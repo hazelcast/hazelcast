@@ -27,7 +27,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import static java.util.Objects.requireNonNull;
 
 public final class State {
-    private static final Map<Long, State> STATES = new ConcurrentHashMap<>();
+    private static final Map<String, State> STATES = new ConcurrentHashMap<>();
 
     /**
      * Key represents the partition which the record originated from. <br>
@@ -48,17 +48,17 @@ public final class State {
     private final List<HistoryRecord> historyRecords;
 
     /**
-     * ID of job for which this state is hold.
+     * Unique ID of the source processor owning this state.
      */
-    private long jobId;
+    private String sourceId;
 
     State() {
         this(new ConcurrentHashMap<>(), new CopyOnWriteArrayList<>());
     }
 
-    public State(long jobId) {
+    public State(String sourceId) {
         this();
-        this.jobId = jobId;
+        this.sourceId = sourceId;
     }
 
     State(Map<ByteBuffer, ByteBuffer> partitionsToOffset, CopyOnWriteArrayList<HistoryRecord> historyRecords) {
@@ -67,13 +67,13 @@ public final class State {
     }
 
     @Nonnull
-    static State getOrCreate(final long jobId) {
-        return requireNonNull(STATES.computeIfAbsent(jobId, k -> new State(jobId)), "state returned cannot be null");
+    static State getOrCreate(final String sourceId) {
+        return requireNonNull(STATES.computeIfAbsent(sourceId, State::new), "state returned cannot be null");
     }
 
     @Nonnull
-    static State get(final long jobId) {
-        return requireNonNull(STATES.get(jobId), "state returned cannot be null");
+    static State get(final String sourceId) {
+        return requireNonNull(STATES.get(sourceId), "state returned cannot be null");
     }
 
     ByteBuffer getOffset(ByteBuffer partition) {
@@ -102,13 +102,13 @@ public final class State {
     }
 
     void remove() {
-        STATES.remove(jobId);
+        STATES.remove(sourceId, this);
     }
 
     @Override
     public String toString() {
         return "State {"
-                + "\n\tjobId=" + jobId
+                + "\n\tsourceId=" + sourceId
                 + "\n\tpartitionsToOffset=" + Utils.decode(partitionsToOffset)
                 + ", \n\thistoryRecords=" + historyRecords
                 + "\n}";

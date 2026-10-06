@@ -64,7 +64,7 @@ public abstract class AbstractBasicCdcIntegrationTest<C extends GenericContainer
 
         // then
         IList<CustomerInfo> results = hz.getList("results");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         assertContainsInitialRecords(results);
 
@@ -88,7 +88,7 @@ public abstract class AbstractBasicCdcIntegrationTest<C extends GenericContainer
 
         // then
         IList<CustomerInfo> results = hz.getList("results");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         //when
         performSetOfChanges(container());
@@ -103,7 +103,7 @@ public abstract class AbstractBasicCdcIntegrationTest<C extends GenericContainer
 
         assertThat(job).eventuallyHasStatus(RUNNING);
         waitForNextSnapshot(jr, job.getId(), 10, false);
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         performSecondSetOfChanges(container());
         assertContainsAddedRecordsAfterRestart(results);
@@ -154,7 +154,7 @@ public abstract class AbstractBasicCdcIntegrationTest<C extends GenericContainer
 
         // then
         IList<CustomerInfo> results = hz.getList("resultsJson");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
         JobRepository jr = new JobRepository(hz);
         waitForNextSnapshot(jr, job.getId(), 60, false);
 
@@ -215,7 +215,7 @@ public abstract class AbstractBasicCdcIntegrationTest<C extends GenericContainer
         Job job = hz.getJet().newJob(pipeline, standardConf());
         assertThat(job).eventuallyHasStatus(RUNNING);
         IList<CustomerInfo> results = hz.getList("filtersMultipleTables");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         performSetOfChanges(container());
         performChangeToProduct(container());

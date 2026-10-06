@@ -90,6 +90,7 @@ public class ReadCdcP<T> extends AbstractProcessor {
 
     private final Properties properties;
     private final EventTimeMapper<? super T> eventTimeMapper;
+    private final boolean trackSnapshots;
     private final RecordMappingFunction<T> recordMappingFunction;
 
     private Traverser<Object> traverser = Traversers.empty();
@@ -105,6 +106,8 @@ public class ReadCdcP<T> extends AbstractProcessor {
 
     private State state;
     private volatile CompletionEvent completionEvent;
+    private Long snapshotTrackingId;
+    private String vertexName;
 
     static {
         // workaround for https://github.com/hazelcast/hazelcast-jet/issues/2603
@@ -120,28 +123,44 @@ public class ReadCdcP<T> extends AbstractProcessor {
     }
 
     public ReadCdcP(
-            @Nonnull Properties properties,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-            @Nonnull RecordMappingFunction<T> recordMappingFunction) {
+        @Nonnull Properties properties,
+        @Nonnull EventTimePolicy<? super T> eventTimePolicy,
+        @Nonnull RecordMappingFunction<T> recordMappingFunction,
+        boolean trackSnapshots) {
         this.properties = requireNonNull(properties, "properties cannot be null");
         this.recordMappingFunction = requireNonNull(recordMappingFunction, "recordMappingFunction cannot be null");
 
         this.eventTimeMapper = new EventTimeMapper<>(requireNonNull(eventTimePolicy, "eventTimePolicy cannot be null"));
+        this.trackSnapshots = trackSnapshots;
         this.eventTimeMapper.addPartitions(1);
     }
 
     @Override
     protected void init(@Nonnull Context context) {
         this.logger = context.logger();
+        this.vertexName = context.vertexName();
 
         properties.setProperty(OFFSET_STORAGE.name(), JetOffsetStorage.class.getName());
         properties.setProperty(SCHEMA_HISTORY.name(), StatefulSchemaHistory.class.getName());
 
-        state = State.getOrCreate(context.jobId());
+        String sourceId = context.jobId() + ":" + context.executionId() + ":" + context.vertexName();
+        state = State.getOrCreate(sourceId);
         // due to Debezium providing only a subset of properties to SchemaHistory and OffsetBackingStore,
-        // we need to reuse existing properties to provide job id
-        properties.setProperty(JET_JOB_ID_REPLACEMENT_PROP_1, String.valueOf(context.jobId()));
-        properties.setProperty(JET_JOB_ID_REPLACEMENT_PROP_2, String.valueOf(context.jobId()));
+        // we need to reuse existing properties to provide the source state ID
+        properties.setProperty(JET_JOB_ID_REPLACEMENT_PROP_1, sourceId);
+        properties.setProperty(JET_JOB_ID_REPLACEMENT_PROP_2, sourceId);
+
+        if (trackSnapshots) {
+            final String channelsKey = "notification.enabled.channels";
+            String channels = properties.containsKey(channelsKey)
+                              ? properties.getProperty(channelsKey) + ","
+                              : "";
+            properties.setProperty(channelsKey, channels + "SnapshotCompletionListener");
+            snapshotTrackingId = context.jobId();
+            NotificationHoldingMap.INSTANCE.markNotYetDone(snapshotTrackingId, vertexName);
+            properties.setProperty("notification.SnapshotCompletionListener.jobId", String.valueOf(snapshotTrackingId));
+            properties.setProperty("notification.SnapshotCompletionListener.sourceVertexName", vertexName);
+        }
 
         recordMappingFunction.init(properties, context.classLoader());
 
@@ -229,8 +248,7 @@ public class ReadCdcP<T> extends AbstractProcessor {
         public void configure(Configuration config, HistoryRecordComparator comparator,
                               SchemaHistoryListener listener, boolean useCatalogBeforeSchema) {
             super.configure(config, comparator, listener, useCatalogBeforeSchema);
-            long jobId = Long.parseLong(config.getString(JET_JOB_ID_REPLACEMENT_PROP_2));
-            state = State.get(jobId);
+            state = State.get(config.getString(JET_JOB_ID_REPLACEMENT_PROP_2));
             requireNonNull(state);
         }
 
@@ -268,7 +286,7 @@ public class ReadCdcP<T> extends AbstractProcessor {
         @Override
         public void configure(WorkerConfig config) {
             super.configure(config);
-            state = State.get(Long.parseLong(config.getString(JET_JOB_ID_REPLACEMENT_PROP_1)));
+            state = State.get(config.getString(JET_JOB_ID_REPLACEMENT_PROP_1));
         }
 
         @Override
@@ -365,19 +383,26 @@ public class ReadCdcP<T> extends AbstractProcessor {
 
     @Override
     public void close() {
-        closeQuietly(engine);
-        if (executor != null) {
-            executor.shutdown();
-            try {
-                if (!executor.awaitTermination(maxShutdownWaitSeconds, SECONDS)) {
-                    logger.warning("Cannot shutdown executor after " + maxShutdownWaitSeconds + " seconds");
+        try {
+            closeQuietly(engine);
+            if (executor != null) {
+                executor.shutdown();
+                try {
+                    if (!executor.awaitTermination(maxShutdownWaitSeconds, SECONDS)) {
+                        logger.warning("Cannot shutdown executor after " + maxShutdownWaitSeconds + " seconds");
+                    }
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    throw new JetException(e);
                 }
-            } catch (InterruptedException e) {
-                throw new JetException(e);
             }
-        }
-        if (state != null) {
-            state.remove();
+        } finally {
+            if (state != null) {
+                state.remove();
+            }
+            if (trackSnapshots && snapshotTrackingId != null) {
+                NotificationHoldingMap.INSTANCE.clearStatus(snapshotTrackingId, vertexName);
+            }
         }
     }
 

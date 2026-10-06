@@ -101,7 +101,7 @@ public abstract class AbstractCdcDataTypesTest<C extends GenericContainer<?>> ex
 
         // then
         IList<TransactionInfo> results = hz.getList("results");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         // when
         performSetOfTemporalChanges(container());
@@ -130,7 +130,7 @@ public abstract class AbstractCdcDataTypesTest<C extends GenericContainer<?>> ex
 
         // then
         IList<TransactionInfo> results = hz.getList("results");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         // when
         performSetOfTemporalChanges(container());
@@ -164,7 +164,7 @@ public abstract class AbstractCdcDataTypesTest<C extends GenericContainer<?>> ex
 
         // then
         IList<StronglyTypedTransactionInfo> results = hz.getList("results");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         // when
         performSetOfTemporalChanges(container());

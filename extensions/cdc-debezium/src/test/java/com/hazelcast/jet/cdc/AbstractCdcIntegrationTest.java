@@ -19,6 +19,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.cdc.TestUtils.Customer;
 import com.hazelcast.jet.cdc.TestUtils.CustomerInfo;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
@@ -37,7 +38,6 @@ import org.testcontainers.containers.JdbcDatabaseContainer;
 
 import javax.annotation.Nonnull;
 import java.util.List;
-import java.util.UUID;
 
 import static com.hazelcast.jet.cdc.Operation.DELETE;
 import static com.hazelcast.jet.cdc.Operation.INSERT;
@@ -56,7 +56,6 @@ public abstract class AbstractCdcIntegrationTest<C extends GenericContainer<?>> 
     @Rule
     public TestName testName = new TestName();
     protected int testNumberModifier = 1000;
-    protected String uuidForNotifications;
 
     @BeforeClass
     public static void beforeClassCheckDocker() {
@@ -72,9 +71,8 @@ public abstract class AbstractCdcIntegrationTest<C extends GenericContainer<?>> 
             prepareDatabase((C) container);
         }
         testNumberModifier = RandomUtils.insecure().randomInt(1100, 9999);
-        uuidForNotifications = UUID.randomUUID().toString();
-        LOG.info("Current test is '{}' and it has number modifier: {}, notification UUID: {}",
-                testName.getMethodName(), testNumberModifier, uuidForNotifications);
+        LOG.info("Current test is '{}' and it has number modifier: {}",
+                testName.getMethodName(), testNumberModifier);
     }
 
     @SuppressWarnings("unchecked")
@@ -105,6 +103,17 @@ public abstract class AbstractCdcIntegrationTest<C extends GenericContainer<?>> 
     @Nonnull
     public Pipeline getPipeline(StreamSource<ChangeRecord> source) {
         return TestUtils.getPipeline(source, ChangeRecord::table);
+    }
+
+    protected void waitUntilSnapshotCompleted(HazelcastInstance instance, Job job) {
+        SnapshotCompletionListenerTestUtil.waitUntilSnapshotCompleted(instance, job);
+        afterInitialSnapshot();
+    }
+
+    /**
+     * Connector-specific readiness beyond the Debezium snapshot notification.
+     */
+    protected void afterInitialSnapshot() {
     }
 
     protected String tablePrefix() {
@@ -205,10 +214,6 @@ public abstract class AbstractCdcIntegrationTest<C extends GenericContainer<?>> 
                 new CustomerInfo(INSERT, new Customer(1005, "Jason" + testNumberModifier, "Bourne", "jason@bourne.org")),
                 new CustomerInfo(DELETE, new Customer(1005, "Jason" + testNumberModifier, "Bourne", "jason@bourne.org"))
         );
-    }
-
-    protected void waitForSnapshotEnd() {
-        TestNotificationChannel.waitForSnapshotEnd(uuidForNotifications);
     }
 
     @Override

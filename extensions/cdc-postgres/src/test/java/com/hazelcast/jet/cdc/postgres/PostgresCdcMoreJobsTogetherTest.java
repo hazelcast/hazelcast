@@ -91,8 +91,7 @@ public class PostgresCdcMoreJobsTogetherTest extends AbstractCdcMoreJobsTogether
                 .setProperty("plugin.name", "pgoutput")
                 .setProperty("publication.name", "dbz_publication" + ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE))
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", options.get("uuid"))
+                .enableSnapshotTracking()
                 .changeRecord();
     }
 }
