@@ -382,7 +382,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
                         "using class loader '%s'", className, ClassLoaderUtil.retrieveClassLoaderID(classLoader));
                 String classNotFoundExceptionMessage = ClassLoaderUtil.checkStackForClassNotFound(e);
                 String messageToInsert;
-                if (Strings.isBlank(classNotFoundExceptionMessage)) {
+                if (classNotFoundExceptionMessage == null || classNotFoundExceptionMessage.isBlank()) {
                     messageToInsert = String.format("%s.", baseMessage);
                 } else {
                     messageToInsert = String.format("%s because class was missing from class path: %s",
