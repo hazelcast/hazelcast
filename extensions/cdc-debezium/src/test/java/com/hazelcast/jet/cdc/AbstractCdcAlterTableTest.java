@@ -68,7 +68,7 @@ public abstract class AbstractCdcAlterTableTest<C extends GenericContainer<?>> e
 
         // then
         IList<CustomerInfo> results = hz.getList("results");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         // when
         performSetOfChanges(container());
@@ -95,7 +95,7 @@ public abstract class AbstractCdcAlterTableTest<C extends GenericContainer<?>> e
 
         // then
         IList<CustomerWithDesignationInfo> results = hz.getList("results");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         // when
         performSetOfChanges(container());
@@ -122,7 +122,7 @@ public abstract class AbstractCdcAlterTableTest<C extends GenericContainer<?>> e
 
         // then
         IList<CustomerInfo> results = hz.getList("results");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         // when
         performSetOfChanges(container());
@@ -149,7 +149,7 @@ public abstract class AbstractCdcAlterTableTest<C extends GenericContainer<?>> e
 
         // then
         IList<CustomerWithDesignationInfo> results = hz.getList("results");
-        waitForSnapshotEnd();
+        waitUntilSnapshotCompleted(hz, job);
 
         // when
         performSetOfChanges(container());

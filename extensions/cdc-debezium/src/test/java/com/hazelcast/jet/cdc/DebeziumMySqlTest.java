@@ -82,9 +82,9 @@ public class DebeziumMySqlTest extends AbstractBasicCdcIntegrationTest<MySQLCont
                 .setProperty("table.include.list", "inventory.customers")
                 .setProperty("include.schema.changes", true)
                 .setProperty("topic.prefix", "TESTS")
+                .setProperty("snapshot.mode", "initial")
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", uuidForNotifications)
+                .enableSnapshotTracking()
 
                 .setProperty("heartbeat.interval.ms", 1000); // this will add Heartbeat messages to the stream
     }
