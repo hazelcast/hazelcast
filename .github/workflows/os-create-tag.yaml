@@ -9,16 +9,30 @@ jobs:
   create-tag:
     runs-on: ubuntu-latest
     steps:
-      - name: Create Tag
+      - name: Create or update release tag
         run: |
-          # Create-or-replace tag
+          TAG_NAME="${GITHUB_REF_NAME#tag-}"
+
+          # First try to create the release tag with `POST` as release tags
+          # normally should not exist prior. If that fails, only then attempt to `PATCH`
+          # existing release tag (useful in `sandbox` or when a post fix is applied and
+          # tag needs refreshing)
+          gh api \
+            --method POST \
+            repos/${GITHUB_REPOSITORY}/git/refs \`
+            -f ref=refs/tags/${TAG_NAME} \
+            -f sha=${GITHUB_SHA} || \
           gh api \
             --method PATCH \
-            repos/${GITHUB_REPOSITORY}/git/refs/tags/${GITHUB_REF_NAME#tag-}} \
-            -f sha="${GITHUB_SHA}" \
-            -f force=true
+            repos/${GITHUB_REPOSITORY}/git/refs/tags/${TAG_NAME} \
+            -f sha=${GITHUB_SHA} \
+            -F force=true
+        env:
+          GH_TOKEN: ${{ github.token }}
 
-          # Delete branch
+      - name: Delete temp `tag-v*` branch
+        if: always()
+        run: |
           gh api \
             --method DELETE \
             repos/${GITHUB_REPOSITORY}/git/refs/heads/${GITHUB_REF_NAME}
