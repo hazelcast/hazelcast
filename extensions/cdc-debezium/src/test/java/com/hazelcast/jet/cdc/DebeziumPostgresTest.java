@@ -55,9 +55,9 @@ public class DebeziumPostgresTest extends AbstractBasicCdcIntegrationTest<Postgr
                 .setProperty("table.include.list", "inventory.customers")
                 .setProperty("heartbeat.interval.ms", 1000)
                 .setProperty("plugin.name", "pgoutput")
+                .setProperty("snapshot.mode", "initial")
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", uuidForNotifications)
+                .enableSnapshotTracking()
                 .changeRecord();
     }
 }

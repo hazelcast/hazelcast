@@ -164,10 +164,10 @@ public class DebeziumMongoTest extends AbstractBasicCdcIntegrationTest<MongoDBCo
                 .setProperty("collection.include.list", "inventory.customers")
                 .setProperty("database.include.list", "inventory")
                 .setProperty("filters.match.mode", "literal")
+                .setProperty("snapshot.mode", "initial")
                 .setProperty("capture.mode", "change_streams_update_full_with_pre_image")
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", uuidForNotifications)
+                .enableSnapshotTracking()
                 .setProperty("topic.prefix", "TESTS");
     }
 

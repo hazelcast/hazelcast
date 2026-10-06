@@ -53,10 +53,9 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.TreeSet;
-import java.util.UUID;
 
 import static com.hazelcast.jet.cdc.Operation.UNSPECIFIED;
-import static com.hazelcast.jet.cdc.TestNotificationChannel.waitForSnapshotEnd;
+import static com.hazelcast.jet.cdc.SnapshotCompletionListenerTestUtil.waitUntilSnapshotCompleted;
 import static com.hazelcast.jet.cdc.TestUtils.smallInstanceConfigWithCompactSerialization;
 import static com.hazelcast.jet.TestedVersions.TOXIPROXY_IMAGE;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -96,7 +95,6 @@ public abstract class NetworkIssuesTest<C extends JdbcDatabaseContainer<?>> exte
     protected ToxiproxyContainer toxiproxy;
     private HazelcastInstance hz;
     protected Proxy proxy;
-    protected String uuidForNotifications;
 
     @BeforeClass
     public static void beforeClassCheckDocker() {
@@ -117,7 +115,6 @@ public abstract class NetworkIssuesTest<C extends JdbcDatabaseContainer<?>> exte
 
         HazelcastInstance[] hazelcastInstances = createHazelcastInstances(smallInstanceConfigWithCompactSerialization(), 2);
         hz = hazelcastInstances[0];
-        uuidForNotifications = UUID.randomUUID().toString();
     }
 
     protected abstract int databasePort();
@@ -234,7 +231,7 @@ public abstract class NetworkIssuesTest<C extends JdbcDatabaseContainer<?>> exte
         final Pipeline pipeline = getPipeline(source);
         job = hz.getJet().newJob(pipeline, getJobConfig());
         Thread.sleep(500);
-        waitForSnapshotEnd(uuidForNotifications);
+        waitUntilSnapshotCompleted(hz, job);
 
         DataProducer dataProducer = new DataProducer(jdbcUrlWithAuth(),
                 id -> ("INSERT INTO inventory.customers (id, first_name, last_name, email) "

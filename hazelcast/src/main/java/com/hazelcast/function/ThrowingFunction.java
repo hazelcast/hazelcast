@@ -18,6 +18,7 @@ package com.hazelcast.function;
 
 import com.hazelcast.internal.util.ExceptionUtil;
 
+import javax.annotation.Nonnull;
 import java.util.function.Function;
 
 /**
@@ -44,5 +45,14 @@ public interface ThrowingFunction<T, R> extends Function<T, R> {
         } catch (Exception e) {
             throw ExceptionUtil.sneakyThrow(e);
         }
+    }
+
+    /**
+     * Wraps given invocation to {@link ThrowingFunction}, so e.g. in stream transform user doesn't need to use try-catch block.
+     * @since 6.0
+     */
+    @Nonnull
+    static <T, R> ThrowingFunction<T, R> wrap(@Nonnull ThrowingFunction<T, R> function) {
+        return function;
     }
 }
