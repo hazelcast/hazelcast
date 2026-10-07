@@ -24,9 +24,16 @@ import com.hazelcast.cp.internal.datastructures.cpmap.operation.CPMapPutOp;
 import com.hazelcast.cp.internal.datastructures.cpmap.operation.CPMapRemoveOp;
 import com.hazelcast.cp.internal.datastructures.cpmap.operation.CPMapSetOp;
 import com.hazelcast.internal.serialization.DataSerializerHook;
+import com.hazelcast.internal.serialization.impl.ArrayDataSerializableFactory;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.util.function.Supplier;
+
+/**
+ * Registers the open source CP Map types.
+ */
 public class CPMapDataSerializerHook implements DataSerializerHook {
     public static final int PUT_OP = 1;
     public static final int SET_OP = 2;
@@ -35,6 +42,12 @@ public class CPMapDataSerializerHook implements DataSerializerHook {
     public static final int CAS_OP = 5;
     public static final int GET_OP = 6;
     public static final int PUT_IF_ABSENT_OP = 7;
+
+    /**
+     * LEN = 18 because we merge an extension constructor into
+     * this factory to keep RU compatibility between versions.
+     */
+    public static final int LEN = 18;
 
     private static final String RAFT_CPMAP_DS_FACTORY = "hazelcast.serialization.ds.raft.cpmap";
     private static final int RAFT_CPMAP_DS_FACTORY_DEFAULT_ID = -1079;
@@ -45,20 +58,20 @@ public class CPMapDataSerializerHook implements DataSerializerHook {
         return F_ID;
     }
 
-    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     @Override
     public DataSerializableFactory createFactory() {
-        return typeId -> switch (typeId) {
-            case PUT_OP -> new CPMapPutOp();
-            case GET_OP -> new CPMapGetOp();
-            case SET_OP -> new CPMapSetOp();
-            case REMOVE_OP -> new CPMapRemoveOp();
-            case CAS_OP -> new CPMapCompareAndSetOp();
-            case DELETE_OP -> new CPMapDeleteOp();
-            case PUT_IF_ABSENT_OP -> new CPMapPutIfAbsentOp();
+        Supplier<IdentifiedDataSerializable>[] constructors = new Supplier[LEN];
 
-            default ->
-                    throw new IllegalArgumentException("Unknown type ID: " + typeId);
-        };
+        constructors[PUT_OP] = CPMapPutOp::new;
+        constructors[SET_OP] = CPMapSetOp::new;
+        constructors[REMOVE_OP] = CPMapRemoveOp::new;
+        constructors[DELETE_OP] = CPMapDeleteOp::new;
+        constructors[CAS_OP] = CPMapCompareAndSetOp::new;
+        constructors[GET_OP] = CPMapGetOp::new;
+        constructors[PUT_IF_ABSENT_OP] = CPMapPutIfAbsentOp::new;
+        // 12..17 stay null here: they are owned by the enterprise hook,
+        // which merges them into this factory instance in afterFactoriesCreated().
+
+        return new ArrayDataSerializableFactory(constructors);
     }
 }
