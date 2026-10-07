@@ -330,11 +330,13 @@
                 <version>${kafka.version}</version>
                 <classifier>test</classifier>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.xerial.snappy:snappy-java` should be upgraded -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-api</artifactId>
                 <version>${hadoop.version}</version>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.xerial.snappy:snappy-java` should be upgraded -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-runtime</artifactId>
@@ -423,6 +425,12 @@
                 <artifactId>commons-math3</artifactId>
                 <version>3.6.1</version>
             </dependency>
+            <!-- 
+                Addresses convergence between:
+                - `org.apache.hadoop:hadoop-client-api`
+                - `org.apache.hadoop:hadoop-client-runtime`
+                - `org.apache.parquet:parquet-hadoop`
+            -->
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
@@ -512,6 +520,7 @@
                 Addresses convergence between:
                 - `org.apache.parquet:parquet-hadoop` (transitively via `org.apache.parquet:parquet-avro`)
                 - `org.apache.kafka:kafka-clients`
+                - `org.xerial.snappy:snappy-java` (transitively via `org.apache.parquet:parquet-avro`)
             -->
             <dependency>
                 <groupId>com.github.luben</groupId>
