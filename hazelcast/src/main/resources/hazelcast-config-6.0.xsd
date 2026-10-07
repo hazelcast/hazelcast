@@ -5393,6 +5393,9 @@
                         Flag to denote whether or not CP Subsystem Persistence is enabled.
                         If enabled, CP members persist their local CP data to stable storage and
                         can recover from crashes.
+                        Feature is disabled by default. If you enable this option in open-source,
+                        the member will fail to start, you need Enterprise to run it and obtain a
+                        license from Hazelcast.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -5422,6 +5425,9 @@
                     <xs:documentation>
                         The CP member priority. The CP groups' leadership will be eventually transferred to members
                         with higher priorities within the CP group.
+                        Feature is disabled by default. If you enable this option in open-source,
+                        the member will fail to start, you need Enterprise to run it and obtain a
+                        license from Hazelcast.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -5476,6 +5482,10 @@
 
                         Note: When set to true, cpMemberPriority is ignored because this member
                         is not allowed to hold leadership.
+
+                        Feature is disabled by default. If you enable this option in open-source,
+                        the member will fail to start, you need Enterprise to run it and obtain a
+                        license from Hazelcast.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -5708,7 +5718,9 @@
                         When enabled, entries exceeding a given age can be removed
                         based on timestamps assigned by the Raft leader rather than
                         local timestamps of follower nodes.
-                        Default is false.
+                        Feature is disabled by default. If you enable this option in open-source,
+                        the member will fail to start, you need Enterprise to run it and obtain a
+                        license from Hazelcast.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

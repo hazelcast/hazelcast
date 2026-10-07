@@ -42,7 +42,6 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_CANCELLED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_METRIC_COMPLETED;
@@ -54,6 +53,7 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EXECUTOR_
 import static java.lang.System.currentTimeMillis;
 import static java.lang.Thread.sleep;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Common methods used in ScheduledExecutorService tests.
@@ -90,18 +90,21 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         return total;
     }
 
-    static class StatefulRunnableTask implements Runnable, Serializable, HazelcastInstanceAware, StatefulTask<String, Integer> {
+    public static class StatefulRunnableTask
+            implements Runnable, StatefulTask<String, Integer>, HazelcastInstanceAware, Serializable {
 
-        final String latchName;
-        final String runCounterName;
-        final String loadCounterName;
+        private static final String STATE_KEY = "status";
 
-        int status = 0;
+        private final String latchName;
+        private final String runCounterName;
+        private final String loadCounterName;
 
-        transient HazelcastInstance instance;
+        private int status;
 
-        StatefulRunnableTask(String runsCountLatchName, String runCounterName, String loadCounterName) {
-            this.latchName = runsCountLatchName;
+        private transient HazelcastInstance instance;
+
+        public StatefulRunnableTask(String latchName, String runCounterName, String loadCounterName) {
+            this.latchName = latchName;
             this.runCounterName = runCounterName;
             this.loadCounterName = loadCounterName;
         }
@@ -109,118 +112,115 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void run() {
             status++;
-            instance.getCPSubsystem().getAtomicLong(runCounterName).set(status);
-            instance.getCPSubsystem().getCountDownLatch(latchName).countDown();
+            signal(instance, runCounterName);
+            signal(instance, latchName);
         }
 
         @Override
         public void load(Map<String, Integer> snapshot) {
-            status = snapshot.get("status");
-            instance.getCPSubsystem().getAtomicLong(loadCounterName).incrementAndGet();
+            if (snapshot.containsKey(STATE_KEY)) {
+                status = snapshot.get(STATE_KEY);
+            }
+            signal(instance, loadCounterName);
         }
 
         @Override
         public void save(Map<String, Integer> snapshot) {
-            snapshot.put("status", status);
+            snapshot.put(STATE_KEY, status);
         }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
         }
     }
 
-    static class ICountdownLatchCallableTask implements Callable<Double>, Serializable, HazelcastInstanceAware {
+    public static class ICountdownLatchCallableTask
+            implements Callable<Double>, HazelcastInstanceAware, Serializable {
 
-        final String initLatchName;
-        final String waitLatchName;
-        final String doneLatchName;
+        private final String initName;
+        private final String waitName;
+        private final String doneName;
+        private transient HazelcastInstance instance;
 
-        transient HazelcastInstance instance;
-
-        ICountdownLatchCallableTask(String initLatchName, String waitLatchName, String doneLatchName) {
-            this.initLatchName = initLatchName;
-            this.waitLatchName = waitLatchName;
-            this.doneLatchName = doneLatchName;
+        public ICountdownLatchCallableTask(String initName, String waitName, String doneName) {
+            this.initName = initName;
+            this.waitName = waitName;
+            this.doneName = doneName;
         }
 
         @Override
         public Double call() {
-            instance.getCPSubsystem().getCountDownLatch(initLatchName).countDown();
-            assertOpenEventually(instance.getCPSubsystem().getCountDownLatch(waitLatchName));
-            instance.getCPSubsystem().getCountDownLatch(doneLatchName).countDown();
+            signal(instance, initName);
+            awaitGate(instance, waitName);
+            signal(instance, doneName);
             return 77 * 2.2;
         }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
         }
     }
 
-    static class ICountdownLatchMapIncrementCallableTask implements Runnable, Serializable, HazelcastInstanceAware {
+    public static class ICountdownLatchMapIncrementCallableTask
+            implements Callable<Double>, HazelcastInstanceAware, Serializable {
 
-        final String startedLatch;
-        final String finishedLatch;
-        final String waitAfterStartLatch;
-        final String runEntryCounterName;
-        final String mapName;
+        private final String mapName;
+        private final String runEntryCounterName;
+        private final String startedName;
+        private final String finishedName;
+        private final String waitAfterStartName;
+        private transient HazelcastInstance instance;
 
-        transient HazelcastInstance instance;
-
-        ICountdownLatchMapIncrementCallableTask(String mapName, String runEntryCounterName,
-                                                String startedLatch, String finishedLatch, String waitAfterStartLatch) {
+        public ICountdownLatchMapIncrementCallableTask(String mapName, String runEntryCounterName,
+                                                       String startedName, String finishedName,
+                                                       String waitAfterStartName) {
             this.mapName = mapName;
             this.runEntryCounterName = runEntryCounterName;
-            this.startedLatch = startedLatch;
-            this.finishedLatch = finishedLatch;
-            this.waitAfterStartLatch = waitAfterStartLatch;
+            this.startedName = startedName;
+            this.finishedName = finishedName;
+            this.waitAfterStartName = waitAfterStartName;
         }
 
         @Override
-        public void run() {
-            instance.getCPSubsystem().getAtomicLong(runEntryCounterName).incrementAndGet();
-            instance.getCPSubsystem().getCountDownLatch(startedLatch).countDown();
-            try {
-                instance.getCPSubsystem().getCountDownLatch(waitAfterStartLatch).await(1, TimeUnit.MINUTES);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-
-            IMap<String, Integer> map = instance.getMap(mapName);
-            if (map.get("foo") == 1) {
-                map.put("foo", 2);
-            }
-
-            instance.getCPSubsystem().getCountDownLatch(finishedLatch).countDown();
+        public Double call() {
+            // signalled on every execution -> ends at 2 (original + migrated re-run)
+            signal(instance, runEntryCounterName);
+            signal(instance, startedName);
+            // first run blocks here and is killed by instances[0] shutdown;
+            // the migrated re-run passes straight through (gate already open)
+            awaitGate(instance, waitAfterStartName);
+            // only the completing run reaches here -> "foo" 1 -> 2
+            instance.<String, Integer>getMap(mapName).merge("foo", 1, Integer::sum);
+            signal(instance, finishedName);
+            return 0.0;
         }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
         }
     }
 
-    static class ICountdownLatchRunnableTask implements Runnable, Serializable, HazelcastInstanceAware {
+    public static class ICountdownLatchRunnableTask
+            implements Runnable, HazelcastInstanceAware, Serializable {
 
-        final String[] runsCountDownLatchNames;
+        private final String[] names;
+        private transient HazelcastInstance instance;
 
-        transient HazelcastInstance instance;
-
-        ICountdownLatchRunnableTask(String... runsCountDownLatchNames) {
-            this.runsCountDownLatchNames = runsCountDownLatchNames;
+        public ICountdownLatchRunnableTask(String... names) {
+            this.names = names;
         }
 
         @Override
         public void run() {
-            for (String runsCounterLatchName : runsCountDownLatchNames) {
-                instance.getCPSubsystem().getCountDownLatch(runsCounterLatchName).countDown();
-            }
+            signal(instance, names);
         }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
         }
     }
 
@@ -241,7 +241,7 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
                 try {
                     sleep(5000);
                     if (currentTimeMillis() - start >= 30000) {
-                        instance.getCPSubsystem().getCountDownLatch(runFinishedLatchName).countDown();
+                        signal(instance, runFinishedLatchName);
                         break;
                     }
                 } catch (InterruptedException e) {
@@ -336,33 +336,27 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
 
     }
 
-    static class ErroneousCallableTask implements Callable<Double>, Serializable, HazelcastInstanceAware {
+    public static class ErroneousCallableTask
+            implements Callable<Double>, HazelcastInstanceAware, Serializable {
 
-        private String completionLatchName;
-
+        private final String completionName;
         private transient HazelcastInstance instance;
 
-        ErroneousCallableTask() {
-        }
-
-        ErroneousCallableTask(String completionLatchName) {
-            this.completionLatchName = completionLatchName;
+        public ErroneousCallableTask(String completionName) {
+            this.completionName = completionName;
         }
 
         @Override
-        public Double call() throws Exception {
-            try {
-                throw new IllegalStateException("Erroneous task");
-            } finally {
-                if (completionLatchName != null) {
-                    instance.getCPSubsystem().getCountDownLatch(completionLatchName).countDown();
-                }
+        public Double call() {
+            if (completionName != null) {
+                signal(instance, completionName);
             }
+            throw new IllegalStateException("Erroneous task");
         }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
         }
     }
 
@@ -376,24 +370,27 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
     }
 
 
-    static class PlainInstanceAwareRunnableTask implements Runnable, Serializable, HazelcastInstanceAware {
+    public static class PlainInstanceAwareRunnableTask
+            implements Runnable, HazelcastInstanceAware, Serializable {
 
-        private final String latchName;
-
+        private final String name;
         private transient HazelcastInstance instance;
 
-        PlainInstanceAwareRunnableTask(String latchName) {
-            this.latchName = latchName;
+        public PlainInstanceAwareRunnableTask(String name) {
+            this.name = name;
         }
 
         @Override
         public void run() {
-            this.instance.getCPSubsystem().getCountDownLatch(latchName).countDown();
+            if (instance == null) {
+                throw new IllegalStateException("HazelcastInstance was not injected");
+            }
+            signal(instance, name);
         }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            instance = hazelcastInstance;
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
         }
     }
 
@@ -410,29 +407,29 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    static class PlainPartitionAwareRunnableTask implements Runnable, Serializable, PartitionAware<String>, HazelcastInstanceAware {
+    public static class PlainPartitionAwareRunnableTask
+            implements Runnable, PartitionAware<String>, HazelcastInstanceAware, Serializable {
 
-        private final String latchName;
-
+        private final String name;
         private transient HazelcastInstance instance;
 
-        PlainPartitionAwareRunnableTask(String latchName) {
-            this.latchName = latchName;
+        public PlainPartitionAwareRunnableTask(String name) {
+            this.name = name;
         }
 
         @Override
         public void run() {
-            this.instance.getCPSubsystem().getCountDownLatch(latchName).countDown();
+            signal(instance, name);
         }
 
         @Override
         public String getPartitionKey() {
-            return "TestKey";
+            return "PartitionAwareRunnableTaskKey";
         }
 
         @Override
-        public void setHazelcastInstance(HazelcastInstance hazelcastInstance) {
-            this.instance = hazelcastInstance;
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
         }
     }
 
@@ -627,4 +624,39 @@ public class ScheduledExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
+
+    protected static final String COORDINATION_MAP = "coordination";
+
+    protected static void signal(HazelcastInstance hz, String... names) {
+        for (String name : names) {
+            hz.<String, Long>getMap(COORDINATION_MAP).merge(name, 1L, Long::sum);
+        }
+    }
+
+    protected static long signalCount(HazelcastInstance hz, String name) {
+        Long value = hz.<String, Long>getMap(COORDINATION_MAP).get(name);
+        return value == null ? 0L : value;
+    }
+
+    protected void assertSignalledEventually(HazelcastInstance hz, String name, long expected) {
+        assertTrueEventually(() -> assertTrue(
+                "expected signal count >= " + expected + " for '" + name + "' but was " + signalCount(hz, name),
+                signalCount(hz, name) >= expected));
+    }
+
+    protected static void awaitGate(HazelcastInstance hz, String name) {
+        IMap<String, Long> map = hz.getMap(COORDINATION_MAP);
+        while (true) {
+            Long value = map.get(name);
+            if (value != null && value >= 1L) {
+                return;
+            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
 }

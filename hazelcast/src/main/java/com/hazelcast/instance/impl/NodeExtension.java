@@ -421,6 +421,14 @@ public interface NodeExtension {
     CPSubsystem createCPSubsystem(NodeEngine nodeEngine);
 
     /**
+     * Returns {@code true} if the ADVANCED_CP feature is available
+     * (e.g. CPMap, CP group snapshots for client routing, auto step-down).
+     */
+    default boolean isAdvancedCPEnabled() {
+        return false;
+    }
+
+    /**
      * Returns a JetService.
      */
     JetService getJet();

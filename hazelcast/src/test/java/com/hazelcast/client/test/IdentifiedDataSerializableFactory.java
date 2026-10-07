@@ -480,7 +480,7 @@ public class IdentifiedDataSerializableFactory implements DataSerializableFactor
 
         @Override
         public Boolean call() {
-            hazelcastInstance.getCPSubsystem().getCountDownLatch("callableStartedLatch").countDown();
+            hazelcastInstance.<String, Boolean>getMap("coordination").put(startSignalLatchName, true);
             try {
                 Thread.sleep(Long.MAX_VALUE);
             } catch (InterruptedException e) {

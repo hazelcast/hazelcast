@@ -143,6 +143,10 @@
     <!-- CP Subsystem -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]RaftService"/>
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]raft[\\/]impl[\\/]RaftNodeImpl"/>
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]cp[\\/]internal[\\/]MetadataRaftGroupManager"/>
+    <!-- EE CP files in packages where OS already has package-info.java -->
+    <suppress checks="JavadocPackage" files="com[\\/]hazelcast[\\/]client[\\/]cp[\\/]internal[\\/]CPSubsystemEnterpriseImpl"/>
+    <suppress checks="JavadocPackage" files="com[\\/]hazelcast[\\/]client[\\/]cp[\\/]internal[\\/]datastructures[\\/]proxy[\\/]ClientRaftProxyEnterpriseFactory"/>
 
     <!-- Spring -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]spring[\\/]HazelcastConfigBeanDefinitionParser"/>

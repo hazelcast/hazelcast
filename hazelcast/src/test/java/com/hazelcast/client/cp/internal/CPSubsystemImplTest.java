@@ -1,0 +1,218 @@
+/*
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.client.cp.internal;
+
+import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.cp.CPGroupId;
+import com.hazelcast.cp.CPSubsystem;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.util.Collection;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertNotNull;
+
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
+public class CPSubsystemImplTest extends HazelcastTestSupport {
+
+    private TestHazelcastFactory factory;
+
+    @Before
+    public void init() {
+        factory = new TestHazelcastFactory();
+    }
+
+    @After
+    public void tearDown() {
+        factory.terminateAll();
+    }
+
+    @Test
+    public void test_atomicLong_whenCPSubsystemNotConfigured() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertThrows(HazelcastException.class,
+                () -> client.getCPSubsystem().getAtomicLong("long"));
+    }
+
+    @Test
+    public void test_atomicReference_whenCPSubsystemNotConfigured() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertThrows(HazelcastException.class,
+                () -> client.getCPSubsystem().getAtomicReference("ref"));
+    }
+
+    @Test
+    public void test_lock_whenCPSubsystemNotConfigured() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertThrows(HazelcastException.class,
+                () -> client.getCPSubsystem().getLock("lock"));
+    }
+
+    @Test
+    public void test_semaphore_whenCPSubsystemNotConfigured() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertThrows(HazelcastException.class,
+                () -> client.getCPSubsystem().getSemaphore("semaphore"));
+    }
+
+    @Test
+    public void test_countDownLatch_whenCPSubsystemNotConfigured() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertThrows(HazelcastException.class,
+                () -> client.getCPSubsystem().getAtomicLong("latch"));
+    }
+
+    @Test
+    public void test_cpSubsystemManagementService_whenCPSubsystemNotConfigured() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertThrows(UnsupportedOperationException.class, () -> client.getCPSubsystem().getCPSubsystemManagementService());
+    }
+
+    @Test
+    public void test_cpSessionManagementService_whenCPSubsystemNotConfigured() {
+        factory.newHazelcastInstance();
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertThrows(UnsupportedOperationException.class, () -> client.getCPSubsystem().getCPSessionManagementService());
+    }
+
+    @Test
+    public void test_atomicLong_whenCPSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        assertNotNull(client.getCPSubsystem().getAtomicLong("long"));
+    }
+
+    @Test
+    public void test_atomicReference_whenCPSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        assertNotNull(client.getCPSubsystem().getAtomicReference("ref"));
+    }
+
+    @Test
+    public void test_lock_whenCPSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        assertNotNull(client.getCPSubsystem().getLock("lock"));
+    }
+
+    @Test
+    public void test_semaphore_whenCPSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        assertNotNull(client.getCPSubsystem().getSemaphore("semaphore"));
+    }
+
+    @Test
+    public void test_countDownLatch_whenCPSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+
+        assertNotNull(client.getCPSubsystem().getCountDownLatch("latch"));
+    }
+
+    @Test
+    public void test_cpSubsystemManagementService_whenCPSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertThrows(UnsupportedOperationException.class, () -> client.getCPSubsystem().getCPSubsystemManagementService());
+    }
+
+    @Test
+    public void test_cpSessionManagementService_whenCPSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+        assertThrows(UnsupportedOperationException.class, () -> client.getCPSubsystem().getCPSessionManagementService());
+    }
+
+    @Test
+    public void testGetCPGroupIdsWhenSubsystemConfigured() {
+        Config config = new Config();
+        config.getCPSubsystemConfig().setCPMemberCount(3);
+
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+        HazelcastInstance client = factory.newHazelcastClient();
+        CPSubsystem cp = client.getCPSubsystem();
+
+        cp.getAtomicLong("long");
+        cp.getAtomicLong("long@group1");
+        cp.getAtomicLong("long@group2");
+
+        Collection<CPGroupId> cpGroupIds = cp.getCPGroupIds();
+        assertThat(cpGroupIds).extracting(CPGroupId::getName)
+                .containsExactlyInAnyOrder("METADATA", "default", "group1", "group2");
+    }
+}

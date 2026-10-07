@@ -23,6 +23,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.cp.internal.RaftServiceUtil;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.Joiner;
@@ -46,9 +47,6 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -1106,24 +1104,13 @@ public class MembershipManager {
     }
 
     private void removeFromCPMissingMembers(MembersView membersView) {
-        Object raftService;
+        RaftService raftService;
         try {
             raftService = nodeEngine.getService(RaftServiceUtil.SERVICE_NAME);
         } catch (HazelcastException e) {
             return;
         }
-
-        List<MemberInfo> membersInfo = membersView.getMembers();
-
-        // Lookup to invoke EE RaftService#removeFromMissingMembers method
-        MethodHandles.Lookup publicLookup = MethodHandles.publicLookup();
-        MethodType mt = MethodType.methodType(void.class, List.class);
-        try {
-            MethodHandle removeFromMissingMembers = publicLookup.bind(raftService, "removeFromMissingMembers", mt);
-            removeFromMissingMembers.invoke(membersInfo);
-        } catch (Throwable e) {
-            throw new RuntimeException(e);
-        }
+        raftService.removeFromMissingMembers(membersView.getMembers());
     }
 
     private boolean isHotRestartEnabled() {

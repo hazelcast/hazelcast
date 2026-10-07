@@ -41,9 +41,10 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.CPSubsystemStubImpl;
+import com.hazelcast.client.cp.internal.CPSubsystemImpl;
+import com.hazelcast.client.cp.internal.datastructures.proxy.ClientRaftProxyFactory;
+import com.hazelcast.client.cp.internal.session.ClientProxySessionManager;
 import com.hazelcast.cp.internal.session.ProxySessionManager;
-import com.hazelcast.cp.internal.session.StubProxySessionManager;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.internal.memory.DefaultMemoryStats;
@@ -251,12 +252,12 @@ public class DefaultClientExtension implements ClientExtension {
 
     @Override
     public CPSubsystem createCPSubsystem(HazelcastClientInstanceImpl hazelcastClientInstance) {
-        return new CPSubsystemStubImpl(true);
+        return new CPSubsystemImpl(new ClientRaftProxyFactory(hazelcastClientInstance));
     }
 
     @Override
     public ProxySessionManager createProxySessionManager(HazelcastClientInstanceImpl hazelcastClientInstance) {
-        return new StubProxySessionManager();
+        return new ClientProxySessionManager(hazelcastClientInstance);
     }
 
     @Override

@@ -15,3 +15,4 @@
 #
 
 com.hazelcast.jet.impl.client.protocol.task.JetMessageTaskFactoryProvider
+com.hazelcast.cp.internal.client.CPMessageTaskFactoryProvider
