@@ -17,14 +17,11 @@
 package com.hazelcast.cp.internal.datastructures.snapshot;
 
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
-import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefSnapshot;
-import com.hazelcast.cp.internal.datastructures.cpmap.CPMapServiceUtil;
 import com.hazelcast.cp.internal.raft.ChunkedSnapshotAwareService;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftIntegration;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotChunk;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
-import com.hazelcast.cp.internal.raftop.snapshot.RestoreSnapshotOp;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -350,81 +347,5 @@ public final class ChunkUtil {
         }
 
         throw new IllegalArgumentException("Unknown chunk object type " + chunk);
-    }
-
-    /**
-     * Processes a single snapshot chunk and distributes its operations to either service snapshots or direct ops.
-     */
-    private static void processChunk(SnapshotChunk chunk, Map<String, Object> serviceSnapshots,
-                                     List<RestoreSnapshotOp> snapshotOps) {
-        Object op = chunk.operation();
-        if (!(op instanceof List<?>)) {
-            return;
-        }
-
-        for (RestoreSnapshotOp restoreOp : (List<RestoreSnapshotOp>) op) {
-            String serviceName = restoreOp.getServiceName();
-            Object snapshotData = restoreOp.getSnapshot();
-
-            switch (serviceName) {
-                case CPMapServiceUtil.SERVICE_NAME:
-                    handleCPMapSnapshot(serviceSnapshots, snapshotData);
-                    break;
-                case AtomicRefService.SERVICE_NAME:
-                    handleAtomicRefSnapshot(serviceSnapshots, snapshotData);
-                    break;
-                default:
-                    snapshotOps.add(restoreOp);
-                    break;
-            }
-        }
-    }
-
-    /**
-     * Handles CPMap snapshot data chunk processing.
-     */
-    private static void handleCPMapSnapshot(Map<String, Object> serviceSnapshots, Object snapshotData) {
-        if (!(snapshotData instanceof DataChunkGroup<?>)) {
-            return;
-        }
-
-        DataChunkGroup<?> dataChunkGroup = (DataChunkGroup<?>) snapshotData;
-        Object cpMapSnapshot = serviceSnapshots.computeIfAbsent(CPMapServiceUtil.SERVICE_NAME,
-                s -> newCPMapRegistrySnapshot());
-        invokeCPMapFromChunks(cpMapSnapshot, dataChunkGroup.getServiceData());
-    }
-
-    private static Object newCPMapRegistrySnapshot() {
-        try {
-            return Class.forName("com.hazelcast.cp.internal.datastructures.cpmap.CPMapRegistrySnapshot")
-                        .getConstructor()
-                        .newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("CPMap registry snapshot type is not available", e);
-        }
-    }
-
-    private static void invokeCPMapFromChunks(Object cpMapSnapshot, List<?> chunks) {
-        try {
-            cpMapSnapshot.getClass().getMethod("fromChunks", List.class).invoke(cpMapSnapshot, chunks);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Failed to reconstruct CPMap registry snapshot from chunks", e);
-        }
-    }
-
-    /**
-     * Handles AtomicRef snapshot data chunk processing.
-     */
-    private static void handleAtomicRefSnapshot(Map<String, Object> serviceSnapshots, Object snapshotData) {
-        if (!(snapshotData instanceof DataChunkGroup<?>)) {
-            return;
-        }
-
-        DataChunkGroup<ValueDataChunk> dataChunkGroup = (DataChunkGroup<ValueDataChunk>) snapshotData;
-        AtomicRefSnapshot atomicRefSnapshot = (AtomicRefSnapshot) serviceSnapshots.computeIfAbsent(
-                AtomicRefService.SERVICE_NAME,
-                s -> new AtomicRefSnapshot()
-        );
-        atomicRefSnapshot.fromChunks(dataChunkGroup.getServiceData());
     }
 }

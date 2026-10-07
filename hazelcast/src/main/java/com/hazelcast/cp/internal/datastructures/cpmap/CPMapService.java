@@ -140,7 +140,7 @@ public class CPMapService implements RaftManagedService, RaftRemoteService,
     @Override
     public boolean destroyRaftObject(CPGroupId groupId, String objectName) {
         return mapRegistries.computeIfAbsent(groupId,
-                r -> new CPMapRegistry(groupId)).destroyMapStore(objectName);
+                r -> createCPMapRegistry(groupId)).destroyMapStore(objectName);
     }
 
     @Override

@@ -96,6 +96,10 @@ public class RaftGroupMembershipManager {
                 MANAGEMENT_TASK_PERIOD_IN_MILLIS, MANAGEMENT_TASK_PERIOD_IN_MILLIS, MILLISECONDS);
         executionService.scheduleWithRepetition(CP_SUBSYSTEM_MANAGEMENT_EXECUTOR, new CheckLocalRaftNodesTask(),
                 CHECK_LOCAL_RAFT_NODES_TASK_PERIOD, CHECK_LOCAL_RAFT_NODES_TASK_PERIOD, SECONDS);
+        scheduleAdditionalTasks(executionService);
+    }
+
+    void scheduleAdditionalTasks(ExecutionService executionService) {
     }
 
     protected boolean skipRunningTask() {
