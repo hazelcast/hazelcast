@@ -23,7 +23,6 @@ public class TestsHaveRunnersTest extends ArchUnitTestSupport {
 
     @Test
     public void testHaveRunners() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage);
 
         ArchUnitRules.TESTS_HAVE_RUNNNERS.check(classes);

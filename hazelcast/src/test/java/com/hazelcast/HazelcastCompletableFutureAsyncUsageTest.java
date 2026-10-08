@@ -30,7 +30,6 @@ public class HazelcastCompletableFutureAsyncUsageTest extends ArchUnitTestSuppor
 
     @Test
     public void noClassUsesCompletableFuture() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
 
         JavaClasses javaClassesFiltered = classes
