@@ -19,7 +19,7 @@ jobs:
           # tag needs refreshing)
           gh api \
             --method POST \
-            repos/${GITHUB_REPOSITORY}/git/refs \`
+            repos/${GITHUB_REPOSITORY}/git/refs \
             -f ref=refs/tags/${TAG_NAME} \
             -f sha=${GITHUB_SHA} || \
           gh api \

@@ -90,7 +90,7 @@
         <avro.version>1.12.0</avro.version>
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
-        <aws.sdk2.version>2.55.6</aws.sdk2.version>
+        <aws.sdk2.version>2.55.11</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -330,11 +330,13 @@
                 <version>${kafka.version}</version>
                 <classifier>test</classifier>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.xerial.snappy:snappy-java` should be upgraded -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-api</artifactId>
                 <version>${hadoop.version}</version>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.xerial.snappy:snappy-java` should be upgraded -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-runtime</artifactId>
@@ -370,7 +372,7 @@
             <dependency>
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
-                <version>3.1.1</version>
+                <version>3.2</version>
             </dependency>
             <!--
                 Addresses convergence between:
@@ -423,6 +425,12 @@
                 <artifactId>commons-math3</artifactId>
                 <version>3.6.1</version>
             </dependency>
+            <!-- 
+                Addresses convergence between:
+                - `org.apache.hadoop:hadoop-client-api`
+                - `org.apache.hadoop:hadoop-client-runtime`
+                - `org.apache.parquet:parquet-hadoop`
+            -->
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
@@ -512,6 +520,7 @@
                 Addresses convergence between:
                 - `org.apache.parquet:parquet-hadoop` (transitively via `org.apache.parquet:parquet-avro`)
                 - `org.apache.kafka:kafka-clients`
+                - `org.xerial.snappy:snappy-java` (transitively via `org.apache.parquet:parquet-avro`)
             -->
             <dependency>
                 <groupId>com.github.luben</groupId>
@@ -760,7 +769,7 @@
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>7.4.11.Final</version>
+                <version>7.4.12.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>

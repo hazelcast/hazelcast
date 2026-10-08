@@ -42,6 +42,13 @@ import com.hazelcast.client.impl.protocol.task.map.MapMadePublishableMessageTask
 import com.hazelcast.client.impl.protocol.task.schema.FetchSchemaMessageTask;
 import com.hazelcast.client.impl.protocol.task.schema.SendAllSchemasMessageTask;
 import com.hazelcast.client.impl.protocol.task.schema.SendSchemaMessageTask;
+import com.hazelcast.cp.internal.client.AddCPGroupAvailabilityListenerMessageTask;
+import com.hazelcast.cp.internal.client.AddCPMembershipListenerMessageTask;
+import com.hazelcast.cp.internal.client.CPSubsystemGetCPGroupIdsMessageTask;
+import com.hazelcast.cp.internal.client.CPSubsystemGetCPObjectInfosMessageTask;
+import com.hazelcast.cp.internal.client.RemoveCPGroupAvailabilityListenerMessageTask;
+import com.hazelcast.cp.internal.client.RemoveCPMembershipListenerMessageTask;
+import com.hazelcast.cp.internal.datastructures.spi.client.CreateRaftGroupMessageTask;
 import com.hazelcast.sql.impl.client.SqlCloseMessageTask;
 import com.hazelcast.sql.impl.client.SqlExecuteMessageTask;
 import com.hazelcast.sql.impl.client.SqlFetchMessageTask;
@@ -108,6 +115,13 @@ public class MessageTaskSecurityTest {
         skip(AuthenticationCustomCredentialsMessageTask.class, "Authentication message processing");
         skip(ClientTpcAuthenticationMessageTask.class, "Authentication message processing");
         skip(CreateProxiesMessageTask.class, "Permissions handled in beforeProcess() method");
+        skip(CPSubsystemGetCPGroupIdsMessageTask.class, "Gets names of CP objects");
+        skip(CPSubsystemGetCPObjectInfosMessageTask.class, "Gets names of CP objects");
+        skip(AddCPGroupAvailabilityListenerMessageTask.class, "Listener for the cluster-topology change");
+        skip(AddCPMembershipListenerMessageTask.class, "Listener for the cluster-topology change");
+        skip(RemoveCPGroupAvailabilityListenerMessageTask.class, "Listener for the cluster-topology change");
+        skip(RemoveCPMembershipListenerMessageTask.class, "Listener for the cluster-topology change");
+        skip(CreateRaftGroupMessageTask.class, "Initial message while creating a Client proxy for any CP object");
     }
 
     @Test

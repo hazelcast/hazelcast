@@ -147,43 +147,6 @@ public interface RaftStateStore extends Closeable {
     void deleteSnapshotChunks(long snapshotIndex) throws IOException;
 
     /**
-     * Persists the given snapshot entry.
-     * <p>
-     * After a snapshot is persisted at <em>index=i</em> and {@link #flushLogs()}
-     * is called, the log entry at <em>index=i</em> and all the preceding
-     * entries are no longer needed and can be evicted from storage. Failing to
-     * evict stale entries will not cause a consistency problem, but it will
-     * increase the time to recover after a restart. Therefore eviction can be
-     * done in a background task.
-     * <p>
-     * Raft takes snapshots at a predetermined interval, controlled by {@link
-     * RaftAlgorithmConfig#getCommitIndexAdvanceCountToSnapshot()
-     * commitIndexAdvanceCountToSnapshot}. For instance, if it is 100, snapshots
-     * will occur at indices 100, 200, 300, and so on.
-     * <p>
-     * The snapshot index can lag behind the index of the newest log entry that
-     * was already persisted, but there is an upper bound to this difference,
-     * controlled by {@link RaftAlgorithmConfig#getUncommittedEntryCountToRejectNewAppends()
-     * uncommittedEntryCountToRejectNewAppends}. For instance, if {@code
-     * uncommittedEntryCountToRejectNewAppends} is 10, and a {@code
-     * persistSnapshot()} call is made with snapshotIndex=100, the index of the
-     * preceding {@code persistEntry()} call can be at most 110.
-     * <p>
-     * On the other hand, the snapshot index can also be ahead of the newest log
-     * entry. This can happen when a Raft follower has fallen so far behind the
-     * leader that the leader no longer holds the missing entries. In that case
-     * the follower receives a snapshot from the leader. There is no upper bound
-     * on the gap between the newest log entry and the index of the received
-     * snapshot.
-     *
-     * @see #flushLogs()
-     * @see #persistEntry(LogEntry)
-     * @see RaftAlgorithmConfig
-     */
-    // RU_COMPAT_5_5
-    void persistSnapshot(@Nonnull SnapshotEntry entry) throws IOException;
-
-    /**
      * Rolls back the log by deleting all entries starting with the given index.
      * A deleted log entry is no longer valid and must not be restored (or at
      * least must be ignored during the restore process).
@@ -205,14 +168,8 @@ public interface RaftStateStore extends Closeable {
      * to the storage layer and returns after those changes are written.
      *
      * @see #persistEntry(LogEntry)
-     * @see #persistSnapshot(SnapshotEntry)
      * @see #deleteEntriesFrom(long)
      */
     void flushLogs() throws IOException;
 
-    /**
-     * Checks if the cluster version supports chunking.
-     */
-    // RU_COMPAT_5_5
-    boolean isChunkingSupportedVersion();
 }

@@ -32,6 +32,7 @@ import com.hazelcast.collection.impl.set.SetService;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.DistributedObjectListener;
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
@@ -84,6 +85,7 @@ import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.config.cp.CPSubsystemConfig.MIN_GROUP_SIZE;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -419,8 +421,13 @@ public class HazelcastInstanceImpl implements HazelcastInstance, SerializationSe
     @Nonnull
     @Override
     public CPSubsystem getCPSubsystem() {
+        if (node.getConfig().getCPSubsystemConfig().getCPMemberCount() <= 0) {
+            throw new HazelcastException("The CP Subsystem is disabled. "
+                    + "To enable it, there must be at least " + MIN_GROUP_SIZE + " CP members.");
+        }
         return cpSubsystem;
     }
+
 
     @Nonnull
     @Override
