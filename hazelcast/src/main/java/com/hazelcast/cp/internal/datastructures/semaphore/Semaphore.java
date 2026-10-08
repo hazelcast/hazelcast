@@ -252,7 +252,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
     }
 
     /**
-     * Assigns all available permits to the <sessionId, threadId> endpoint.
+     * Assigns all available permits to the {@code <sessionId, threadId>} endpoint.
      * Permits are not assigned if the drain request is a retry of a successful
      * drain request of a session-aware proxy. Permits are assigned again if
      * the drain request is a retry of a successful drain request of
@@ -423,7 +423,7 @@ public class Semaphore extends BlockingResource<AcquireInvocationKey> implements
     private static class SessionSemaphoreState {
 
         /**
-         * map of threadId -> <invocationUid, permits> to track last operation of each endpoint
+         * map of threadId -> {@code <invocationUid, permits>} to track last operation of each endpoint
          */
         private final Long2ObjectHashMap<BiTuple<UUID, Integer>> invocationRefUids = new Long2ObjectHashMap<>();
 
