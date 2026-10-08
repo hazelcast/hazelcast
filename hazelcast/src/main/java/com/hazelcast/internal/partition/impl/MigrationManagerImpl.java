@@ -190,6 +190,8 @@ public class MigrationManagerImpl implements MigrationManager {
         maxTotalChunkedDataInBytes = (int) MEGABYTES.toBytes(properties.getInteger(PARTITION_CHUNKED_MAX_MIGRATING_DATA_IN_MB));
         maxParallelMigrations = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_MIGRATIONS);
         maxParallelPromotionBatches = properties.getInteger(ClusterProperty.PARTITION_MAX_PARALLEL_PROMOTION_BATCHES);
+        Preconditions.checkPositive(ClusterProperty.PARTITION_MAX_PARALLEL_PROMOTION_BATCHES.getName(),
+                maxParallelPromotionBatches);
         partitionStateManager = partitionService.getPartitionStateManager();
         ILogger migrationThreadLogger = node.getLogger(MigrationThread.class);
         String hzName = nodeEngine.getHazelcastInstance().getName();
