@@ -24,6 +24,10 @@ import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
 import com.hazelcast.internal.partition.impl.MigrationInterceptor;
 import com.hazelcast.internal.partition.impl.MigrationManager;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
+import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
+import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -39,7 +43,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant.DESTINATION;
+import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
 import static com.hazelcast.test.Accessors.getPartitionService;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -78,7 +85,7 @@ public class PromotionCommitOperationTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void promotionRecovers_whenCompleteStageFails() {
+    public void promotionCompletes_whenCompleteStageListenerFails() {
         AtomicBoolean intercepted = new AtomicBoolean();
         assertPromotionRecovers(intercepted, new MigrationInterceptor() {
             @Override
@@ -118,8 +125,39 @@ public class PromotionCommitOperationTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, master);
 
         assertTrueEventually(() -> assertTrue(failedPromotions.get() > 0));
+        // the master waits before it retries the failed promotion, it does not retry in a busy loop
+        int failedPromotionsBefore = failedPromotions.get();
+        sleepSeconds(2);
+        assertThat(failedPromotions.get() - failedPromotionsBefore).isBetween(1, 20);
         stateManager.clearMigratingFlag(partitionId);
 
+        assertPromotionCompleted(master);
+    }
+
+    @Test
+    public void promotionCompletes_whenFinalizePromotionOperationFails() {
+        HazelcastInstance[] members = startCluster();
+        HazelcastInstance master = members[0];
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(master);
+        int partitionId = getPartitionIdOwnedBy(partitionService, members[1]);
+
+        // FinalizePromotionOperation sends PartitionMigratingException to the operations parked on the promoted partition.
+        // The response handler of this operation throws, so FinalizePromotionOperation fails.
+        AtomicBoolean responseFailed = new AtomicBoolean();
+        ParkedOperation parkedOperation = new ParkedOperation();
+        parkedOperation.setPartitionId(partitionId).setReplicaIndex(1);
+        parkedOperation.setOperationResponseHandler((op, response) -> {
+            responseFailed.set(true);
+            throw new IllegalStateException("Injected failure in FinalizePromotionOperation");
+        });
+        OperationParkerImpl operationParker = (OperationParkerImpl) getNodeEngineImpl(master).getOperationParker();
+        getOperationService(master).execute(parkedOperation);
+        assertTrueEventually(() -> assertEquals(1, operationParker.getTotalParkedOperationCount()));
+
+        members[1].getLifecycleService().terminate();
+        assertClusterSizeEventually(1, master);
+
+        assertTrueEventually(() -> assertTrue(responseFailed.get()));
         assertPromotionCompleted(master);
     }
 
@@ -142,7 +180,8 @@ public class PromotionCommitOperationTest extends HazelcastTestSupport {
 
     private HazelcastInstance[] startCluster() {
         Config config = smallInstanceConfig()
-                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), String.valueOf(CALL_TIMEOUT_SECONDS));
+                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), String.valueOf(CALL_TIMEOUT_SECONDS))
+                .setProperty(ClusterProperty.HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
         HazelcastInstance[] members = createHazelcastInstances(config, 2);
         warmUpPartitions(members);
         waitAllForSafeState(members);
@@ -171,6 +210,38 @@ public class PromotionCommitOperationTest extends HazelcastTestSupport {
     private static void assertPromotionPermitReleased(MigrationManager migrationManager) {
         assertTrue("promotion permit is still held", migrationManager.acquirePromotionPermit());
         migrationManager.releasePromotionPermit();
+    }
+
+    private static final class ParkedOperation extends Operation implements BlockingOperation {
+        private static final WaitNotifyKey WAIT_KEY = new WaitNotifyKey() {
+            @Override
+            public String getServiceName() {
+                return "promotion-test";
+            }
+
+            @Override
+            public String getObjectName() {
+                return "parked";
+            }
+        };
+
+        @Override
+        public WaitNotifyKey getWaitKey() {
+            return WAIT_KEY;
+        }
+
+        @Override
+        public boolean shouldWait() {
+            return true;
+        }
+
+        @Override
+        public void onWaitExpire() {
+        }
+
+        @Override
+        public void run() {
+        }
     }
 
     private static void assertNoPartitionMigrating(InternalPartitionServiceImpl partitionService) {

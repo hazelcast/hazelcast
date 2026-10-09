@@ -55,9 +55,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.cluster.Versions.V6_0;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
  * Used for committing a promotion on destination. Sent by the master to update the partition table on destination and
@@ -239,8 +239,9 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             try {
                 success = partitionService.processPartitionRuntimeState(partitionState);
             } catch (Throwable t) {
-                // BeforePromotionOperations have set the migrating flags. FinalizePromotionOperations with a failed result
-                // roll back the services and clear the flags, and the COMPLETE stage releases the promotion permit.
+                // The partition state can be partly applied. FinalizePromotionOperations with a failed result clear
+                // the migrating flags and roll back the services, the COMPLETE stage releases the promotion permit,
+                // and the master publishes its partition table after the failed result.
                 logger.severe("Could not apply the partition state of the promotion, rolling back "
                         + promotions.size() + " promotions", t);
                 success = false;
@@ -296,13 +297,15 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
                 MigrationStateImpl ms = migrationState;
                 for (MigrationInfo promotion : promotions) {
                     ms = ms.onComplete(1, 0L);
-                    eventManager.sendMigrationEvent(ms, promotion, 0L);
+                    eventManager.sendMigrationEvent(ms, promotion, 0L, success);
                 }
                 eventManager.sendMigrationProcessCompletedEvent(ms);
             }
-        } finally {
-            releasePromotionPermit();
+        } catch (Throwable t) {
+            // The promotion is already committed or rolled back. Event delivery is best effort and must not change the result.
+            getLogger().warning("Failed to publish promotion completion", t);
         }
+        releasePromotionPermit();
     }
 
     private void releasePromotionPermit() {
@@ -401,7 +404,8 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
         @Override
         public void onFailure(MigrationInfo promotion) {
-            // FinalizePromotionOperation does not report failures, the finalize stage cannot be rolled back
+            // The partition state is already applied and cannot be rolled back. The failed operation cleared the migrating
+            // flag, so count it as done and complete the promotion.
             onComplete(promotion);
         }
     }
@@ -448,7 +452,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     interface PromotionOperationCallback {
         void onComplete(MigrationInfo promotion);
 
-        /** Called when the operation of the promotion failed before it changed any state. */
+        /** Called when the operation of the promotion failed. {@code afterRun()} does not run in this case. */
         void onFailure(MigrationInfo promotion);
     }
 }
