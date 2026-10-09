@@ -42,6 +42,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.CallStatus;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
 import java.io.IOException;
@@ -78,6 +79,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
 
     private transient boolean success;
     private transient MigrationStateImpl migrationState;
+    private transient boolean promotionPermitAcquired;
 
     // Used while PromotionCommitOperation is running to separate before and after phases
     private transient RunStage runStage = RunStage.BEFORE_PROMOTION;
@@ -148,6 +150,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             throw new RetryableHazelcastException("Another promotion is being run currently. "
                     + "This is only expected when promotion is retried to an unresponsive destination.");
         }
+        promotionPermitAcquired = true;
 
         long partitionStateStamp;
         partitionStateStamp = partitionService.getPartitionStateStamp();
@@ -190,8 +193,7 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     private CallStatus alreadyAppliedAllPromotions() {
         getLogger().warning("Already applied all promotions to the partition state. Promotion state stamp: "
                 + partitionState.getStamp());
-        InternalPartitionServiceImpl partitionService = getService();
-        partitionService.getMigrationManager().releasePromotionPermit();
+        releasePromotionPermit();
         success = true;
         return CallStatus.RESPONSE;
     }
@@ -259,13 +261,32 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
             }
             eventManager.sendMigrationProcessCompletedEvent(ms);
         }
+        releasePromotionPermit();
+    }
+
+    private void releasePromotionPermit() {
+        InternalPartitionServiceImpl service = getService();
         service.getMigrationManager().releasePromotionPermit();
+        promotionPermitAcquired = false;
     }
 
     /** Reruns this operation with next {@link #runStage}*/
     private void scheduleNextRun(RunStage nextState) {
         runStage = nextState;
+        // The operation started execution in the BEFORE_PROMOTION stage, so the call timeout no longer applies.
+        // Without this, a next stage that starts after the call timeout is rejected by the operation runner,
+        // the promotion never completes and the promotion permit is never released.
+        OperationAccessor.setCallTimeout(this, Long.MAX_VALUE);
         getNodeEngine().getOperationService().execute(this);
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        super.onExecutionFailure(e);
+        if (promotionPermitAcquired) {
+            getLogger().warning("Releasing promotion permit after promotion commit failed in " + runStage + " stage", e);
+            releasePromotionPermit();
+        }
     }
 
     @Override
