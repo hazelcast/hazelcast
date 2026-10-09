@@ -80,4 +80,14 @@ final class BeforePromotionOperation extends AbstractPromotionOperation {
             beforePromotionsCallback.onComplete(migrationInfo);
         }
     }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        // afterRun() does not run after a failure. Without this, PromotionCommitOperation waits for this operation forever
+        // and keeps the promotion permit. The operation fails in the precondition checks or in beforeRun(), so it did not
+        // set the migrating flag. run() catches the exceptions of the services.
+        if (beforePromotionsCallback != null) {
+            beforePromotionsCallback.onFailure(migrationInfo);
+        }
+    }
 }

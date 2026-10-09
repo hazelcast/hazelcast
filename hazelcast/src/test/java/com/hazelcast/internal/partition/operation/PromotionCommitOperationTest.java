@@ -36,6 +36,7 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.partition.impl.MigrationInterceptor.MigrationParticipant.DESTINATION;
 import static com.hazelcast.test.Accessors.getPartitionService;
@@ -90,18 +91,45 @@ public class PromotionCommitOperationTest extends HazelcastTestSupport {
         });
     }
 
+    @Test
+    public void promotionRollsBack_whenPartitionIsAlreadyMigrating() {
+        HazelcastInstance[] members = startCluster();
+        HazelcastInstance master = members[0];
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(master);
+        PartitionStateManager stateManager = partitionService.getPartitionStateManager();
+
+        // the master promotes the partitions of the other member, BeforePromotionOperation cannot set the migrating flag
+        // of this partition while a migration or a replica sync keeps it
+        int partitionId = getPartitionIdOwnedBy(partitionService, members[1]);
+        assertTrue(stateManager.trySetMigratingFlag(partitionId));
+
+        AtomicInteger failedPromotions = new AtomicInteger();
+        partitionService.setMigrationInterceptor(new MigrationInterceptor() {
+            @Override
+            public void onPromotionComplete(MigrationParticipant participant, Collection<MigrationInfo> migrations,
+                                            boolean success) {
+                if (participant == DESTINATION && !success) {
+                    failedPromotions.incrementAndGet();
+                }
+            }
+        });
+
+        members[1].getLifecycleService().terminate();
+        assertClusterSizeEventually(1, master);
+
+        assertTrueEventually(() -> assertTrue(failedPromotions.get() > 0));
+        stateManager.clearMigratingFlag(partitionId);
+
+        assertPromotionCompleted(master);
+    }
+
     /**
      * Starts 2 members, installs the interceptor on the master and terminates the other member, so the master
      * promotes the backups it holds. Then asserts that the promotion completes and leaves no state behind.
      */
     private void assertPromotionRecovers(AtomicBoolean intercepted, MigrationInterceptor interceptor) {
-        Config config = smallInstanceConfig()
-                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), String.valueOf(CALL_TIMEOUT_SECONDS));
-        HazelcastInstance[] members = createHazelcastInstances(config, 2);
+        HazelcastInstance[] members = startCluster();
         HazelcastInstance master = members[0];
-        warmUpPartitions(members);
-        waitAllForSafeState(members);
-
         InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(master);
         partitionService.setMigrationInterceptor(interceptor);
 
@@ -109,6 +137,29 @@ public class PromotionCommitOperationTest extends HazelcastTestSupport {
         assertClusterSizeEventually(1, master);
 
         assertTrueEventually(() -> assertTrue(intercepted.get()));
+        assertPromotionCompleted(master);
+    }
+
+    private HazelcastInstance[] startCluster() {
+        Config config = smallInstanceConfig()
+                .setProperty(ClusterProperty.MAX_NO_HEARTBEAT_SECONDS.getName(), String.valueOf(CALL_TIMEOUT_SECONDS));
+        HazelcastInstance[] members = createHazelcastInstances(config, 2);
+        warmUpPartitions(members);
+        waitAllForSafeState(members);
+        return members;
+    }
+
+    private static int getPartitionIdOwnedBy(InternalPartitionServiceImpl partitionService, HazelcastInstance member) {
+        for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
+            if (member.getCluster().getLocalMember().getAddress().equals(partitionService.getPartitionOwner(partitionId))) {
+                return partitionId;
+            }
+        }
+        throw new AssertionError("No partition is owned by " + member);
+    }
+
+    private static void assertPromotionCompleted(HazelcastInstance master) {
+        InternalPartitionServiceImpl partitionService = (InternalPartitionServiceImpl) getPartitionService(master);
         assertTrueEventually(() -> assertEquals(0, partitionService.getMigrationQueueSize()));
         assertPromotionPermitReleased(partitionService.getMigrationManager());
         assertNoPartitionMigrating(partitionService);
