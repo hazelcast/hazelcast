@@ -209,11 +209,7 @@ public final class EntryOperator {
         // predicated entry processors can only be applied to existing entries
         // so if we have a predicate and somehow (due to expiration or split-brain healing)
         // we found value null, we should skip that entry.
-        if (predicate != null && oldValue == null) {
-            return false;
-        }
-
-        return true;
+        return predicate == null || oldValue != null;
     }
 
     public EntryOperator operateOnKeyValue(Data dataKey, Object oldValue) {

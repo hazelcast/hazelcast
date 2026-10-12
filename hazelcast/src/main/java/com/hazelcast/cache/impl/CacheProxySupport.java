@@ -204,10 +204,7 @@ abstract class CacheProxySupport<K, V>
         }
 
         CacheProxySupport that = (CacheProxySupport) o;
-        if (nameWithPrefix != null ? !nameWithPrefix.equals(that.nameWithPrefix) : that.nameWithPrefix != null) {
-            return false;
-        }
-        return true;
+        return nameWithPrefix != null ? nameWithPrefix.equals(that.nameWithPrefix) : that.nameWithPrefix == null;
     }
 
     @Override

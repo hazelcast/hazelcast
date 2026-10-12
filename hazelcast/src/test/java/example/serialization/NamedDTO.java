@@ -42,10 +42,7 @@ public class NamedDTO {
         if (myint != that.myint) {
             return false;
         }
-        if (name != null ? !name.equals(that.name) : that.name != null) {
-            return false;
-        }
-        return true;
+        return name != null ? name.equals(that.name) : that.name == null;
     }
 
     @Override

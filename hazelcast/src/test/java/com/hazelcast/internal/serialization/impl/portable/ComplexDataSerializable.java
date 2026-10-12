@@ -69,11 +69,7 @@ class ComplexDataSerializable implements DataSerializable {
         if (ds2 != null ? !ds2.equals(that.ds2) : that.ds2 != null) {
             return false;
         }
-        if (portable != null ? !portable.equals(that.portable) : that.portable != null) {
-            return false;
-        }
-
-        return true;
+        return portable != null ? portable.equals(that.portable) : that.portable == null;
     }
 
     @Override

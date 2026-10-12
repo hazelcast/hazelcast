@@ -193,10 +193,7 @@ public class SerializationV1DataSerializable implements DataSerializable {
         if (string != null ? !string.equals(that.string) : that.string != null) {
             return false;
         }
-        if (!Arrays.equals(strings, that.strings)) {
-            return false;
-        }
-        return true;
+        return Arrays.equals(strings, that.strings);
     }
 
     @Override

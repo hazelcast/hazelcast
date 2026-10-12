@@ -104,14 +104,10 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
             return true;
         }
 
-        if (systemProperty.startsWith("java")
-                || systemProperty.startsWith("hazelcast")
-                || systemProperty.startsWith("sun")
-                || systemProperty.startsWith("os")) {
-            return false;
-        }
-
-        return true;
+        return !systemProperty.startsWith("java")
+                && !systemProperty.startsWith("hazelcast")
+                && !systemProperty.startsWith("sun")
+                && !systemProperty.startsWith("os");
     }
 
     private String getProperty(String keyString) {
