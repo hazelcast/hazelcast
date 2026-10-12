@@ -17,13 +17,13 @@
 package com.hazelcast.jet.pulsar;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.TestedVersions;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.StreamSource;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Message;
-import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Producer;
@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
+import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 @ParameterizedClass
@@ -119,14 +120,14 @@ public abstract class PulsarTestSupport extends JetTestSupport {
             try {
                 produceMessage(message + "-" + i, topicName);
             } catch (PulsarClientException e) {
-                e.printStackTrace();
+                sneakyThrow(e);
             }
         }
     }
 
-    protected static MessageId produceMessage(String message, String topicName)
+    protected static void produceMessage(String message, String topicName)
             throws PulsarClientException {
-        return getProducer(topicName).send(message.getBytes(StandardCharsets.UTF_8));
+        getProducer(topicName).send(message.getBytes(StandardCharsets.UTF_8));
     }
 
 
@@ -166,20 +167,20 @@ public abstract class PulsarTestSupport extends JetTestSupport {
 
     protected static StreamSource<String> setupConsumerSource(String topicName,
                                                               FunctionEx<Message<byte[]>, String> projectionFn) {
-        return PulsarSources.pulsarConsumer(
-                topicName,
-                () -> PulsarClient.builder().serviceUrl(getServiceUrl()).build(),
-                () -> Schema.BYTES,
-                projectionFn);
+        return PulsarSources.pulsarConsumerBuilder(() -> Schema.BYTES)
+                   .topic(topicName)
+                   .projectionFn(projectionFn)
+                   .connectionSupplier(() -> PulsarClient.builder().serviceUrl(getServiceUrl()).build())
+                   .build();
     }
 
     protected static StreamSource<String> setupReaderSource(String topicName,
                                                             FunctionEx<Message<byte[]>, String> projectionFn) {
-        return PulsarSources.pulsarReader(
-                topicName,
-                () -> PulsarClient.builder().serviceUrl(getServiceUrl()).build(),
-                () -> Schema.BYTES,
-                projectionFn);
+        return PulsarSources.pulsarReaderBuilder(() -> Schema.BYTES)
+                            .topic(topicName)
+                            .connectionSupplier(() -> PulsarClient.builder().serviceUrl(getServiceUrl()).build())
+                            .projectionFn(projectionFn)
+                            .build();
     }
 
     protected static Sink<Integer> setupSink(String topicName) {
@@ -193,5 +194,18 @@ public abstract class PulsarTestSupport extends JetTestSupport {
             arguments(TestedVersions.PULSAR_4_IMAGE),
             arguments(TestedVersions.PULSAR_5_IMAGE)
         );
+    }
+
+    protected SupplierEx<PulsarClient> notSerializableConnectionSupplier() {
+        return new SupplierEx<>() {
+            // used to make class non-serializable
+            @SuppressWarnings("unused")
+            private final Object object = new Object();
+
+            @Override
+            public PulsarClient getEx() {
+                return null;
+            }
+        };
     }
 }

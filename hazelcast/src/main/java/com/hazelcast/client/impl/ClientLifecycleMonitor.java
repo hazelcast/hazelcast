@@ -58,7 +58,7 @@ public class ClientLifecycleMonitor implements Runnable {
         this.nodeEngine = nodeEngine;
         this.clientEngine = clientEngine;
         checkMillis = hazelcastProperties.getPositiveMillisOrDefault(ClusterProperty.CLIENT_CLEANUP_PERIOD);
-        timeoutMillis = hazelcastProperties.getSeconds(ClusterProperty.CLIENT_CLEANUP_TIMEOUT);
+        timeoutMillis = hazelcastProperties.getMillis(ClusterProperty.CLIENT_CLEANUP_TIMEOUT);
 
     }
 

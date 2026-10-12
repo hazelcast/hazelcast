@@ -64,6 +64,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
@@ -170,16 +171,27 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         waitAllForSafeState(Arrays.asList(hz1, hz2, hz3));
 
         EventCollectingMigrationListener listener = new EventCollectingMigrationListener(false);
-        hz1.getPartitionService().addMigrationListener(listener);
+        hz2.getPartitionService().addMigrationListener(listener);
 
         hz3.getLifecycleService().terminate();
 
-        // 2 promotions on each node + 1 repartitioning to create missing backups
-        for (MigrationEventsPack eventsPack : listener.ensureAndGetEventPacks(3)) {
+        for (MigrationEventsPack eventsPack : listener.ensureAndGetEventPacks(2)) {
             assertMigrationProcessCompleted(eventsPack);
             assertMigrationProcessEventsConsistent(eventsPack);
             assertMigrationEventsConsistentWithResult(eventsPack);
         }
+        waitAllForSafeState(hz1, hz2);
+        assertTrueAllTheTime(() -> assertEquals(2, listener.getEventPackCount()), 3);
+    }
+
+    @Test
+    public void testEventCollectingMigrationListener_surfacesCallbackFailure() {
+        EventCollectingMigrationListener listener = new EventCollectingMigrationListener(false);
+        MigrationState state = new MigrationStateImpl(1L, 1, 0, 0L);
+        listener.migrationStarted(state);
+
+        assertThrows(AssertionError.class, () -> listener.migrationStarted(state));
+        assertThrows(AssertionError.class, listener::getEventPackCount);
     }
 
     public static void assertMigrationProcessCompleted(MigrationEventsPack eventsPack) {
@@ -199,14 +211,20 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
     }
 
     public static void assertMigrationEventsConsistentWithResult(MigrationEventsPack eventsPack) {
+        assertMigrationEventsConsistentWithResult(eventsPack, 0);
+    }
+
+    public static void assertMigrationEventsConsistentWithResult(MigrationEventsPack eventsPack, int expectedFailedMigrations) {
         MigrationState migrationResult = eventsPack.migrationProcessCompleted;
         List<ReplicaMigrationEvent> migrationsCompleted = eventsPack.migrationsCompleted;
 
         assertEquals(migrationResult.getCompletedMigrations(), migrationsCompleted.size());
+        assertThat(migrationsCompleted)
+                .filteredOn(event -> !event.isSuccess())
+                .hasSize(expectedFailedMigrations);
 
         MigrationState completed = null;
         for (ReplicaMigrationEvent event : migrationsCompleted) {
-            assertTrue(event.toString(), event.isSuccess());
             MigrationState progress = event.getMigrationState();
             assertEquals(migrationResult.getStartTime(), progress.getStartTime());
             assertEquals(migrationResult.getPlannedMigrations(), progress.getPlannedMigrations());
@@ -539,6 +557,7 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         final List<MigrationEventsPack> allEventPacks = Collections.synchronizedList(new ArrayList<>());
         final ILogger logger = Logger.getLogger(PartitionMigrationListenerTest.class);
         volatile MigrationEventsPack currentEvents;
+        private volatile Throwable callbackFailure;
 
         final boolean shouldRecordIncompleteEvents;
 
@@ -548,45 +567,55 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
 
         @Override
         public void migrationStarted(MigrationState state) {
-            assertNull(currentEvents);
-            currentEvents = new MigrationEventsPack();
-            currentEvents.migrationProcessStarted = state;
-            logger.info("Migration started: " + state);
+            runCallback(() -> {
+                assertNull(currentEvents);
+                currentEvents = new MigrationEventsPack();
+                currentEvents.migrationProcessStarted = state;
+                logger.info("Migration started: " + state);
+            });
         }
 
         @Override
         public void migrationFinished(MigrationState state) {
-            assertNotNull(currentEvents);
-            currentEvents.migrationProcessCompleted = state;
-            // As per contract of MigrationListener#migrationFinished:
-            //      "Not all of the planned migrations have to be completed.
-            //      Some of them can be skipped because of a newly created migration plan."
-            // Due to this, we should only record fully completed migrations, otherwise
-            //   this test will inconsistently fail when a new migration plan is created
-            boolean migrationCompleted = state.getPlannedMigrations() == state.getCompletedMigrations();
-            if (shouldRecordIncompleteEvents || migrationCompleted) {
-                allEventPacks.add(currentEvents);
-            }
-            currentEvents = null;
-            logger.info(migrationCompleted ? "Migration finished: " + state
-                    : "Migration finished but NOT completed, not adding to event tracker: " + state);
+            runCallback(() -> {
+                assertNotNull(currentEvents);
+                currentEvents.migrationProcessCompleted = state;
+                // As per contract of MigrationListener#migrationFinished:
+                //      "Not all of the planned migrations have to be completed.
+                //      Some of them can be skipped because of a newly created migration plan."
+                // Due to this, we should only record fully completed migrations, otherwise
+                //   this test will inconsistently fail when a new migration plan is created
+                boolean migrationCompleted = state.getPlannedMigrations() == state.getCompletedMigrations();
+                if (shouldRecordIncompleteEvents || migrationCompleted) {
+                    allEventPacks.add(currentEvents);
+                }
+                currentEvents = null;
+                logger.info(migrationCompleted ? "Migration finished: " + state
+                        : "Migration finished but NOT completed, not adding to event tracker: " + state);
+            });
         }
 
         @Override
         public void replicaMigrationCompleted(ReplicaMigrationEvent event) {
-            assertNotNull(currentEvents);
-            currentEvents.migrationsCompleted.add(event);
+            runCallback(() -> {
+                assertNotNull(currentEvents);
+                currentEvents.migrationsCompleted.add(event);
+            });
         }
 
         @Override
         public void replicaMigrationFailed(ReplicaMigrationEvent event) {
-            assertNotNull(currentEvents);
-            currentEvents.migrationsCompleted.add(event);
-            logger.info("Replica Migration failed (1 of " + currentEvents.migrationsCompleted.size() + "): " + event);
+            runCallback(() -> {
+                assertNotNull(currentEvents);
+                currentEvents.migrationsCompleted.add(event);
+                logger.info("Replica Migration failed (1 of " + currentEvents.migrationsCompleted.size() + "): " + event);
+            });
         }
 
-        List<MigrationEventsPack> ensureAndGetEventPacks(int count) {
+        public List<MigrationEventsPack> ensureAndGetEventPacks(int count) {
+            assertNoCallbackFailure();
             awaitEventPacksComplete(count);
+            assertNoCallbackFailure();
             return allEventPacks.subList(0, count);
         }
 
@@ -594,8 +623,31 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
             return ensureAndGetEventPacks(1).get(0);
         }
 
+        public int getEventPackCount() {
+            assertNoCallbackFailure();
+            return allEventPacks.size();
+        }
+
+        private void runCallback(Runnable callback) {
+            try {
+                callback.run();
+            } catch (RuntimeException | Error failure) {
+                if (callbackFailure == null) {
+                    callbackFailure = failure;
+                }
+                throw failure;
+            }
+        }
+
+        private void assertNoCallbackFailure() {
+            if (callbackFailure != null) {
+                throw new AssertionError("Migration listener callback failed", callbackFailure);
+            }
+        }
+
         void awaitEventPacksComplete(int count) {
             assertTrueEventually(() -> {
+                assertNoCallbackFailure();
                 assertThat(allEventPacks).hasSizeGreaterThanOrEqualTo(count);
                 assertNull(currentEvents);
             });

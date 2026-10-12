@@ -158,4 +158,18 @@
         <packageUrl regex="true">^pkg:maven/org\.elasticsearch(?:/(?:elasticsearch|elasticsearch-cli|elasticsearch-core|elasticsearch-geo|elasticsearch-lz4|elasticsearch-plugin-classloader|elasticsearch-secure-sm|elasticsearch-x-content)|\.client/(?:elasticsearch-rest-client|elasticsearch-rest-high-level-client)|\.plugin/(?:aggs-matrix-stats-client|lang-mustache-client|mapper-extras-client|parent-join-client|rank-eval-client))@7\.17\.29$</packageUrl>
         <cve>CVE-2025-37731</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2026-88032 doesn't impact the synchronous driver. See https://jira.mongodb.org/browse/JAVA-6276
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.mongodb/(?:mongodb-driver-core|mongodb-driver-sync)@.*$</packageUrl>
+        <cve>CVE-2026-88032</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - CVE-2026-9753 only impacts MongoDB server.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast\.jet/(?:original-)?hazelcast-jet-mongodb@.*$</packageUrl>
+        <cve>CVE-2026-9753</cve>
+    </suppress>
 </suppressions>

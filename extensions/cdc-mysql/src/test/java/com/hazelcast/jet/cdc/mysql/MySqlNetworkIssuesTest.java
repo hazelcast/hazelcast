@@ -61,8 +61,7 @@ public class MySqlNetworkIssuesTest extends NetworkIssuesTest<MySQLContainer<?>>
                 .setProperty("connect.timeout.ms", 1000)
                 .setProperty("topic.prefix", "TESTS")
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", uuidForNotifications)
+                .enableSnapshotTracking()
                 .build();
     }
 

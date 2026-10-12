@@ -60,3 +60,14 @@ com.hazelcast.jet.impl.aggregate.AggregateDataSerializerHook
 com.hazelcast.jet.config.JetConfigDataSerializerHook
 com.hazelcast.internal.serialization.impl.compact.schema.SchemaDataSerializerHook
 com.hazelcast.jet.impl.util.FunctionsSerializerHook
+com.hazelcast.cp.event.impl.CpEventDataSerializerHook
+com.hazelcast.cp.internal.RaftServiceDataSerializerHook
+com.hazelcast.cp.internal.datastructures.RaftDataServiceDataSerializerHook
+com.hazelcast.cp.internal.datastructures.atomiclong.AtomicLongDataSerializerHook
+com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefDataSerializerHook
+com.hazelcast.cp.internal.datastructures.countdownlatch.CountDownLatchDataSerializerHook
+com.hazelcast.cp.internal.datastructures.lock.LockDataSerializerHook
+com.hazelcast.cp.internal.datastructures.semaphore.SemaphoreDataSerializerHook
+com.hazelcast.cp.internal.raft.impl.RaftDataSerializerHook
+com.hazelcast.cp.internal.session.RaftSessionServiceDataSerializerHook
+com.hazelcast.cp.internal.datastructures.cpmap.CPMapDataSerializerHook

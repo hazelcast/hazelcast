@@ -19,7 +19,6 @@ package com.hazelcast;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.JavaIPvXProperties;
-import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -45,7 +44,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.hazelcast.test.OverridePropertyRule.clear;
-import static org.junit.Assume.assumeTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -87,14 +85,6 @@ public class MembersJoinWithMulticastIT
     @Test
     public void testCreatingMembers() {
         assertClusterSizeEquals(getBaseConfiguration(), 2);
-    }
-
-    @Test
-    public void clusterFailsToFormWithLoopbackModeDisabled() {
-        assumeTrue(OS.isMac());
-        Config cfg = getBaseConfiguration();
-        cfg.getNetworkConfig().getJoin().getMulticastConfig().setLoopbackModeEnabled(false);
-        assertClusterSizeEquals(cfg, 1);
     }
 
     private Config getBaseConfiguration() {

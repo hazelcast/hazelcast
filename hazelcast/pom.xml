@@ -699,7 +699,7 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.193</version>
+            <version>4.8.197</version>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
@@ -851,7 +851,7 @@
         <dependency>
             <groupId>org.apache.groovy</groupId>
             <artifactId>groovy-all</artifactId>
-            <version>5.1.1</version>
+            <version>6.0.0</version>
             <type>pom</type>
             <scope>test</scope>
             <optional>true</optional>

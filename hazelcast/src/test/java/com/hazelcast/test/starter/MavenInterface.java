@@ -32,6 +32,7 @@ import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.NoLocalRepositoryManagerException;
 
+import org.eclipse.aether.spi.localrepo.LocalRepositoryManagerFactory;
 import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 
@@ -74,12 +75,13 @@ public class MavenInterface {
     static {
         try {
             final DefaultLocalRepositoryProvider repositoryProvider = new DefaultLocalRepositoryProvider(
-                    Collections.singleton(new SimpleLocalRepositoryManagerFactory(new DefaultLocalPathComposer())));
+                    Collections.<String, LocalRepositoryManagerFactory>singletonMap(MavenInterface.class.getName(),
+                            new SimpleLocalRepositoryManagerFactory(new DefaultLocalPathComposer())));
 
             MAVEN_REPOSITORY = Paths.get(evaluateExpression("settings.localRepository"));
 
             if (Files.exists(MAVEN_REPOSITORY)) {
-                final LocalRepository localRepo = new LocalRepository(MAVEN_REPOSITORY.toFile());
+                final LocalRepository localRepo = new LocalRepository(MAVEN_REPOSITORY);
                 REPOSITORY_MANAGER = repositoryProvider.newLocalRepositoryManager(MavenRepositorySystemUtils.newSession(),
                         localRepo);
             } else {
@@ -170,15 +172,19 @@ public class MavenInterface {
                 new ProcessBuilder(MVN.get(), "help:evaluate", "--quiet", "-Dexpression=" + expression, "-DforceStdout", "--raw-streams");
         configureMavenEnvironment(processBuilder);
 
-        try (InputStream stream = processBuilder.start()
-                .getInputStream()) {
-            List<String> output = IOUtils.readLines(stream, StandardCharsets.UTF_8);
+        try {
+            Process process = processBuilder.start();
 
-            if (output.size() == 1) {
-                return output.get(0);
-            } else {
-                throw new IOException("Maven expression (\"%s\") returned unexpected response:%n%s".formatted(expression,
-                        String.join(System.lineSeparator(), output)));
+            try (InputStream inputStream = process.getInputStream(); InputStream errorStream = process.getErrorStream()) {
+                List<String> output = IOUtils.readLines(inputStream, StandardCharsets.UTF_8);
+
+                if (output.size() == 1) {
+                    return output.get(0);
+                } else {
+                    throw new IOException("Maven expression (\"%s\") returned unexpected response:%n%s%n%s".formatted(
+                            expression, String.join(System.lineSeparator(), output),
+                            String.join(System.lineSeparator(), IOUtils.readLines(errorStream, StandardCharsets.UTF_8))));
+                }
             }
         } catch (IOException e) {
             throw rethrow(e);

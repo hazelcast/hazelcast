@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -125,9 +124,7 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
     public void writeData(ObjectDataOutput out) throws IOException {
         writeUUID(out, uuid);
         out.writeObject(address);
-        if (out.getVersion().isGreaterOrEqual(Versions.V5_7)) {
-            out.writeBoolean(autoStepDownWhenLeader);
-        }
+        out.writeBoolean(autoStepDownWhenLeader);
     }
 
     @Override
@@ -135,12 +132,7 @@ public class CPMemberInfo implements CPMember, Serializable, IdentifiedDataSeria
         uuid = readUUID(in);
         endpoint = new RaftEndpointImpl(uuid);
         address = in.readObject();
-        // RU_COMPAT_5_6
-        if (in.getVersion().isGreaterOrEqual(Versions.V5_7)) {
-            autoStepDownWhenLeader = in.readBoolean();
-        } else {
-            autoStepDownWhenLeader = false;
-        }
+        autoStepDownWhenLeader = in.readBoolean();
     }
 
     @Override

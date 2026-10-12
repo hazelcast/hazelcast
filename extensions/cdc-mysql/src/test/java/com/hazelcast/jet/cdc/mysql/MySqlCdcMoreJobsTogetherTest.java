@@ -54,8 +54,7 @@ public class MySqlCdcMoreJobsTogetherTest extends AbstractCdcMoreJobsTogetherTes
                 .setProperty("database.server.id", Integer.parseInt(options.get("serverId")))
                 .setProperty("topic.prefix", options.get("serverId"))
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", options.get("uuid"))
+                .enableSnapshotTracking()
                 .changeRecord();
     }
 

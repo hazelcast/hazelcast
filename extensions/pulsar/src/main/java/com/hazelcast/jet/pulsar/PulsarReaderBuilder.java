@@ -18,6 +18,10 @@ package com.hazelcast.jet.pulsar;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.function.ThrowingSupplier;
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.logging.ILogger;
@@ -29,6 +33,7 @@ import org.apache.pulsar.client.api.Reader;
 import org.apache.pulsar.client.api.Schema;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -37,7 +42,11 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Validation.validate;
+import static java.util.Objects.requireNonNull;
 
 /**
  * See {@link PulsarSources#pulsarReaderBuilder(String, SupplierEx, SupplierEx, FunctionEx)}
@@ -47,12 +56,18 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  */
 public final class PulsarReaderBuilder<M, T> implements Serializable {
 
-    private final String topic;
-    private final SupplierEx<PulsarClient> connectionSupplier;
+    private List<String> topics;
+    private SupplierEx<PulsarClient> connectionSupplier;
+    private DataConnectionRef dataConnectionRef;
     private Map<String, Object> readerConfig;
-    private SupplierEx<Schema<M>> schemaSupplier;
+    private final SupplierEx<Schema<M>> schemaSupplier;
     private FunctionEx<Message<M>, T> projectionFn;
 
+    public PulsarReaderBuilder(SupplierEx<Schema<M>> schemaSupplier) {
+        checkNonNullAndSerializable(schemaSupplier, "schemaSupplier");
+        this.schemaSupplier = requireNonNull(schemaSupplier);
+        this.readerConfig = getDefaultReaderConfig();
+    }
 
     /**
      * Required fields of Pulsar reader
@@ -70,11 +85,40 @@ public final class PulsarReaderBuilder<M, T> implements Serializable {
         checkSerializable(connectionSupplier, "connectionSupplier");
         checkSerializable(schemaSupplier, "schemaSupplier");
         checkSerializable(projectionFn, "projectionFn");
-        this.topic = topic;
+        this.topics = List.of(topic);
         this.connectionSupplier = connectionSupplier;
         this.readerConfig = getDefaultReaderConfig();
         this.schemaSupplier = schemaSupplier;
         this.projectionFn = projectionFn;
+    }
+
+    @Nonnull
+    public PulsarReaderBuilder<M, T> topic(@Nonnull String... topics) {
+        checkNotNull(topics, "topics");
+        this.topics = List.of(topics);
+        return this;
+    }
+
+    @Nonnull
+    public PulsarReaderBuilder<M, T> connectionSupplier(@Nonnull SupplierEx<PulsarClient> connectionSupplier) {
+        checkSerializable(connectionSupplier, "connectionSupplier");
+        this.connectionSupplier = connectionSupplier;
+        return this;
+    }
+
+    @Nonnull
+    public PulsarReaderBuilder<M, T> dataConnectionRef(@Nonnull DataConnectionRef dataConnectionRef) {
+        requireNonNull(dataConnectionRef, "dataConnectionRef");
+        this.dataConnectionRef = dataConnectionRef;
+        return this;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Nonnull
+    public <NEW_T> PulsarReaderBuilder<M, NEW_T> projectionFn(@Nonnull FunctionEx<Message<M>, NEW_T> projectionFn) {
+        checkNonNullAndSerializable(projectionFn, "projectionFn");
+        this.projectionFn = (FunctionEx<Message<M>, T>) projectionFn;
+        return (PulsarReaderBuilder<M, NEW_T>) this;
     }
 
 
@@ -88,9 +132,7 @@ public final class PulsarReaderBuilder<M, T> implements Serializable {
      * @param readerConfig Pulsar reader configurations that must contain reader name
      */
     @Nonnull
-    public PulsarReaderBuilder<M, T> readerConfig(
-            @Nonnull Map<String, Object> readerConfig
-    ) {
+    public PulsarReaderBuilder<M, T> readerConfig(@Nonnull Map<String, Object> readerConfig) {
         checkSerializable(readerConfig, "readerConfig");
         this.readerConfig = readerConfig;
         return this;
@@ -101,12 +143,25 @@ public final class PulsarReaderBuilder<M, T> implements Serializable {
      */
     @Nonnull
     public StreamSource<T> build() {
-        return SourceBuilder.timestampedStream("pulsar-reader-source", ctx -> new PulsarReaderBuilder.ReaderContext<>(
-                ctx.logger(), connectionSupplier.get(), topic, readerConfig, schemaSupplier, projectionFn))
-                .<T>fillBufferFn(PulsarReaderBuilder.ReaderContext::fillBuffer)
-                .createSnapshotFn(PulsarReaderBuilder.ReaderContext::createSnapshot)
-                .restoreSnapshotFn(PulsarReaderBuilder.ReaderContext::restoreSnapshot)
-                .destroyFn(PulsarReaderBuilder.ReaderContext::destroy)
+        validate()
+            .checkNotNull(topics, "topics")
+            .checkNotNull(readerConfig, "readerConfig")
+            .checkNotNullAndSerializable(schemaSupplier, "schemaSupplier")
+            .checkNotNullAndSerializable(projectionFn, "projectionFn")
+            .checkSerializableIfNotNull(connectionSupplier, "connectionSupplier")
+            .check(Utils.exactlyOnlyOneIsNotNull(connectionSupplier, dataConnectionRef),
+                   "Either connectionSupplier or dataConnectionRef must be provided")
+            .throwIfErrors();
+        return SourceBuilder.timestampedStream("pulsar-reader-source",
+                                               ctx -> new ReaderContext<>(
+                                                   ctx, connectionSupplier, dataConnectionRef,
+                                                   topics, readerConfig,
+                                                   schemaSupplier, projectionFn))
+                .<T>fillBufferFn(ReaderContext::fillBuffer)
+                            .initFn(ctx -> requireNonNull(ctx).init())
+                .createSnapshotFn(ReaderContext::createSnapshot)
+                .restoreSnapshotFn(ReaderContext::restoreSnapshot)
+                .destroyFn(ctx -> requireNonNull(ctx).destroy())
                 .build();
     }
 
@@ -121,30 +176,42 @@ public final class PulsarReaderBuilder<M, T> implements Serializable {
         private static final int MAX_FILL_MESSAGES = 128;
 
         private final ILogger logger;
-        private final PulsarClient client;
+        private PulsarClient client;
         private final BlockingQueue<Message<M>> queue = new ArrayBlockingQueue<>(QUEUE_CAP);
 
         private final FunctionEx<Message<M>, T> projectionFn;
         private final Map<String, Object> readerConfig;
         private final Schema<M> schema;
-        private final String topic;
+        private final List<String> topics;
         private Reader<M> reader;
         private MessageId offset = MessageId.earliest;
 
+        private ThrowingSupplier<PulsarClient> clientSupplier;
+
         private ReaderContext(
-                @Nonnull ILogger logger,
-                @Nonnull PulsarClient client,
-                @Nonnull String topic,
+                @Nonnull Processor.Context ctx,
+                @Nullable SupplierEx<PulsarClient> clientSupplier,
+                @Nullable DataConnectionRef dataConnectionRef,
+                @Nonnull List<String> topics,
                 @Nonnull Map<String, Object> readerConfig,
                 @Nonnull SupplierEx<Schema<M>> schemaSupplier,
                 @Nonnull FunctionEx<Message<M>, T> projectionFn
         ) {
-            this.logger = logger;
-            this.client = client;
-            this.topic = topic;
+            this.logger = ctx.logger();
+            this.clientSupplier = () -> Utils.getClient(ctx, clientSupplier, dataConnectionRef);
+            this.topics = topics;
             this.readerConfig = readerConfig;
             this.schema = schemaSupplier.get();
             this.projectionFn = projectionFn;
+        }
+
+        public void init() {
+            try {
+                client = clientSupplier.get();
+                clientSupplier = null;
+            } catch (Exception e) {
+                throw new JetException("Unable to initialize context for Pulsar Reader", e);
+            }
         }
 
         /**
@@ -152,7 +219,7 @@ public final class PulsarReaderBuilder<M, T> implements Serializable {
          * In this method, emitted items are created by applying the projection function
          * to the messages received from Pulsar client. If there is an event time
          * associated with the message, it sets the event time as the timestamp of the
-         * emitted item. Otherwise, it sets the publish time(which always exists)
+         * emitted item. Otherwise, it sets the publishing time(which always exists)
          * of the message as the timestamp.
          */
         private void fillBuffer(SourceBuilder.TimestampedSourceBuffer<T> sourceBuffer) throws PulsarClientException {
@@ -178,7 +245,7 @@ public final class PulsarReaderBuilder<M, T> implements Serializable {
 
         private void createReader() throws PulsarClientException {
             reader = client.newReader(schema)
-                           .topic(topic)
+                           .topics(topics)
                            .startMessageId(offset)
                            .loadConf(readerConfig)
                            .readerListener((r, msg) -> {

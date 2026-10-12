@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.IExecutorService;
 import com.hazelcast.core.MultiExecutionCallback;
 import com.hazelcast.durableexecutor.DurableExecutorService;
+import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -46,6 +47,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static com.hazelcast.test.Accessors.getNode;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class ExecutorServiceTestSupport extends HazelcastTestSupport {
@@ -275,12 +277,50 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class IncrementAtomicLongIfMemberUUIDNotMatchRunnable implements Runnable, Serializable, HazelcastInstanceAware {
 
+    public static class IncrementAtomicLongRunnable implements Runnable, HazelcastInstanceAware, Serializable {
+        private final String name;
+        private transient HazelcastInstance instance;
+
+        public IncrementAtomicLongRunnable(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public void run() {
+            signal(instance, name);
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
+        }
+    }
+
+    public static class IncrementAtomicLongCallable implements Callable<Long>, HazelcastInstanceAware, Serializable {
+        private final String name;
+        private transient HazelcastInstance instance;
+
+        public IncrementAtomicLongCallable(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public Long call() {
+            return instance.<String, Long>getMap(COORDINATION_MAP).merge(name, 1L, Long::sum);
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
+        }
+    }
+
+    public static class IncrementAtomicLongIfMemberUUIDNotMatchRunnable
+            implements Runnable, HazelcastInstanceAware, Serializable {
         private final UUID uuid;
         private final String name;
-
-        private HazelcastInstance instance;
+        private transient HazelcastInstance instance;
 
         public IncrementAtomicLongIfMemberUUIDNotMatchRunnable(UUID uuid, String name) {
             this.uuid = uuid;
@@ -295,7 +335,7 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void run() {
             if (!instance.getCluster().getLocalMember().getUuid().equals(uuid)) {
-                instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
+                signal(instance, name);
             }
         }
     }
@@ -402,52 +442,6 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         }
     }
 
-    public static class IncrementAtomicLongRunnable implements Runnable, Serializable, HazelcastInstanceAware {
-
-        private final String name;
-
-        private transient HazelcastInstance instance;
-
-        public IncrementAtomicLongRunnable(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance instance) {
-            this.instance = instance;
-        }
-
-        @Override
-        public void run() {
-            instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
-        }
-    }
-
-    public static class IncrementAtomicLongCallable implements Callable<Long>, Serializable, HazelcastInstanceAware {
-
-        private final String name;
-
-        private HazelcastInstance instance;
-
-        public IncrementAtomicLongCallable(String name) {
-            this.name = name;
-        }
-
-        @Override
-        public void setHazelcastInstance(HazelcastInstance instance) {
-            this.instance = instance;
-        }
-
-        public void run() {
-            instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
-        }
-
-        @Override
-        public Long call() throws Exception {
-            return instance.getCPSubsystem().getAtomicLong(name).incrementAndGet();
-        }
-    }
-
     public static class MemberUUIDCheckCallable implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
 
         private final UUID uuid;
@@ -521,6 +515,60 @@ public class ExecutorServiceTestSupport extends HazelcastTestSupport {
         @Override
         public void onComplete(Map<Member, Object> values) {
             this.results = values;
+        }
+    }
+
+
+    protected static final String COORDINATION_MAP = "coordination";
+
+    protected static void signal(HazelcastInstance hz, String name) {
+        hz.<String, Long>getMap(COORDINATION_MAP).merge(name, 1L, Long::sum);
+    }
+
+    protected static long signalCount(HazelcastInstance hz, String name) {
+        Long value = hz.<String, Long>getMap(COORDINATION_MAP).get(name);
+        return value == null ? 0L : value;
+    }
+
+    protected void assertSignalledEventually(HazelcastInstance hz, String name, long expected) {
+        assertTrueEventually(() -> assertTrue(
+                "expected signal count >= " + expected + " for '" + name + "' but was " + signalCount(hz, name),
+                signalCount(hz, name) >= expected));
+    }
+
+    protected static void awaitGate(HazelcastInstance hz, String name) {
+        IMap<String, Long> map = hz.getMap(COORDINATION_MAP);
+        while (true) {
+            Long value = map.get(name);
+            if (value != null && value >= 1L) {
+                return;
+            }
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
+            }
+        }
+    }
+
+    public static class ICountDownLatchAwaitCallable implements Callable<Boolean>, HazelcastInstanceAware, Serializable {
+        private final String name;
+        private transient HazelcastInstance instance;
+
+        public ICountDownLatchAwaitCallable(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public Boolean call() {
+            awaitGate(instance, name);
+            return true;
+        }
+
+        @Override
+        public void setHazelcastInstance(HazelcastInstance instance) {
+            this.instance = instance;
         }
     }
 }

@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.internal.cluster.Versions.V6_0;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.readCollection;
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeCollection;
 
@@ -63,7 +64,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeC
  *     <li>In {@link RunStage#FINALIZE_PROMOTION} stage, finalize the promotions by sending
  *     {@link FinalizePromotionOperation} for every promotion. After all complete, it will reschedule
  *     itself with {@link RunStage#COMPLETE}.</li>
- *     <li>In last stage, it will fire completion events and return the response.</li>
+ *     <li>In last stage, it fires legacy destination events when required and returns the response.</li>
  * </ul>
  *
  */
@@ -160,9 +161,11 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
         }
 
         ILogger logger = getLogger();
-        migrationState = new MigrationStateImpl(Clock.currentTimeMillis(), promotions.size(), 0, 0L);
         partitionService.getMigrationInterceptor().onPromotionStart(MigrationParticipant.DESTINATION, promotions);
-        partitionService.getPartitionEventManager().sendMigrationProcessStartedEvent(migrationState);
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(V6_0)) {
+            migrationState = new MigrationStateImpl(Clock.currentTimeMillis(), promotions.size(), 0, 0L);
+            partitionService.getPartitionEventManager().sendMigrationProcessStartedEvent(migrationState);
+        }
 
         if (logger.isFineEnabled()) {
             logger.fine("Submitting BeforePromotionOperations for " + promotions.size() + " promotions. "
@@ -247,13 +250,15 @@ public class PromotionCommitOperation extends AbstractPartitionOperation impleme
     private void complete() {
         InternalPartitionServiceImpl service = getService();
         service.getMigrationInterceptor().onPromotionComplete(MigrationParticipant.DESTINATION, promotions, success);
-        PartitionEventManager eventManager = service.getPartitionEventManager();
-        MigrationStateImpl ms = migrationState;
-        for (MigrationInfo promotion : promotions) {
-            ms = ms.onComplete(1, 0L);
-            eventManager.sendMigrationEvent(ms, promotion, 0L);
+        if (migrationState != null) {
+            PartitionEventManager eventManager = service.getPartitionEventManager();
+            MigrationStateImpl ms = migrationState;
+            for (MigrationInfo promotion : promotions) {
+                ms = ms.onComplete(1, 0L);
+                eventManager.sendMigrationEvent(ms, promotion, 0L);
+            }
+            eventManager.sendMigrationProcessCompletedEvent(ms);
         }
-        eventManager.sendMigrationProcessCompletedEvent(ms);
         service.getMigrationManager().releasePromotionPermit();
     }
 

@@ -174,9 +174,9 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         long mergeFirstRunDelayMs = node.getProperties().getPositiveMillisOrDefault(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS,
-                DEFAULT_MERGE_RUN_DELAY_MILLIS);
+                () -> DEFAULT_MERGE_RUN_DELAY_MILLIS);
         long mergeNextRunDelayMs = node.getProperties().getPositiveMillisOrDefault(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS,
-                DEFAULT_MERGE_RUN_DELAY_MILLIS);
+                () -> DEFAULT_MERGE_RUN_DELAY_MILLIS);
 
         ExecutionService executionService = nodeEngine.getExecutionService();
         executionService.scheduleWithRepetition(SPLIT_BRAIN_HANDLER_EXECUTOR_NAME, new SplitBrainHandler(node),

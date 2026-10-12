@@ -51,8 +51,7 @@ public class PostgresAlterTableTest extends AbstractCdcAlterTableTest<PostgreSQL
                 .setProperty("heartbeat.interval.ms", 1000)
                 .setProperty("plugin.name", "pgoutput")
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", uuidForNotifications)
+                .enableSnapshotTracking()
                 .setProperty("publication.name", "dbz_publication" + ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE))
                 .changeRecord();
     }

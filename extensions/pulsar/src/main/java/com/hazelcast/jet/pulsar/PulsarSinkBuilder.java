@@ -18,8 +18,11 @@ package com.hazelcast.jet.pulsar;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.function.ThrowingSupplier;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.logging.ILogger;
@@ -36,7 +39,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.tpcengine.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.impl.util.Validation.validate;
+import static com.hazelcast.jet.pulsar.Utils.exactlyOnlyOneIsNotNull;
+import static java.util.Objects.requireNonNull;
 
 /**
  * See {@link PulsarSinks#builder(String, SupplierEx, SupplierEx, FunctionEx)}
@@ -45,8 +53,9 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  * @param <M> the type of the message published by {@code PulsarProducer}
  */
 public final class PulsarSinkBuilder<E, M> implements Serializable {
-    private final SupplierEx<PulsarClient> connectionSupplier;
-    private final String topic;
+    private SupplierEx<PulsarClient> connectionSupplier;
+    private DataConnectionRef dataConnectionRef;
+    private String topic;
     private final SupplierEx<Schema<M>> schemaSupplier;
 
     private Map<String, Object> producerConfig;
@@ -56,6 +65,13 @@ public final class PulsarSinkBuilder<E, M> implements Serializable {
     private FunctionEx<? super E, Long> extractTimestampFn;
     private int preferredLocalParallelism = 2;
 
+    public PulsarSinkBuilder(@Nonnull SupplierEx<Schema<M>> schemaSupplier, @Nonnull FunctionEx<? super E, M> extractValueFn) {
+        checkNonNullAndSerializable(schemaSupplier, "schemaSupplier");
+        checkNonNullAndSerializable(extractValueFn, "extractValueFn");
+        this.schemaSupplier = schemaSupplier;
+        this.extractValueFn = extractValueFn;
+        this.producerConfig = getDefaultProducerConfig();
+    }
 
     /**
      * Required fields of Pulsar sink
@@ -82,6 +98,27 @@ public final class PulsarSinkBuilder<E, M> implements Serializable {
         this.extractValueFn = extractValueFn;
     }
 
+    @Nonnull
+    public PulsarSinkBuilder<E, M> topic(@Nonnull String topic) {
+        checkNotNull(topic, "topic");
+        this.topic = topic;
+        return this;
+    }
+
+    @Nonnull
+    public PulsarSinkBuilder<E, M> connectionSupplier(@Nonnull SupplierEx<PulsarClient> connectionSupplier) {
+        checkNonNullAndSerializable(connectionSupplier, "connectionSupplier");
+        this.connectionSupplier = connectionSupplier;
+        return this;
+    }
+
+    @Nonnull
+    public PulsarSinkBuilder<E, M> dataConnectionRef(@Nonnull DataConnectionRef dataConnectionRef) {
+        checkNotNull(dataConnectionRef, "dataConnectionRef");
+        this.dataConnectionRef = dataConnectionRef;
+        return this;
+    }
+
     private static Map<String, Object> getDefaultProducerConfig() {
         return new HashMap<>();
     }
@@ -90,9 +127,7 @@ public final class PulsarSinkBuilder<E, M> implements Serializable {
      * @param producerConfig The configurations for {@code PulsarProducer}
      */
     @Nonnull
-    public PulsarSinkBuilder<E, M> producerConfig(
-            Map<String, Object> producerConfig
-    ) {
+    public PulsarSinkBuilder<E, M> producerConfig(Map<String, Object> producerConfig) {
         checkSerializable(producerConfig, "producerConfig");
         this.producerConfig = producerConfig;
         return this;
@@ -107,6 +142,18 @@ public final class PulsarSinkBuilder<E, M> implements Serializable {
     ) {
         checkSerializable(extractKeyFn, "extractKeyFn");
         this.extractKeyFn = extractKeyFn;
+        return this;
+    }
+
+    /**
+     * @param extractValueFn extracts the message value from the emitted items.
+     */
+    @Nonnull
+    public PulsarSinkBuilder<E, M> extractValueFn(
+            FunctionEx<? super E, M> extractValueFn
+    ) {
+        checkSerializable(extractValueFn, "extractValueFn");
+        this.extractValueFn = extractValueFn;
         return this;
     }
 
@@ -148,12 +195,26 @@ public final class PulsarSinkBuilder<E, M> implements Serializable {
      */
     @Nonnull
     public Sink<E> build() {
-        return SinkBuilder.sinkBuilder("pulsar-sink", ctx -> new PulsarSinkContext<>(ctx.logger(), topic,
-                connectionSupplier.get(), producerConfig, schemaSupplier, extractValueFn,
+        validate()
+            .checkNotNull(topic, "topic")
+            .check(exactlyOnlyOneIsNotNull(connectionSupplier, dataConnectionRef),
+                   "Either connectionSupplier or dataConnectionRef must be provided")
+            .checkSerializableIfNotNull(connectionSupplier, "connectionSupplier")
+
+            .checkNotNull(producerConfig, "producerConfig")
+            .checkNotNullAndSerializable(schemaSupplier, "schemaSupplier")
+            .checkSerializableIfNotNull(extractKeyFn, "extractKeyFn")
+            .checkSerializableIfNotNull(extractPropertiesFn, "extractPropertiesFn")
+            .checkSerializableIfNotNull(extractTimestampFn, "extractTimestampFn")
+            .checkNotNullAndSerializable(extractValueFn, "extractValueFn")
+            .throwIfErrors();
+
+        return SinkBuilder.sinkBuilder("pulsar-sink", ctx -> new PulsarSinkContext<>(ctx, topic,
+                connectionSupplier, dataConnectionRef, producerConfig, schemaSupplier, extractValueFn,
                 extractKeyFn, extractPropertiesFn, extractTimestampFn))
                 .<E>receiveFn(PulsarSinkContext::add)
-                .flushFn(PulsarSinkContext::flush)
-                .destroyFn(PulsarSinkContext::destroy)
+                .flushFn(ctx -> requireNonNull(ctx).flush())
+                .destroyFn(ctx -> requireNonNull(ctx).destroy())
                 .preferredLocalParallelism(preferredLocalParallelism)
                 .build();
     }
@@ -161,8 +222,8 @@ public final class PulsarSinkBuilder<E, M> implements Serializable {
 
     private static final class PulsarSinkContext<E, M> {
         private final ILogger logger;
-        private final PulsarClient client;
-        private final Producer<M> producer;
+        private PulsarClient client;
+        private Producer<M> producer;
 
         private final FunctionEx<? super E, M> extractValueFn;
         private final FunctionEx<? super E, String> extractKeyFn;
@@ -171,20 +232,24 @@ public final class PulsarSinkBuilder<E, M> implements Serializable {
 
         private final AtomicReference<Throwable> error = new AtomicReference<>();
 
+        private ThrowingSupplier<PulsarClient> clientSupplier;
+        private ThrowingSupplier<Producer<M>> producerSupplier;
+
         private PulsarSinkContext(
-                @Nonnull ILogger logger,
+                @Nonnull Processor.Context ctx,
                 @Nonnull String topic,
-                @Nonnull PulsarClient client,
+                @Nullable SupplierEx<PulsarClient> clientSupplier,
+                @Nullable DataConnectionRef dataConnectionRef,
                 @Nonnull Map<String, Object> producerConfig,
                 @Nonnull SupplierEx<Schema<M>> schemaSupplier,
                 @Nonnull FunctionEx<? super E, M> extractValueFn,
                 @Nullable FunctionEx<? super E, String> extractKeyFn,
                 @Nullable FunctionEx<? super E, Map<String, String>> extractPropertiesFn,
                 @Nullable FunctionEx<? super E, Long> extractTimestampFn
-        ) throws PulsarClientException {
-            this.logger = logger;
-            this.client = client;
-            this.producer = client.newProducer(schemaSupplier.get())
+        ) {
+            this.logger = ctx.logger();
+            this.clientSupplier = () -> Utils.getClient(ctx, clientSupplier, dataConnectionRef);
+            this.producerSupplier = () -> client.newProducer(schemaSupplier.get())
                                   .topic(topic)
                                   .loadConf(producerConfig)
                                   .create();
@@ -192,6 +257,21 @@ public final class PulsarSinkBuilder<E, M> implements Serializable {
             this.extractValueFn = extractValueFn;
             this.extractPropertiesFn = extractPropertiesFn;
             this.extractTimestampFn = extractTimestampFn;
+
+            // temp before moving to Processor API
+            init();
+        }
+
+        public void init() {
+            try {
+                client = clientSupplier.get();
+                producer = producerSupplier.get();
+
+                clientSupplier = null;
+                producerSupplier = null;
+            } catch (Exception e) {
+                throw new JetException("Unable to create Pulsar Producer", e);
+            }
         }
 
         private void flush() throws PulsarClientException {

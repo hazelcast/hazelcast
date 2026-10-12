@@ -154,7 +154,7 @@ public class BounceMemberRule implements TestRule {
     private final AtomicInteger driverCounter = new AtomicInteger();
     private ExecutorService taskExecutor;
 
-    private BounceMemberRule(BounceTestConfiguration bounceTestConfig) {
+    BounceMemberRule(BounceTestConfiguration bounceTestConfig) {
         this.bounceTestConfig = bounceTestConfig;
         this.members = new AtomicReferenceArray<>(bounceTestConfig.getClusterSize());
         this.testDrivers = new AtomicReferenceArray<>(bounceTestConfig.getDriverCount());
@@ -202,9 +202,8 @@ public class BounceMemberRule implements TestRule {
      */
     public void testRepeatedly(int concurrency, Runnable task, long durationSeconds) {
         assert concurrency > 0 : "Concurrency level should be greater than 0";
-
-        TestTaskRunnable[] tasks = new TestTaskRunnable[concurrency];
-        Arrays.fill(tasks, new TestTaskRunnable(task));
+        Runnable[] tasks = new Runnable[concurrency];
+        Arrays.fill(tasks, task);
         testRepeatedly(tasks, durationSeconds);
     }
 
@@ -330,7 +329,7 @@ public class BounceMemberRule implements TestRule {
     }
 
     // Start cluster with configured number of members and member configuration
-    private void setup() {
+    void setup() {
         assert (bounceTestConfig.getClusterSize() > 1) : "Cluster size must be at least 2.";
 
         if (bounceTestConfig.getDriverType() == CLIENT) {
@@ -353,7 +352,7 @@ public class BounceMemberRule implements TestRule {
         testRunning.set(true);
     }
 
-    private void tearDown() {
+    void tearDown() {
         try {
             LOGGER.info("Tearing down BounceMemberRule");
             if (taskExecutor != null) {
@@ -364,7 +363,9 @@ public class BounceMemberRule implements TestRule {
             if (testDrivers != null) {
                 for (int i = 0; i < testDrivers.length(); i++) {
                     HazelcastInstance hz = testDrivers.get(i);
-                    hz.shutdown();
+                    if (hz != null) {
+                        hz.shutdown();
+                    }
                 }
             }
             if (factory != null) {
@@ -394,11 +395,7 @@ public class BounceMemberRule implements TestRule {
         return new Statement() {
             @Override
             public void evaluate() throws Throwable {
-                LOGGER.info("Spawning member bouncing thread");
-                bouncingMembersTask = new FutureTask<>(new MemberUpDownMonkey(), null);
-                Thread bounceMembersThread = new Thread(bouncingMembersTask);
-                bounceMembersThread.setDaemon(true);
-                bounceMembersThread.start();
+                startBouncing();
                 next.evaluate();
             }
         };
@@ -416,18 +413,35 @@ public class BounceMemberRule implements TestRule {
                 try {
                     next.evaluate();
                 } finally {
-                    testRunning.set(false);
-                    try {
-                        LOGGER.info("Waiting for member bouncing thread to stop...");
-                        bouncingMembersTask.get();
-                        LOGGER.info("Member bouncing thread stopped.");
-                    } catch (Exception e) {
-                        // do not rethrow
-                        LOGGER.warning("Member bouncing thread failed to stop.", e);
-                    }
+                    stopBouncing();
                 }
             }
         };
+    }
+
+    void startBouncing() {
+        LOGGER.info("Spawning member bouncing thread");
+        bouncingMembersTask = new FutureTask<>(new MemberUpDownMonkey(), null);
+        Thread bounceMembersThread = new Thread(bouncingMembersTask);
+        bounceMembersThread.setDaemon(true);
+        bounceMembersThread.start();
+    }
+
+    void stopBouncing() {
+        testRunning.set(false);
+        if (bouncingMembersTask == null) {
+            return;
+        }
+        try {
+            LOGGER.info("Waiting for member bouncing thread to stop...");
+            bouncingMembersTask.get();
+            LOGGER.info("Member bouncing thread stopped.");
+        } catch (Exception e) {
+            // do not rethrow
+            LOGGER.warning("Member bouncing thread failed to stop.", e);
+        } finally {
+            bouncingMembersTask = null;
+        }
     }
 
     // wait until all test tasks complete or one of them throws an exception
@@ -623,7 +637,7 @@ public class BounceMemberRule implements TestRule {
                             // might lead to data loss.
                             // This check is done after termination to give time to accumulate some in-progress operations
                             // before next termination.
-                            assertClusterSizeEventually(bounceTestConfig.getClusterSize() - 1, getSteadyMember());
+                            assertClusterSizeEventually(bounceTestConfig.getEffectiveClusterSize() - 1, getSteadyMember());
                             waitClusterForSafeState(getSteadyMember());
                         }
                     } else {

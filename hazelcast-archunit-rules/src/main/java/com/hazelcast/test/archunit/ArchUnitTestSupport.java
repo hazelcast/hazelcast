@@ -24,6 +24,7 @@ import static org.assertj.core.api.Assumptions.assumeThat;
 public abstract class ArchUnitTestSupport {
 
     private static final int HIGHEST_JDK = 27;
+    protected String basePackage = "com.hazelcast";
 
     // ArchUnit releases lag behind the JDK releases.
     // Skip the test if JDK version is higher than the specified assumption

@@ -137,6 +137,7 @@ public final class DebeziumCdcSources {
 
         protected final DebeziumConfig config;
         protected RecordMappingFunction<T> recordMappingFunction;
+        private boolean trackSnapshots;
 
         protected Builder(
                 @Nonnull String name,
@@ -298,12 +299,30 @@ public final class DebeziumCdcSources {
         }
 
         /**
+         * If called, enables the usage of {@link SnapshotCompletionListener} to track if
+         * initial snapshot has completed.
+         * <p>
+         * Listener uses {@code SnapshotCompletionListener} executor to check completion statuses on all members. If you need to
+         * configure security or want to customize other parameters of executor that will handle checks, please update
+         * configuration for {@code SnapshotCompletionListener} executor. CDC module must be present on all nodes
+         * in order to use this functionality.
+         *
+         * @since 6.0
+         */
+        @Nonnull
+        public Builder<T> enableSnapshotTracking() {
+            trackSnapshots = true;
+            return this;
+        }
+
+        /**
          * Returns the CDC source based on the properties set.
          */
         @Nonnull
         public StreamSource<T> build() {
             final Properties properties = config.toProperties();
             final RecordMappingFunction<T> recordMappingFunction = this.recordMappingFunction;
+            final boolean trackSnapshots = this.trackSnapshots;
 
             final String name = properties.getProperty(ReadCdcP.NAME_PROPERTY);
             return Sources.streamFromProcessorWithWatermarks(
@@ -311,7 +330,7 @@ public final class DebeziumCdcSources {
                     true,
                     eventTimePolicy -> {
                         ProcessorSupplier supplier = ProcessorSupplier.of(
-                                () -> new ReadCdcP<>(properties, eventTimePolicy, recordMappingFunction));
+                                () -> new ReadCdcP<>(properties, eventTimePolicy, recordMappingFunction, trackSnapshots));
                         return ProcessorMetaSupplier.forceTotalParallelismOne(supplier);
                     });
         }

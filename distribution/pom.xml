@@ -33,6 +33,12 @@
         <configs.from.jar>${project.build.directory}/config</configs.from.jar>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <prometheus.version>0.20.0</prometheus.version>
+		<!--
+			cyclonedx-maven-plugin generates SBOM based on project dependencies, but these are not accurate for distribution
+			the actual contents is configured via assembly configuration and differs between regular/slim packages
+			as such, do not execute
+		-->
+        <cyclonedx.skip>true</cyclonedx.skip>
     </properties>
 
     <build>

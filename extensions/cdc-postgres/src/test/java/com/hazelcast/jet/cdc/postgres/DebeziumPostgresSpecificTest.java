@@ -44,8 +44,7 @@ public class DebeziumPostgresSpecificTest extends DebeziumPostgresTest {
                 .setProperty("topic.prefix", "TESTS")
                 .setProperty("plugin.name", "pgoutput")
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", uuidForNotifications)
+                .enableSnapshotTracking()
                 .setProperty("publication.name", "dbz_publication" + ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE))
                 .changeRecord();
     }

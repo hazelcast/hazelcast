@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.api.util.SetSystemProperty;
 import org.junit.platform.testkit.engine.EngineTestKit;
 
@@ -28,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
 
+@Isolated
 class HazelcastSerialTestExtensionTest {
 
     @Test

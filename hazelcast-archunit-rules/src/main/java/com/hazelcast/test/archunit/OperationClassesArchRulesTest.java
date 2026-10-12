@@ -23,7 +23,6 @@ public class OperationClassesArchRulesTest extends ArchUnitTestSupport {
 
     @Test
     public void noReadOnlyAndMutatingOperations() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
 
         ArchUnitRules.OPERATIONS_SHOULD_NOTIMPL_BOTH_READONLY_AND_MUTATINGOPERATION.check(classes);
@@ -31,7 +30,6 @@ public class OperationClassesArchRulesTest extends ArchUnitTestSupport {
 
     @Test
     public void noBackupOpsImplementingMutatingOperation() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
 
         ArchUnitRules.BACKUP_OPERATIONS_SHOULD_NOTIMPL_MUTATINGOPERATION.check(classes);

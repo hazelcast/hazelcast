@@ -29,7 +29,6 @@ public class NoHamcrestInOurTestSourcesTest extends ArchUnitTestSupport {
 
     @Test
     public void noClassUsesHamcrest() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage);
 
         ArchUnitRules.MATCHERS_USAGE.check(classes);

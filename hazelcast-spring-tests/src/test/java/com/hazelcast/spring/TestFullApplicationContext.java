@@ -1568,7 +1568,6 @@ public class TestFullApplicationContext {
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
         assertFalse(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/custom-dir").getAbsolutePath(), cpSubsystemConfig.getBaseDir().getAbsolutePath());
-        assertEquals(-1, cpSubsystemConfig.getCPMemberPriority());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());
@@ -1595,7 +1594,7 @@ public class TestFullApplicationContext {
         CPMapConfig mapConfig1 = cpSubsystemConfig.findCPMapConfig("map1");
         assertNotNull(mapConfig1);
         assertEquals(50, mapConfig1.getMaxSizeMb());
-        assertTrue(mapConfig1.isPurgeEnabled());
+        assertFalse(mapConfig1.isPurgeEnabled());
 
         CPMapConfig mapConfig2 = cpSubsystemConfig.findCPMapConfig("map2");
         assertNotNull(mapConfig2);
@@ -1605,8 +1604,7 @@ public class TestFullApplicationContext {
         CPMapConfig mapConfig3 = cpSubsystemConfig.findCPMapConfig("map3");
         assertNotNull(mapConfig3);
         assertEquals(100, mapConfig3.getMaxSizeMb());
-        assertTrue(cpSubsystemConfig.isAutoStepDownWhenLeader());
-        assertTrue(mapConfig3.isPurgeEnabled());
+        assertFalse(mapConfig3.isPurgeEnabled());
     }
 
     @Test

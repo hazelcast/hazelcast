@@ -16,7 +16,10 @@
 
 package com.hazelcast.jet.pulsar;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
@@ -28,11 +31,14 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.map.IMap;
+import org.apache.pulsar.client.api.Schema;
 import org.junit.jupiter.api.Test;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
@@ -40,7 +46,10 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.test.JetAssert.assertEquals;
 import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
 import static com.hazelcast.jet.core.test.JetAssert.fail;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
+import static com.hazelcast.jet.pulsar.PulsarSources.pulsarConsumerBuilder;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -126,6 +135,49 @@ public class PulsarSourceTest extends PulsarTestSupport {
     }
 
     @Test
+    public void when_readUsingDataConnection_then_jobGetsAllPublishedMessages() {
+        Config conf = smallInstanceConfig();
+        conf.addDataConnectionConfig(new DataConnectionConfig("myPulsar")
+                                         .setShared(true)
+                                         .setType("Pulsar")
+                                         .setProperty(PulsarDataConnection.Properties.BROKER_URL, getServiceUrl()));
+
+        HazelcastInstance[] instances = new HazelcastInstance[2];
+        Arrays.setAll(instances, i -> createHazelcastInstance(conf));
+
+        String topicName = randomName();
+        StreamSource<String> pulsarConsumerSrc = pulsarConsumerBuilder(() -> Schema.BYTES)
+                                                     .topic(topicName)
+                                                     .projectionFn(x -> new String(x.getData(), StandardCharsets.UTF_8))
+                                                     .dataConnectionRef(dataConnectionRef("myPulsar"))
+                                                     .build();
+
+        IMap<Object, Object> resultMap = instances[0].getMap(randomMapName());
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(pulsarConsumerSrc)
+                .withNativeTimestamps(0)
+                .map(s -> Map.entry(s, s))
+                .writeTo(Sinks.map(resultMap));
+        Job job = instances[0].getJet().newJob(pipeline);
+        assertThat(job).eventuallyHasStatus(RUNNING);
+
+        produceMessages("hello-pulsar", topicName, ITEM_COUNT);
+
+        assertTrueEventually(() -> {
+            assertEquals("# of Emitted items should be equal to # of published items",
+                         ITEM_COUNT, resultMap.size());
+            for (int i = 0; i < ITEM_COUNT; i++) {
+                String message = "hello-pulsar-" + i;
+                assertTrue("missing entry: " + message, resultMap.containsKey(message));
+            }
+        });
+
+        for (HazelcastInstance instance : instances) {
+            instance.shutdown();
+        }
+    }
+
+    @Test
     public void integrationTest_noSnapshotting() {
         integrationTest(ProcessingGuarantee.NONE);
     }
@@ -201,5 +253,29 @@ public class PulsarSourceTest extends PulsarTestSupport {
         // cancel the job
         job.cancel();
         assertTrueEventually(() -> assertTrue(job.getFuture().isDone()));
+    }
+
+    @Test
+    void consumerValidations() {
+        SupplierEx<Schema<byte[]>> schemaSupplier = () -> Schema.BYTES;
+        assertThatThrownBy(() -> PulsarSources.pulsarConsumerBuilder(schemaSupplier).build())
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("topics must not be null")
+            .hasMessageContaining("Either connectionSupplier or dataConnectionRef must be provided");
+        assertThatThrownBy(() -> PulsarSources.pulsarConsumerBuilder(schemaSupplier).connectionSupplier(notSerializableConnectionSupplier()).build())
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("\"connectionSupplier\" must be serializable");
+    }
+
+    @Test
+    void readerValidations() {
+        SupplierEx<Schema<byte[]>> schemaSupplier = () -> Schema.BYTES;
+        assertThatThrownBy(() -> PulsarSources.pulsarReaderBuilder(schemaSupplier).build())
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("topics must not be null")
+            .hasMessageContaining("Either connectionSupplier or dataConnectionRef must be provided");
+        assertThatThrownBy(() -> PulsarSources.pulsarReaderBuilder(schemaSupplier).connectionSupplier(notSerializableConnectionSupplier()).build())
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("\"connectionSupplier\" must be serializable");
     }
 }

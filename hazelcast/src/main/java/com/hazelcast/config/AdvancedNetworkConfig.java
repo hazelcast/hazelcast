@@ -19,7 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.rest.RestConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
-import com.hazelcast.spi.annotation.Beta;
+import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.Collection;
 import java.util.Map;
@@ -34,8 +34,8 @@ import static com.hazelcast.instance.EndpointQualifier.REST;
 /**
  * Similar to {@link NetworkConfig} with the additional ability to define multiple
  * endpoints, each with its own separate protocol/security and/or socket properties.
- * When {@link AdvancedNetworkConfig} is present and enabled then it always takes precedence over
- * the NetworkingConfig.
+ * When enabled, this configuration takes precedence over {@link NetworkConfig}.
+ * Advanced networking is disabled by default.
  *
  * @see #addWanEndpointConfig(EndpointConfig)
  * @see #setClientEndpointConfig(ServerSocketEndpointConfig)
@@ -44,7 +44,6 @@ import static com.hazelcast.instance.EndpointQualifier.REST;
  * @see #setRestEndpointConfig(RestServerEndpointConfig)
  * @since 3.12
  */
-@Beta
 @SuppressWarnings("checkstyle:methodcount")
 public class AdvancedNetworkConfig {
 
@@ -59,14 +58,29 @@ public class AdvancedNetworkConfig {
 
     private MemberAddressProviderConfig memberAddressProviderConfig = new MemberAddressProviderConfig();
 
+    /**
+     * Creates a disabled advanced network configuration with a default
+     * {@link ProtocolType#MEMBER MEMBER} server socket endpoint.
+     */
     public AdvancedNetworkConfig() {
         endpointConfigs.put(MEMBER, new ServerSocketEndpointConfig().setProtocolType(ProtocolType.MEMBER));
     }
 
+    /**
+     * Returns the configuration for the provider of the member's bind and public addresses.
+     *
+     * @return the member address provider configuration
+     */
     public MemberAddressProviderConfig getMemberAddressProviderConfig() {
         return memberAddressProviderConfig;
     }
 
+    /**
+     * Sets the configuration for the provider of the member's bind and public addresses.
+     *
+     * @param memberAddressProviderConfig the member address provider configuration
+     * @return this object for fluent chaining
+     */
     public AdvancedNetworkConfig setMemberAddressProviderConfig(MemberAddressProviderConfig memberAddressProviderConfig) {
         this.memberAddressProviderConfig = memberAddressProviderConfig;
         return this;
@@ -195,10 +209,25 @@ public class AdvancedNetworkConfig {
         return this;
     }
 
+    /**
+     * Returns the endpoint configurations keyed by their {@link EndpointQualifier}.
+     *
+     * @return the endpoint configurations
+     */
     public Map<EndpointQualifier, EndpointConfig> getEndpointConfigs() {
         return endpointConfigs;
     }
 
+    /**
+     * Replaces all endpoint configurations with the entries in the given map.
+     * Each endpoint's protocol type is set to the type of its corresponding
+     * {@link EndpointQualifier}. The endpoint configurations themselves are not copied.
+     *
+     * @param endpointConfigs the endpoint configurations keyed by their qualifiers
+     * @return this object for fluent chaining
+     * @throws InvalidConfigurationException if the number of endpoints for a protocol
+     *                                      exceeds its allowed server socket count
+     */
     public AdvancedNetworkConfig setEndpointConfigs(Map<EndpointQualifier, EndpointConfig> endpointConfigs) {
         // sanitize input
         for (Map.Entry<EndpointQualifier, EndpointConfig> entry : endpointConfigs.entrySet()) {
@@ -217,10 +246,22 @@ public class AdvancedNetworkConfig {
         return this;
     }
 
+    /**
+     * Returns whether advanced networking is enabled.
+     *
+     * @return {@code true} if advanced networking is enabled, {@code false} otherwise
+     */
     public boolean isEnabled() {
         return enabled;
     }
 
+    /**
+     * Enables or disables advanced networking. When enabled, this configuration
+     * takes precedence over {@link Config#getNetworkConfig()}.
+     *
+     * @param enabled {@code true} to enable advanced networking, {@code false} to disable it
+     * @return this object for fluent chaining
+     */
     public AdvancedNetworkConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
@@ -236,7 +277,10 @@ public class AdvancedNetworkConfig {
     }
 
     /**
-     * @param join the join to set
+     * Sets the configuration that defines how this member discovers and joins the cluster.
+     *
+     * @param join the join configuration
+     * @return this object for fluent chaining
      */
     public AdvancedNetworkConfig setJoin(final JoinConfig join) {
         this.join = join;
@@ -247,7 +291,7 @@ public class AdvancedNetworkConfig {
      * Sets the {@link IcmpFailureDetectorConfig}. The value can be {@code null} if this detector isn't needed.
      *
      * @param icmpFailureDetectorConfig the IcmpFailureDetectorConfig to set
-     * @return the updated NetworkConfig
+     * @return this object for fluent chaining
      * @see #getIcmpFailureDetectorConfig()
      */
     public AdvancedNetworkConfig setIcmpFailureDetectorConfig(final IcmpFailureDetectorConfig icmpFailureDetectorConfig) {
@@ -266,6 +310,12 @@ public class AdvancedNetworkConfig {
         return icmpFailureDetectorConfig;
     }
 
+    /**
+     * Returns the server socket endpoint configuration for the {@link ProtocolType#REST REST} protocol.
+     *
+     * @return the REST endpoint configuration, or {@code null} if none has been configured
+     * @see #setRestEndpointConfig(RestServerEndpointConfig)
+     */
     public RestServerEndpointConfig getRestEndpointConfig() {
         return (RestServerEndpointConfig) endpointConfigs.get(REST);
     }
@@ -285,6 +335,7 @@ public class AdvancedNetworkConfig {
      * Member endpoint decorated as a {@link NetworkConfig}
      * Facade used during bootstrap to hide if-logic between the two networking configuration approaches
      */
+    @PrivateApi
     public static class MemberNetworkingView
             extends NetworkConfig {
 

@@ -63,16 +63,36 @@
         </plugins>
     </build>
 
+    <dependencyManagement>
+        <dependencies>
+        	<!--
+				When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
+				- `io.opentelemetry:opentelemetry-context`
+				- `org.bouncycastle:bcprov-jdk18on`
+			-->
+            <!-- DO NOT upgrade to M2 due to https://github.com/apache/pulsar/issues/26694 -->
+            <dependency>
+                <groupId>org.apache.pulsar</groupId>
+                <artifactId>pulsar-bom</artifactId>
+                <version>5.0.0-M1</version>
+                <scope>import</scope>
+                <type>pom</type>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.pulsar</groupId>
             <artifactId>pulsar-client</artifactId>
-            <version>5.0.0-M1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.pulsar</groupId>
             <artifactId>pulsar-client-admin</artifactId>
-            <version>5.0.0-M1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
 
         <dependency>

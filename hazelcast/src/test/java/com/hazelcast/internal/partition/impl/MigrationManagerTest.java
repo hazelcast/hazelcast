@@ -54,6 +54,9 @@ import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_MAX_PARALLEL_PROMOTION_BATCHES;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -76,6 +79,34 @@ public class MigrationManagerTest {
         setupMocks();
         MigrationManagerImpl migrationManager = new MigrationManagerImpl(node, partitionService, lock);
         task = migrationManager.new RedoPartitioningTask();
+    }
+
+    @Test
+    public void testConstructor_whenMaxParallelPromotionBatchesIsZero() {
+        Config config = new Config().setProperty(PARTITION_MAX_PARALLEL_PROMOTION_BATCHES.getName(), "0");
+        when(node.getProperties()).thenReturn(new HazelcastProperties(config));
+
+        assertThatThrownBy(() -> new MigrationManagerImpl(node, partitionService, lock))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(PARTITION_MAX_PARALLEL_PROMOTION_BATCHES.getName());
+    }
+
+    @Test
+    public void testConstructor_whenMaxParallelPromotionBatchesIsNegative() {
+        Config config = new Config().setProperty(PARTITION_MAX_PARALLEL_PROMOTION_BATCHES.getName(), "-1");
+        when(node.getProperties()).thenReturn(new HazelcastProperties(config));
+
+        assertThatThrownBy(() -> new MigrationManagerImpl(node, partitionService, lock))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(PARTITION_MAX_PARALLEL_PROMOTION_BATCHES.getName());
+    }
+
+    @Test
+    public void testConstructor_whenMaxParallelPromotionBatchesIsOne() {
+        Config config = new Config().setProperty(PARTITION_MAX_PARALLEL_PROMOTION_BATCHES.getName(), "1");
+        when(node.getProperties()).thenReturn(new HazelcastProperties(config));
+
+        assertThatCode(() -> new MigrationManagerImpl(node, partitionService, lock)).doesNotThrowAnyException();
     }
 
     @Test

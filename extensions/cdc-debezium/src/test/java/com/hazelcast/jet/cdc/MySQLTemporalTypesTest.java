@@ -98,8 +98,7 @@ public class MySQLTemporalTypesTest extends AbstractCdcDataTypesTest<MySQLContai
                                  .setProperty("time.precision.mode", options.get("precisionMode"))
                                  .setProperty("tombstones.on.delete", false)
 
-                                 .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                                 .setProperty("notification.TestNotificationChannel.uuid", uuidForNotifications)
+                                 .enableSnapshotTracking()
                                  .changeRecord();
     }
 

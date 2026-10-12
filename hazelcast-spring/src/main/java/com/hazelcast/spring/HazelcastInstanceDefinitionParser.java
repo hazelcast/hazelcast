@@ -98,6 +98,7 @@ public class HazelcastInstanceDefinitionParser extends AbstractHazelcastBeanDefi
             String instanceBeanRef = element.getAttribute("id");
             BeanDefinitionBuilder cpBeanDefBuilder = BeanDefinitionBuilder.rootBeanDefinition(CPSubsystem.class);
             cpBeanDefBuilder.setFactoryMethodOnBean("getCPSubsystem", instanceBeanRef);
+            cpBeanDefBuilder.setLazyInit(true);
 
             BeanDefinitionHolder holder =
                     new BeanDefinitionHolder(cpBeanDefBuilder.getBeanDefinition(), instanceBeanRef + CP_SUBSYSTEM_SUFFIX);

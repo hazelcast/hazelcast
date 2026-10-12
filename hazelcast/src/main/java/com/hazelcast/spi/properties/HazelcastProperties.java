@@ -22,6 +22,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.LongSupplier;
 
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static java.lang.String.format;
@@ -264,7 +265,7 @@ public class HazelcastProperties {
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
      */
     public long getPositiveMillisOrDefault(HazelcastProperty property) {
-        return getPositiveMillisOrDefault(property, Long.parseLong(property.getDefaultValue()));
+        return getPositiveMillisOrDefault(property, () -> Long.parseLong(property.getDefaultValue()));
     }
 
     /**
@@ -275,10 +276,27 @@ public class HazelcastProperties {
      * @param defaultValue the default value to return if property has non positive value.
      * @return the value in milliseconds if it is positive, otherwise the passed default value.
      * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
+     *
+     * @deprecated Use {@link #getPositiveMillisOrDefault(HazelcastProperty, LongSupplier)} instead.
      */
+    @Deprecated(since = "6.0", forRemoval = true)
     public long getPositiveMillisOrDefault(HazelcastProperty property, long defaultValue) {
+        return getPositiveMillisOrDefault(property, () -> defaultValue);
+    }
+
+    /**
+     * Returns the configured value of a {@link HazelcastProperty} converted to milliseconds if
+     * it is positive, otherwise returns the passed default value.
+     *
+     * @param property     the {@link HazelcastProperty} to get the value from
+     * @param defaultValueSupplier supplies the default value to return if property has non positive value.
+     * @return the value in milliseconds if it is positive, otherwise the passed default value.
+     * @throws IllegalArgumentException if the {@link HazelcastProperty} has no {@link TimeUnit}
+     * @since 6.0
+     */
+    public long getPositiveMillisOrDefault(HazelcastProperty property, LongSupplier defaultValueSupplier) {
         long millis = getMillis(property);
-        return millis > 0 ? millis : defaultValue;
+        return millis > 0 ? millis : defaultValueSupplier.getAsLong();
     }
 
 

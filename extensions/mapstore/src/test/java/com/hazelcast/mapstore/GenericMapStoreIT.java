@@ -78,11 +78,15 @@ public abstract class GenericMapStoreIT extends JdbcSqlTestSupport {
     }
 
     protected static void initializeBeforeClass(TestDatabaseProvider testDatabaseProvider) {
+        initializeBeforeClass(testDatabaseProvider, new Config());
+    }
+
+    protected static void initializeBeforeClass(TestDatabaseProvider testDatabaseProvider, Config config) {
         databaseProvider = testDatabaseProvider;
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
         // Do not use small config to run with more threads and partitions
-        memberConfig = new Config()
+        memberConfig = config
                 // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
                 .setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null))
                 .addDataConnectionConfig(

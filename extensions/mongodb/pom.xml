@@ -93,7 +93,7 @@
                     </execution>
                     <execution>
                         <id>jar-with-dependencies</id>
-                        <phase>package</phase>
+                        <phase>${shade.jar-with-dependencies.phase}</phase>
                         <goals>
                             <goal>shade</goal>
                         </goals>

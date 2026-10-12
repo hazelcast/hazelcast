@@ -26,7 +26,6 @@ public class VectorSerializableTest extends ArchUnitTestSupport {
 
     @Test
     public void serializable_classes_should_have_valid_serialVersionUID() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
         ArchUnitRules.SERIALIZABLE_SHOULD_HAVE_VALID_SERIAL_VERSION_UID.check(classes);
     }

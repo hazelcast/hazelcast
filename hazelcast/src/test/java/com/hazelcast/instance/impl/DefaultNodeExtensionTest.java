@@ -17,6 +17,7 @@
 package com.hazelcast.instance.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -255,6 +256,29 @@ public class DefaultNodeExtensionTest extends HazelcastTestSupport {
         };
         makeClusterVersionUnknownAndVerifyListener(latch, failed, listener);
         System.clearProperty(ClusterProperty.INIT_CLUSTER_VERSION.getName());
+    }
+
+    @Test
+    public void test_throwsWhenAutoStepDownEnabled() {
+        Config config = getConfig();
+        config.getCPSubsystemConfig().setAutoStepDownWhenLeader(true);
+        assertThrows(IllegalStateException.class, () -> createHazelcastInstance(config));
+    }
+
+    @Test
+    public void test_throwsWhenCPPersistenceEnabled() {
+        Config config = getConfig();
+        config.getCPSubsystemConfig().setPersistenceEnabled(true);
+        assertThrows(IllegalStateException.class, () -> createHazelcastInstance(config));
+    }
+
+    @Test
+    public void test_throwsWhenMemberPriorityEnabled() {
+        Config config = getConfig();
+        config.getCPSubsystemConfig().setCPMemberPriority(1);
+        assertThrows(IllegalStateException.class, () -> createHazelcastInstance(config));
+        config.getCPSubsystemConfig().setCPMemberPriority(-1);
+        assertThrows(IllegalStateException.class, () -> createHazelcastInstance(config));
     }
 
     private void makeClusterVersionUnknownAndVerifyListener(CountDownLatch latch, AtomicBoolean failed,

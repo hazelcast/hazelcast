@@ -22,7 +22,6 @@ import org.junit.Test;
 public class PublicApiClassesExposingInternalImplementationConditionTest extends ArchUnitTestSupport {
     @Test
     public void publicApiClassesExposingInternalImplementationCondition() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleClasses(basePackage);
 
         ArchUnitRules.PUBLIC_API_CLASSES_EXPOSING_INTERNAL_IMPLEMENTATION.check(classes);

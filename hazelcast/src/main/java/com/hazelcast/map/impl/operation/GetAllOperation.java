@@ -75,15 +75,17 @@ public class GetAllOperation extends MapOperation
 
     @Override
     protected void runInternal() {
-        entries = recordStore.getAll(getPartitionKeySet(), getCallerAddress());
+        entries = recordStore.getAll(getPartitionKeySet(false), getCallerAddress());
     }
 
-    private Collection<Data> getPartitionKeySet() {
+    private Collection<Data> getPartitionKeySet(boolean offloaded) {
         if (singlePartition) {
             // Execution with MapStore will mutate provided key set to detect which entries should be loaded from MapStore.
             // In optimized member-side execution the list may be used also for sending to other members,
             // need to copy it to avoid concurrent modifications. Original set may be needed also for retries.
-            return recordStore != null && hasMapStoreImplementation() ? new HashSet<>(keys) : keys;
+            // Offloaded execution is allowed to mutate the key set even if map store is not enabled,
+            // (offloaded execution without MapStore should happen only in force-offload mode).
+            return (recordStore != null && hasMapStoreImplementation() || offloaded) ? new HashSet<>(keys) : keys;
         }
         // RUCOMPAT_5_7
         IPartitionService partitionService = getNodeEngine().getPartitionService();
@@ -101,7 +103,7 @@ public class GetAllOperation extends MapOperation
     @Override
     public State createState() {
         return super.createState()
-                .setKeys(getPartitionKeySet());
+                .setKeys(getPartitionKeySet(true));
     }
 
     @Override

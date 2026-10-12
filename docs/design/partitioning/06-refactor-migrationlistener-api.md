@@ -188,10 +188,23 @@ A new migration process is started for a few cases:
 
 -   *When backup to primary promotion is required after an existing
     member terminates/crashes:*  
-    Promotion tasks on each member will form a single migration process.
-    Promotions are committed to each member serially, one-by-one. So
-    during promotion commits, migration processes for each member will
-    start and finish in sequence.
+    Before cluster version 6.0, promotion tasks on each member form a
+    migration process and the processes run serially. Starting with
+    cluster version 6.0, all promotions planned in one partition table
+    repair round form a single migration process. The master publishes
+    that process while promotion work on destination members may run
+    concurrently. The cluster-version boundary preserves listener
+    semantics during an Enterprise rolling upgrade.
+
+    `hazelcast.partition.max.parallel.promotion.batches` limits concurrent
+    destination batches, including the master's local batch, and defaults
+    to 4. It must be positive and is read on the master. Each destination's
+    batch size is unchanged. A value of 1 serializes the work but retains
+    the single master-owned process at cluster version 6.0 or later.
+    On a caller-side processing failure, the master attempts to finish
+    the process with the progress reported so far, provided it still owns
+    the process. Outstanding outcomes are not inferred, and event delivery
+    remains best effort.
 
 -   *When some partitions lost completely after a member crash when
     partition table is frozen:*  

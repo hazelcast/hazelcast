@@ -26,7 +26,6 @@ public class ParallelJvmTestsDoNotUseNetworkTest extends ArchUnitTestSupport {
 
     @Test
     public void testDoNotUseNetwork() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage)
                 // PipelineTestSupport creates remote cluster with random name - it should be safe
                 .that(not(assignableTo("com.hazelcast.jet.pipeline.PipelineTestSupport")));

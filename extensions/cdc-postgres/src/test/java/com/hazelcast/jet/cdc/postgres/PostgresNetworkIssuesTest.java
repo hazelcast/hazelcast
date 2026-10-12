@@ -63,8 +63,7 @@ public class PostgresNetworkIssuesTest extends NetworkIssuesTest<PostgreSQLConta
                 .setProperty("snapshot.mode", "initial")
                 .setProperty("connect.timeout.ms", 1000)
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", uuidForNotifications)
+                .enableSnapshotTracking()
                 .setProperty("publication.name", "dbz_publication" + ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE))
                 .build();
     }

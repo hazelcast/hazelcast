@@ -21,12 +21,15 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.MapUtil;
 import com.hazelcast.journal.AbstractEventJournalBasicTest;
 import com.hazelcast.journal.EventJournalDataStructureAdapter;
 import com.hazelcast.journal.EventJournalTestContext;
 import com.hazelcast.map.EventJournalMapEvent;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
+import com.hazelcast.ringbuffer.ReadResultSet;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -39,10 +42,15 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static com.hazelcast.config.MapStoreConfig.InitialLoadMode.EAGER;
+import static com.hazelcast.function.FunctionEx.identity;
+import static com.hazelcast.function.PredicateEx.alwaysTrue;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -50,6 +58,7 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
 
     private static final String NON_EXPIRING_MAP = "mappy";
     private static final String EXPIRING_MAP = "expiring";
+    private static final String OBJECT_MAP = "journalObject";
 
     public final AtomicBoolean isPredicateContextInjected = new AtomicBoolean();
     public final AtomicBoolean isProjectionContextInjected = new AtomicBoolean();
@@ -67,6 +76,9 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
 
         config.getMapConfig(EXPIRING_MAP).setTimeToLiveSeconds(1)
               .setInMemoryFormat(getInMemoryFormat());
+        MapConfig objectMap = config.getMapConfig(OBJECT_MAP).setInMemoryFormat(InMemoryFormat.OBJECT);
+        objectMap.getEventJournalConfig().setEnabled(true);
+        objectMap.getMerkleTreeConfig().setEnabled(false);
         config.setManagedContext(obj -> {
             if (obj instanceof PredicateWithContext) {
                 setPredicate(true);
@@ -99,6 +111,36 @@ public class MapEventJournalBasicTest<K, V> extends AbstractEventJournalBasicTes
                 1, 1, new PredicateWithContext(), new ProjectionWithContext());
         assertAtomicEventually("Predicate Must be injected with ManagedContext", true, getPredicate(), 30);
         assertAtomicEventually("Projection must injected with ManagedContext", true, getProjection(), 30);
+    }
+
+    @Test
+    public void testInPlaceObjectUpdate_preservesJournalOldValue() throws Exception {
+        HazelcastInstance instance = getRandomInstance();
+        IMap<String, AtomicInteger> map = instance.getMap(OBJECT_MAP);
+        int partitionId = instance.getPartitionService().getPartition("key").getPartitionId();
+        EventJournalMapDataStructureAdapter<String, AtomicInteger> journal = new EventJournalMapDataStructureAdapter<>(map);
+        map.put("key", new AtomicInteger(1));
+        long nextSequence = journal.subscribeToEventJournal(partitionId)
+                .toCompletableFuture().get(10, SECONDS).getNewestSequence() + 1;
+
+        map.executeOnKey("key", entry -> {
+            AtomicInteger value = entry.getValue();
+            value.incrementAndGet();
+            entry.setValue(value);
+            return null;
+        });
+
+        ReadResultSet<EventJournalMapEvent<String, AtomicInteger>> events =
+                journal.<EventJournalMapEvent<String, AtomicInteger>>readFromEventJournal(
+                        nextSequence, 1, 1, partitionId, alwaysTrue(), identity())
+                        .toCompletableFuture().get(10, SECONDS);
+        assertThat(map.get("key").get()).isEqualTo(2);
+        assertThat(events.size()).isEqualTo(1);
+        EventJournalMapEvent<String, AtomicInteger> update = events.get(0);
+        assertThat(update.getKey()).isEqualTo("key");
+        assertThat(update.getType()).isEqualTo(EntryEventType.UPDATED);
+        assertThat(update.getOldValue().get()).isEqualTo(1);
+        assertThat(update.getNewValue().get()).isEqualTo(2);
     }
 
     public void setPredicate(boolean value) {

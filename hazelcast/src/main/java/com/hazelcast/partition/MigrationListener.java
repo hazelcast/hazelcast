@@ -32,7 +32,12 @@ public interface MigrationListener extends EventListener {
     /**
      * Called when the migration process starts.
      * A migration process consists of a group of partition
-     * replica migrations which are planned together.
+     * replica migrations which are planned together. At cluster version
+     * 6.0 or later, backup promotions planned in one partition table
+     * repair round form one process, even when promotion work runs
+     * concurrently on multiple members. The master publishes this process.
+     * At earlier cluster versions,
+     * each destination's promotions form a separate process.
      * <p>
      * When migration process is completed, {@link #migrationFinished(MigrationState)}
      * is called.
@@ -48,6 +53,9 @@ public interface MigrationListener extends EventListener {
      * <p>
      * Not all of the planned migrations have to be completed.
      * Some of them can be skipped because of a newly created migration plan.
+     * A promotion process can also finish with partial progress after a
+     * coordinator-side processing failure; outstanding promotion outcomes
+     * may not have been reported.
      * <p>
      * If migration process coordinator member (generally the oldest member in cluster)
      * crashes before migration process ends, then this method may not be called at all.

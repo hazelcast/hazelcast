@@ -23,7 +23,6 @@ public class NoMixedJUnitAnnotationsInOurTestSourcesTest extends ArchUnitTestSup
 
     @Test
     public void noJUnitMixing() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage);
 
         ArchUnitRules.NO_JUNIT_MIXING.check(classes);

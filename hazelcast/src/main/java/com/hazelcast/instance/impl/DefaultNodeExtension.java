@@ -39,8 +39,10 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.CPSubsystem;
-import com.hazelcast.cp.CPSubsystemStubImpl;
+import com.hazelcast.cp.internal.CPSubsystemImpl;
+import com.hazelcast.cp.internal.datastructures.cpmap.CPMapService;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
+import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
 import com.hazelcast.hotrestart.HotRestartService;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -84,7 +86,6 @@ import com.hazelcast.internal.memory.DefaultMemoryStats;
 import com.hazelcast.internal.memory.MemoryStats;
 import com.hazelcast.internal.namespace.UserCodeNamespaceService;
 import com.hazelcast.internal.namespace.impl.NoOpUserCodeNamespaceService;
-import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
@@ -118,6 +119,7 @@ import com.hazelcast.partition.strategy.DefaultPartitioningStrategy;
 import com.hazelcast.security.impl.InternalSecurityContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngineThreadLocalContext;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
 import com.hazelcast.spi.impl.servicemanager.ServiceManager;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -128,7 +130,6 @@ import com.hazelcast.wan.impl.WanReplicationService;
 import com.hazelcast.wan.impl.WanReplicationServiceImpl;
 
 import javax.annotation.Nullable;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -143,7 +144,6 @@ import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProper
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.PRODUCT;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.START_TIMESTAMP;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.VERSION;
-import static com.hazelcast.cp.CPSubsystemStubImpl.CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS_MEMBERS;
 import static com.hazelcast.internal.util.CollectionUtil.setOf;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InstanceTrackingUtil.writeInstanceTrackingFile;
@@ -198,9 +198,17 @@ public class DefaultNodeExtension implements NodeExtension {
 
     private void checkCPSubsystemAllowed() {
         CPSubsystemConfig cpSubsystemConfig = node.getConfig().getCPSubsystemConfig();
-        if (cpSubsystemConfig != null && cpSubsystemConfig.getCPMemberCount() != 0
-                && !BuildInfoProvider.getBuildInfo().isEnterprise()) {
-            throw new IllegalStateException(CP_SUBSYSTEM_IS_NOT_AVAILABLE_IN_OS_MEMBERS);
+        if (cpSubsystemConfig == null || BuildInfoProvider.getBuildInfo().isEnterprise()) {
+            return;
+        }
+        if (cpSubsystemConfig.isPersistenceEnabled()) {
+            throw new IllegalStateException("CP Persistence requires Hazelcast Enterprise Edition");
+        }
+        if (cpSubsystemConfig.isAutoStepDownWhenLeader()) {
+            throw new IllegalStateException("CP auto-step-down-when-leader requires Hazelcast Enterprise Edition");
+        }
+        if (cpSubsystemConfig.getCPMemberPriority() != 0) {
+            throw new IllegalStateException("CP member priority requires Hazelcast Enterprise Edition");
         }
     }
 
@@ -372,7 +380,7 @@ public class DefaultNodeExtension implements NodeExtension {
      * 3.x or the 4.x format.
      *
      * @param isCompatibility {@code true} if the serialized format should conform to the
-     *                 3.x serialization format, {@code false} otherwise
+     *                        3.x serialization format, {@code false} otherwise
      * @return the serialization service
      */
     private InternalSerializationService createSerializationService(boolean isCompatibility) {
@@ -456,13 +464,22 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public Map<String, Object> createExtensionServices() {
+        Map<String, Object> services = new HashMap<>();
+
         if (jetServiceBackend != null) {
-            Map<String, Object> services = new HashMap<>();
             services.put(JetServiceBackend.SERVICE_NAME, jetServiceBackend);
             services.put(JobEventService.SERVICE_NAME, new JobEventService(node.getNodeEngine()));
-            return services;
         }
-        return Collections.emptyMap();
+
+        if (node.nodeEngine.getConfig().getCPSubsystemConfig().getCPMemberCount() > 0) {
+            services.put(CPMapService.SERVICE_NAME, createCPMapService());
+        }
+
+        return services;
+    }
+
+    protected CPMapService createCPMapService() {
+        return new CPMapService(node.nodeEngine);
     }
 
     @Override
@@ -686,12 +703,15 @@ public class DefaultNodeExtension implements NodeExtension {
 
     @Override
     public CPPersistenceService getCPPersistenceService() {
-        throw new UnsupportedOperationException();
+        return NopCPPersistenceService.INSTANCE;
     }
 
     @Override
     public CPSubsystem createCPSubsystem(NodeEngine nodeEngine) {
-        return new CPSubsystemStubImpl(false);
+        if (nodeEngine.getConfig().getCPSubsystemConfig().getCPMemberCount() > 0) {
+            return new CPSubsystemImpl(nodeEngine);
+        }
+        return null;
     }
 
     public void setLicenseKey(String licenseKey) {

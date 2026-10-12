@@ -68,6 +68,21 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     private static final long METADATA_CHECK_INTERVAL_NANOS = SECONDS.toNanos(5);
     private static final String PARTITION_COUNTS_SNAPSHOT_KEY = "partitionCounts";
 
+    /**
+     * If number of partitions = number of Kafka partitions, then there is 1:1 assignment.
+     * In such cases, because the processor is only talking to one broker, it fires off its single fetch request in
+     * {@code poll()}. In next iterations of Jet's state machine,
+     * {@code poll(Duration.ZERO)} checks the network socket again and the fetch request is still being processed by the broker
+     * (or traveling over the network), the socket has no data, {@code poll(Duration.ZERO)} immediately returns
+     * an empty collection.
+     *
+     * <p>
+     *  This causes huge latency problems, when combined with Hazelcast's idle strategy of parking the threads.
+     *  Setting the timeout to a value higher than 0 bypasses Kafka's special and non-blocking handing of value "0"
+     *  and therefore avoids large latency spikes caused by frequent thread parking.
+     */
+    private static final Duration POLL_TIMEOUT = Duration.ofMillis(2);
+
     Map<TopicPartition, Integer> currentAssignment = new HashMap<>();
 
     private final FunctionEx<Context, Consumer<K, V>> kafkaConsumerFn;
@@ -240,7 +255,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         ConsumerRecords<K, V> records = null;
         assignPartitions();
         if (!currentAssignment.isEmpty()) {
-            records = consumer.poll(Duration.ZERO);
+            records = consumer.poll(POLL_TIMEOUT);
         }
 
         traverser = isEmpty(records)

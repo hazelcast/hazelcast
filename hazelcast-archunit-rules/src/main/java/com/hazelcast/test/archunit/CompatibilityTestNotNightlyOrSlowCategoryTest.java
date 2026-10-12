@@ -22,7 +22,6 @@ public class CompatibilityTestNotNightlyOrSlowCategoryTest extends ArchUnitTestS
 
     @Test
     public void testCategoryRules() {
-        String basePackage = "com.hazelcast";
         JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage);
         ArchUnitRules.COMPATIBILITY_CATEGORY_NOT_NIGHTLY_OR_SLOW.check(classes);
     }

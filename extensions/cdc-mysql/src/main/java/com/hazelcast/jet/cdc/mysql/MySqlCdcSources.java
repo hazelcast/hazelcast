@@ -20,6 +20,7 @@ import com.hazelcast.jet.cdc.DebeziumCdcSources;
 import com.hazelcast.jet.cdc.RecordMappingFunction;
 import com.hazelcast.jet.cdc.DebeziumSnapshotMode;
 import com.hazelcast.jet.cdc.SequenceExtractor;
+import com.hazelcast.jet.cdc.SnapshotCompletionListener;
 import com.hazelcast.jet.cdc.impl.ReadCdcP;
 import com.hazelcast.jet.cdc.impl.ChangeRecordMappingFn;
 import com.hazelcast.jet.cdc.impl.PropertyRules;
@@ -466,6 +467,16 @@ public final class MySqlCdcSources {
             return (Builder<T>) super.setProperty(key, value);
         }
 
+        /**
+         * If called, enables the usage of {@link SnapshotCompletionListener} to track if
+         * initial snapshot has completed.
+         *
+         * @since 6.0
+         */
+        @Nonnull
+        public Builder<T> enableSnapshotTracking() {
+            return (Builder<T>) super.enableSnapshotTracking();
+        }
         // endregion
 
         /**

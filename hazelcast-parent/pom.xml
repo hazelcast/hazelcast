@@ -90,7 +90,7 @@
         <avro.version>1.12.0</avro.version>
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
-        <aws.sdk2.version>2.54.2</aws.sdk2.version>
+        <aws.sdk2.version>2.55.11</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -98,14 +98,14 @@
         Not required with Calcite >=1.37,
          -->
         <janino.version>3.1.10</janino.version>
-        <debezium.version>3.6.1.Final</debezium.version>
+        <debezium.version>3.6.3.Final</debezium.version>
         <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
         <grpc.version>1.80.0</grpc.version>
         <hadoop.version>3.5.0</hadoop.version>
-        <jackson.version>3.2.2</jackson.version>
-        <jackson2.version>2.22.2</jackson2.version>
+        <jackson.version>3.2.3</jackson.version>
+        <jackson2.version>2.22.3</jackson2.version>
         <jackson.annotation.version>2.22</jackson.annotation.version>
-        <jline.version>3.30.16</jline.version>
+        <jline.version>3.30.17</jline.version>
         <json-surfer.version>0.13</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <!--
@@ -116,16 +116,17 @@
         -->
         <kafka.version>4.3.1</kafka.version>
         <confluent.version>8.1.3</confluent.version>
-        <kotlin.version>2.4.10</kotlin.version>
+        <kotlin.version>2.4.21</kotlin.version>
         <!--
             Match parquet and avro version - parquet-avro depends on avro - https://mvnrepository.com/artifact/org.apache.parquet/parquet-avro
             When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.github.luben:zstd-jni` should be upgraded
         -->
-        <parquet.version>1.18.0</parquet.version>
+        <parquet.version>1.18.1</parquet.version>
+        <httpcore5.version>5.4.4</httpcore5.version>
 
         <spring.boot3.version>3.5.16</spring.boot3.version>
         <org.springframework6.version>6.2.19</org.springframework6.version>
-        <tomcat10.version>10.1.59</tomcat10.version>
+        <tomcat10.version>10.1.60</tomcat10.version>
 
         <spring.boot4.version>4.1.1</spring.boot4.version>
         <org.springframework7.version>7.0.7</org.springframework7.version>
@@ -143,8 +144,8 @@
         <mongodb.version>5.6.5</mongodb.version>
 
         <!-- test dependencies -->
-        <artemis.version>2.56.0</artemis.version>
-        <bytebuddy.version>1.18.12</bytebuddy.version>
+        <artemis.version>2.57.0</artemis.version>
+        <bytebuddy.version>1.18.14</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
         <system-stubs.version>2.1.8</system-stubs.version>
@@ -216,10 +217,6 @@
     </properties>
 
     <distributionManagement>
-        <repository>
-            <id>private-repository</id>
-            <url>https://repository.hazelcast.com/release</url>
-        </repository>
         <snapshotRepository>
             <id>private-repository</id>
             <url>https://repository.hazelcast.com/snapshot</url>
@@ -267,7 +264,7 @@
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty-bom</artifactId>
-                <version>4.1.136.Final</version>
+                <version>4.1.138.Final</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -333,11 +330,13 @@
                 <version>${kafka.version}</version>
                 <classifier>test</classifier>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.xerial.snappy:snappy-java` should be upgraded -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-api</artifactId>
                 <version>${hadoop.version}</version>
             </dependency>
+            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `org.xerial.snappy:snappy-java` should be upgraded -->
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
                 <artifactId>hadoop-client-runtime</artifactId>
@@ -368,12 +367,12 @@
             <dependency>
                 <groupId>org.yaml</groupId>
                 <artifactId>snakeyaml</artifactId>
-                <version>2.6</version>
+                <version>2.7</version>
             </dependency>
             <dependency>
                 <groupId>org.snakeyaml</groupId>
                 <artifactId>snakeyaml-engine</artifactId>
-                <version>3.1.1</version>
+                <version>3.2</version>
             </dependency>
             <!--
                 Addresses convergence between:
@@ -393,7 +392,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.20.0</version>
+                <version>3.21.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -426,6 +425,12 @@
                 <artifactId>commons-math3</artifactId>
                 <version>3.6.1</version>
             </dependency>
+            <!-- 
+                Addresses convergence between:
+                - `org.apache.hadoop:hadoop-client-api`
+                - `org.apache.hadoop:hadoop-client-runtime`
+                - `org.apache.parquet:parquet-hadoop`
+            -->
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
@@ -434,7 +439,7 @@
             <dependency>
                 <groupId>com.microsoft.sqlserver</groupId>
                 <artifactId>mssql-jdbc</artifactId>
-                <version>13.4.0.jre11</version>
+                <version>13.6.0.jre11</version>
             </dependency>
             <dependency>
                 <groupId>com.mysql</groupId>
@@ -444,7 +449,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.7.13</version>
+                <version>42.7.14</version>
             </dependency>
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
@@ -478,13 +483,18 @@
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents.core5</groupId>
+                <artifactId>httpcore5</artifactId>
+                <version>${httpcore5.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents.core5</groupId>
                 <artifactId>httpcore5-h2</artifactId>
-                <version>5.4.3</version>
+                <version>${httpcore5.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
-                <version>7.2.2</version>
+                <version>7.3.0</version>
             </dependency>
             <!--
                 Addresses convergence between:
@@ -510,6 +520,7 @@
                 Addresses convergence between:
                 - `org.apache.parquet:parquet-hadoop` (transitively via `org.apache.parquet:parquet-avro`)
                 - `org.apache.kafka:kafka-clients`
+                - `org.xerial.snappy:snappy-java` (transitively via `org.apache.parquet:parquet-avro`)
             -->
             <dependency>
                 <groupId>com.github.luben</groupId>
@@ -519,7 +530,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-bom</artifactId>
-                <version>2.0.18</version>
+                <version>2.0.20</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -591,14 +602,14 @@
             <dependency>
                 <groupId>org.mockito</groupId>
                 <artifactId>mockito-bom</artifactId>
-                <version>5.23.0</version>
+                <version>5.24.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>nl.jqno.equalsverifier</groupId>
                 <artifactId>equalsverifier</artifactId>
-                <version>4.5.1</version>
+                <version>4.5.2</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
@@ -614,7 +625,7 @@
                 <groupId>com.tngtech.archunit</groupId>
                 <artifactId>archunit</artifactId>
                 <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitTestSupport -->
-                <version>1.5.0</version>
+                <version>1.5.1</version>
             </dependency>
             <!--
                 Addresses convergence between:
@@ -639,7 +650,7 @@
             <dependency>
                 <groupId>io.fabric8</groupId>
                 <artifactId>kubernetes-client-bom</artifactId>
-                <version>7.8.0</version>
+                <version>8.0.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -664,7 +675,7 @@
             <dependency>
                 <groupId>org.apache.mina</groupId>
                 <artifactId>mina-core</artifactId>
-                <version>2.0.29</version>
+                <version>2.0.31</version>
                 <scope>test</scope>
             </dependency>
 
@@ -674,7 +685,7 @@
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.87.0</version>
+                <version>26.90.0</version>
                 <type>pom</type>
                 <scope>import</scope>
                 <!-- we specify explicit versions of these packages elsewhere, avoid conflicts -->
@@ -706,12 +717,12 @@
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-resolver-provider</artifactId>
-                <version>3.9.16</version>
+                <version>3.10.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.maven</groupId>
                 <artifactId>maven-artifact</artifactId>
-                <version>3.9.16</version>
+                <version>3.10.0</version>
             </dependency>
             <dependency>
                 <groupId>org.hdrhistogram</groupId>
@@ -732,7 +743,7 @@
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
-                <version>2.4.240</version>
+                <version>2.5.252</version>
             </dependency>
             <dependency>
                 <groupId>org.assertj</groupId>
@@ -758,12 +769,28 @@
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>7.4.6.Final</version>
+                <version>7.4.12.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>
                 <artifactId>json</artifactId>
                 <version>20260814</version>
+            </dependency>
+            <!--
+                Addresses convergence between:
+                - `com.google.cloud.bigdataoss`
+                - `org.apache.pulsar:pulsar-client`
+            -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-context</artifactId>
+                <version>1.65.0</version>
+            </dependency>
+            <!-- `org.apache.pulsar:pulsar-bom` has internal dependency convergence -->
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>1.85.2</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -774,7 +801,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.15.0</version>
+                    <version>3.16.0</version>
                     <configuration>
                         <fork>true</fork>
                         <release>${jdk.version}</release>
@@ -889,7 +916,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.5.6</version>
+                    <version>3.6.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
@@ -1033,7 +1060,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
-                    <version>3.1.4</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-dependency-plugin</artifactId>
@@ -1063,7 +1090,7 @@
                 <plugin>
                     <groupId>org.apache.felix</groupId>
                     <artifactId>maven-bundle-plugin</artifactId>
-                    <version>6.1.0</version>
+                    <version>6.2.0</version>
                 </plugin>
                 <plugin>
                     <artifactId>maven-enforcer-plugin</artifactId>
@@ -1093,7 +1120,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>exec-maven-plugin</artifactId>
-                    <version>3.6.3</version>
+                    <version>3.6.4</version>
                 </plugin>
                 <plugin>
                     <groupId>pl.project13.maven</groupId>
@@ -1119,12 +1146,12 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>build-helper-maven-plugin</artifactId>
-                    <version>3.6.1</version>
+                    <version>3.6.2</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-install-plugin</artifactId>
-                    <version>3.1.4</version>
+                    <version>3.2.0</version>
                 </plugin>
                 <plugin>
                     <groupId>io.fabric8</groupId>
@@ -1134,7 +1161,7 @@
                 <plugin>
                     <groupId>com.github.siom79.japicmp</groupId>
                     <artifactId>japicmp-maven-plugin</artifactId>
-                    <version>0.26.1</version>
+                    <version>0.26.2</version>
                     <configuration>
                         <!-- Skip property -->
                         <skip>${skip.public.api.check}</skip>
@@ -1295,7 +1322,7 @@
                     <dependency>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>extra-enforcer-rules</artifactId>
-                        <version>1.12.0</version>
+                        <version>1.12.1</version>
                     </dependency>
                 </dependencies>
             </plugin>
@@ -1372,6 +1399,19 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.cyclonedx</groupId>
+                <artifactId>cyclonedx-maven-plugin</artifactId>
+                <version>2.9.3</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>makeBom</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
@@ -1415,6 +1455,8 @@
                 <maven.compiler.useIncrementalCompilation>false</maven.compiler.useIncrementalCompilation>
                 <!-- Skip running maven-dependency-plugin analysis -->
                 <dependency.analyze.phase>none</dependency.analyze.phase>
+                <!-- https://cyclonedx.github.io/cyclonedx-maven-plugin/makeBom-mojo.html#skip -->
+                <cyclonedx.skip>true</cyclonedx.skip>
             </properties>
         </profile>
 
@@ -1483,6 +1525,8 @@
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
                 <attribution.skip>false</attribution.skip>
+                <!-- For _accurate_ SBOM generation, OS+EE must be built in a single reactor - this is not yet the case for release, so until then, don't execute -->
+                <cyclonedx.skip>true</cyclonedx.skip>
             </properties>
             <build>
                 <plugins>
@@ -1520,53 +1564,6 @@
                     </plugin>
                 </plugins>
             </build>
-        </profile>
-
-        <profile>
-            <!-- USE WITH CAUTION! Switches deployment from JFrog Artifactory to Maven Central for releases -->
-            <id>enable-maven-central</id>
-            <properties>
-                <maven.central.autoReleaseAfterClose>false</maven.central.autoReleaseAfterClose>
-                <deploy.name>Hazelcast ${project.version}</deploy.name>
-            </properties>
-            <build>
-                <pluginManagement>
-                    <plugins>
-                        <plugin>
-                            <groupId>org.sonatype.central</groupId>
-                            <artifactId>central-publishing-maven-plugin</artifactId>
-                            <version>0.11.0</version>
-                            <extensions>true</extensions>
-                            <configuration>
-                                <!-- server id comes from settings.xml -->
-                                <publishingServerId>release-repository</publishingServerId>
-                                <!--
-                                wait until the artifacts are actually published automatically using 'autoPublish'.
-                                the default is `validated` which would then require manual publishing
-                                -->
-                                <waitUntil>published</waitUntil>
-                                <autoPublish>${maven.central.autoReleaseAfterClose}</autoPublish>
-                                <checksums>required</checksums>
-                                <deploymentName>Deployment ${deploy.name}</deploymentName>
-                            </configuration>
-                        </plugin>
-                    </plugins>
-                </pluginManagement>
-                <plugins>
-                    <plugin>
-                        <groupId>org.sonatype.central</groupId>
-                        <artifactId>central-publishing-maven-plugin</artifactId>
-                        <inherited>false</inherited>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-        <profile>
-            <!-- USE WITH CAUTION! Activates automatic release to Maven Central upon closing the staging repository -->
-            <id>auto-release-maven-central</id>
-            <properties>
-                <maven.central.autoReleaseAfterClose>true</maven.central.autoReleaseAfterClose>
-            </properties>
         </profile>
 
         <!--
@@ -1662,6 +1659,27 @@
                 <fat.dependency.classifier/>
                 <shade.jar-with-dependencies.phase>none</shade.jar-with-dependencies.phase>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-assembly-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>distro-assembly-hazelcast</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>distro-assembly-hazelcast-slim</id>
+                                <configuration>
+                                    <skipAssembly>false</skipAssembly>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 

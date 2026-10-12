@@ -82,6 +82,15 @@ public class BounceTestConfiguration {
         return clusterSize;
     }
 
+    /**
+     * @return actual cluster size, including both requested members ({@link #getClusterSize()}
+     *         and test drivers is applicable
+     */
+    public int getEffectiveClusterSize() {
+        return clusterSize
+                + (getDriverType() == DriverType.MEMBER || getDriverType() == DriverType.LITE_MEMBER ? getDriverCount() : 0);
+    }
+
     public DriverType getDriverType() {
         return driverConfig.type();
     }

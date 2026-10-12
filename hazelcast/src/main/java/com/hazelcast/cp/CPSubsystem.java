@@ -612,7 +612,7 @@ public interface CPSubsystem {
     boolean removeGroupAvailabilityListener(UUID id);
 
     /**
-     * Returns a proxy for a {@link CPMap}. <b>Enterprise Only</b>.
+     * Returns a proxy for a {@link CPMap}.
      * <p>
      *     If no group name is given within the {@code name} parameter, then the
      *     {@link CPMap} instance will be created on the DEFAULT CP group. If a

@@ -1086,8 +1086,6 @@
                 <hz:persistence-enabled>false</hz:persistence-enabled>
                 <hz:base-dir>/custom-dir</hz:base-dir>
                 <hz:data-load-timeout-seconds>30</hz:data-load-timeout-seconds>
-                <hz:cp-member-priority>-1</hz:cp-member-priority>
-                <hz:auto-step-down-when-leader>true</hz:auto-step-down-when-leader>
                 <hz:raft-algorithm>
                     <hz:leader-election-timeout-in-millis>500</hz:leader-election-timeout-in-millis>
                     <hz:leader-heartbeat-period-in-millis>100</hz:leader-heartbeat-period-in-millis>
@@ -1123,16 +1121,13 @@
                     <hz:map>
                         <hz:name>map1</hz:name>
                         <hz:max-size-mb>50</hz:max-size-mb>
-                        <hz:purge-enabled>true</hz:purge-enabled>
                     </hz:map>
                     <hz:map>
                         <hz:name>map2</hz:name>
                         <hz:max-size-mb>75</hz:max-size-mb>
-                        <hz:purge-enabled>false</hz:purge-enabled>
                     </hz:map>
                     <hz:map>
                         <hz:name>map3</hz:name>
-                        <hz:purge-enabled>true</hz:purge-enabled>
                     </hz:map>
                 </hz:maps>
             </hz:cp-subsystem>

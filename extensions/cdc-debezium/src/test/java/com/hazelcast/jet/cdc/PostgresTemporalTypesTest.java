@@ -107,8 +107,7 @@ public class PostgresTemporalTypesTest extends AbstractCdcDataTypesTest<PostgreS
                 .setProperty("tombstones.on.delete", false)
                 .setProperty("plugin.name", "pgoutput")
 
-                .setProperty("notification.enabled.channels", "TestNotificationChannel")
-                .setProperty("notification.TestNotificationChannel.uuid", uuidForNotifications)
+                .enableSnapshotTracking()
                 .changeRecord();
     }
 }

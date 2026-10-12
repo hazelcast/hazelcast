@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.impl.JavaIPvXProperties;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.OutOfMemoryErrorDispatcher;
 import com.hazelcast.internal.cluster.AddressChecker;
@@ -28,6 +29,7 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.server.tcp.TcpServerContext;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.internal.util.ByteArrayProcessor;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -37,6 +39,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import java.io.EOFException;
 import java.io.IOException;
 import java.net.DatagramPacket;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
@@ -129,6 +132,7 @@ public final class MulticastService implements Runnable {
     // Read the following for some context on multicast socket configuration
     // - https://github.com/hazelcast/hazelcast/wiki/Multicast-behavior-on-different-platforms
     // - https://github.com/hazelcast/hazelcast/pull/19251
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     static void configureMulticastSocket(MulticastSocket multicastSocket, NetworkInterface memberBindInterface,
                                          HazelcastProperties hzProperties, MulticastConfig multicastConfig, ILogger logger)
             throws IOException {
@@ -138,6 +142,8 @@ public final class MulticastService implements Runnable {
         multicastSocket.bind(new InetSocketAddress(multicastConfig.getMulticastPort()));
         multicastSocket.setTimeToLive(multicastConfig.getMulticastTimeToLive());
         try {
+            // NetworkInterface.getByInetAddress() returns null if the bind address is not on a local interface
+            boolean loopbackBind = memberBindInterface != null && memberBindInterface.isLoopback();
             Boolean loopbackModeEnabled = multicastConfig.getLoopbackModeEnabled();
             if (loopbackModeEnabled != null) {
                 // setting loopbackmode is just a hint - and the argument means "disable"!
@@ -150,7 +156,7 @@ public final class MulticastService implements Runnable {
             // to talk regardless of whether they are using the loopback interface or not. If we are using the
             // loopback interface then that implies that we have multiple processes on the same host and therefore
             // we should not disable the loopback mode because of the above.
-            if (memberBindInterface.isLoopback() && !multicastSocket.getOption(IP_MULTICAST_LOOP)) {
+            if (loopbackBind && !multicastSocket.getOption(IP_MULTICAST_LOOP)) {
                 logger.warning("Hazelcast is bound to " + memberBindInterface.getDisplayName() + " and loop-back mode is "
                         + "disabled. This could cause multicast auto-discovery issues "
                         + "and render it unable to work. Check your network connectivity, try to enable the "
@@ -158,16 +164,18 @@ public final class MulticastService implements Runnable {
             }
 
             String propSetInterface = hzProperties.getString(ClusterProperty.MULTICAST_SOCKET_SET_INTERFACE);
-            boolean callSetInterface = true;
+            boolean callSetInterface = OS.isMac() || !loopbackBind;
             if (propSetInterface != null) {
                 callSetInterface = Boolean.parseBoolean(propSetInterface);
             }
-            if (callSetInterface) {
+
+            // On non-Mac platforms we don't pin the interface for loopback binds, to stay compatible with
+            // members of older versions, which let the OS choose. Can be overridden with MULTICAST_SOCKET_SET_INTERFACE.
+            if (callSetInterface && memberBindInterface != null) {
                 // Set the network interface used for outbound packets to our bind interface. This call
                 // ultimately sets the socket option StandardSocketOptions.IP_MULTICAST_IF (see
                 // DatagramSocketAdaptor#setNetworkInterface). If we don't set the outbound interface then
-                // we delegate the responsibility for choosing it to the host OS, depending on the multicast
-                // group used and the routing table the host may not be able to choose and discovery will fail.
+                // we delegate the responsibility for choosing it to the host OS.
                 multicastSocket.setNetworkInterface(memberBindInterface);
             }
         } catch (SocketException e) {
@@ -181,10 +189,18 @@ public final class MulticastService implements Runnable {
         }
         multicastConfig.setMulticastGroup(multicastGroup);
 
+        InetAddress groupAddress = InetAddress.getByName(multicastGroup);
+        if (OS.isMac() && !JavaIPvXProperties.INSTANCE.preferIPv4Stack() && groupAddress instanceof Inet4Address) {
+            logger.warning("Multicast discovery on macOS with the IPv6 network stack does not work with an IPv4 "
+                    + "multicast group (" + multicastGroup + ") on most network interfaces. Start the JVM with "
+                    + "-Djava.net.preferIPv4Stack=true, or set the multicast group to "
+                    + MulticastConfig.DEFAULT_MULTICAST_GROUP_IPV6 + " on all members.");
+        }
+
         // Since we don't specify an interface here then one is determined for us, see e.g. DatagramSocketAdapter#joinGroup.
         // If an outbound interface was set above (default case) that is chosen, otherwise it is the platform specific
         // default interface.
-        multicastSocket.joinGroup(new InetSocketAddress(InetAddress.getByName(multicastGroup), 0), null);
+        multicastSocket.joinGroup(new InetSocketAddress(groupAddress, 0), null);
 
         multicastSocket.setSoTimeout(SOCKET_TIMEOUT);
     }

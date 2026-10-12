@@ -78,8 +78,8 @@ public class DataProducer {
                             .prepareStatement(sqlProducer.apply(id))
                             .executeUpdate();
                     assert updated == 1;
-                    producedItems.incrementAndGet();
                     connection.commit();
+                    producedItems.incrementAndGet();
                 } catch (Throwable t) {
                     connection.rollback();
                     error = t;

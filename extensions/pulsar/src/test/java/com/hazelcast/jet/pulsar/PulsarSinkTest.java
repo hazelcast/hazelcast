@@ -36,6 +36,7 @@ import eu.rekawek.toxiproxy.Proxy;
 import eu.rekawek.toxiproxy.ToxiproxyClient;
 import eu.rekawek.toxiproxy.model.toxic.Bandwidth;
 import org.apache.pulsar.client.api.PulsarClient;
+
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.junit.jupiter.api.AfterAll;
@@ -67,12 +68,14 @@ import static eu.rekawek.toxiproxy.model.ToxicDirection.UPSTREAM;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertTrue;
 import static org.testcontainers.containers.PulsarContainer.BROKER_PORT;
 
+
 public class PulsarSinkTest extends PulsarTestSupport {
     private static final Logger LOG = LoggerFactory.getLogger(PulsarSinkTest.class);
-    private static final int ITEM_COUNT = 100;
+    private static final int ITEM_COUNT = 1_000;
     static TestHazelcastFactory instanceFactory = new TestHazelcastFactory();
     static HazelcastInstance[] instances;
 
@@ -151,15 +154,14 @@ public class PulsarSinkTest extends PulsarTestSupport {
         pipeline.readFrom(Sources.mapJournal(inputMap, JournalInitialPosition.START_FROM_OLDEST))
                 .withIngestionTimestamps()
                 .map(Map.Entry::getValue)
-                .writeTo(PulsarSinks.builder(topicName,
-                                    () -> PulsarClient.builder()
+                .writeTo(PulsarSinks.builder(() -> Schema.DOUBLE, Integer::doubleValue)
+                             .topic(topicName)
+                             .connectionSupplier(() -> PulsarClient.builder()
                                                       .serviceUrl(toxicUrl)
                                                       .connectionTimeout(1, SECONDS)
                                                       .operationTimeout(1, SECONDS)
-                                                      .build(),
-                                    () -> Schema.DOUBLE,
-                                    Integer::doubleValue)
-                             .producerConfig(Map.of("sendTimeoutMs", 5000))
+                                                      .build())
+                             .producerConfig(Map.of("sendTimeoutMs", 2500))
                              .build());
 
         JobConfig config = new JobConfig();
@@ -211,6 +213,17 @@ public class PulsarSinkTest extends PulsarTestSupport {
                 assertTrueEventually(() -> assertThat(resultList).hasSize(size), 60);
             }
         }
+    }
+
+    @Test
+    void validations() {
+        assertThatThrownBy(() -> PulsarSinks.builder(() -> Schema.DOUBLE).build())
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("topic must not be null")
+            .hasMessageContaining("Either connectionSupplier or dataConnectionRef must be provided");
+        assertThatThrownBy(() -> PulsarSinks.builder(() -> Schema.DOUBLE).connectionSupplier(notSerializableConnectionSupplier()).build())
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("\"connectionSupplier\" must be serializable");
     }
 
     private static class MessageProducer {
