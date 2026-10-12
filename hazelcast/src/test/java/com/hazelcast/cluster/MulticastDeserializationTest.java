@@ -133,7 +133,7 @@ public class MulticastDeserializationTest {
                 .setMulticastPort(MULTICAST_PORT)
                 .setMulticastGroup(MULTICAST_GROUP)
                 .setMulticastTimeToLive(MULTICAST_TTL)
-                ;
+        ;
         return config;
     }
 
@@ -141,10 +141,15 @@ public class MulticastDeserializationTest {
         byte[] data = TestJavaSerializationUtils.serialize(object);
         try (MulticastSocket multicastSocket = new MulticastSocket(MULTICAST_PORT)) {
             multicastSocket.setTimeToLive(MULTICAST_TTL);
-            NetworkInterface localhost = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1"));
-            multicastSocket.setNetworkInterface(localhost);
+            // Mirror MulticastService: the member pins its outbound interface only on Mac when bound to loopback,
+            // on other platforms the OS picks the interface. The sender must use the same interface as the member.
+            NetworkInterface sendInterface = null;
+            if (OS.isMac()) {
+                sendInterface = NetworkInterface.getByInetAddress(InetAddress.getByName("127.0.0.1"));
+                multicastSocket.setNetworkInterface(sendInterface);
+            }
             SocketAddress groupAddress = new InetSocketAddress(InetAddress.getByName(MULTICAST_GROUP), MULTICAST_PORT);
-            multicastSocket.joinGroup(groupAddress, localhost);
+            multicastSocket.joinGroup(groupAddress, sendInterface);
 
             int msgSize = data.length;
 
@@ -156,7 +161,7 @@ public class MulticastDeserializationTest {
             byte[] packetData = bbuf.array();
             DatagramPacket packet = new DatagramPacket(packetData, packetData.length, groupAddress);
             multicastSocket.send(packet);
-            multicastSocket.leaveGroup(groupAddress, localhost);
+            multicastSocket.leaveGroup(groupAddress, sendInterface);
         }
     }
 }

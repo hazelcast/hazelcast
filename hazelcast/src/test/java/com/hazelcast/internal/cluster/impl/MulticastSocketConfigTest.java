@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.MulticastConfig;
+import com.hazelcast.internal.tpcengine.util.OS;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -126,7 +127,11 @@ public class MulticastSocketConfigTest {
         HazelcastProperties hzProperties = new HazelcastProperties(config);
         MulticastService.configureMulticastSocket(multicastSocket, loopback, hzProperties, multicastConfig, mock(ILogger.class));
         verify(multicastSocket).setOption(IP_MULTICAST_LOOP, true);
-        verify(multicastSocket).setNetworkInterface(loopback);
+        if (OS.isMac()) {
+            verify(multicastSocket).setNetworkInterface(loopback);
+        } else {
+            verify(multicastSocket, never()).setNetworkInterface(any());
+        }
     }
 
     @Test
@@ -218,7 +223,7 @@ public class MulticastSocketConfigTest {
         joinConfig.getTcpIpConfig().setEnabled(false);
         MulticastConfig multicastConfig = joinConfig.getMulticastConfig();
         multicastConfig.setEnabled(true).setMulticastGroup("239.1.2.3").setMulticastPort(8686).setMulticastTimeoutSeconds(3)
-                       .setMulticastTimeToLive(0).addTrustedInterface("192.168.1.1");
+                .setMulticastTimeToLive(0).addTrustedInterface("192.168.1.1");
         return config;
     }
 }

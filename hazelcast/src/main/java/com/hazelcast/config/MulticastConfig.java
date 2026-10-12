@@ -16,9 +16,6 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.instance.impl.JavaIPvXProperties;
-import com.hazelcast.internal.tpcengine.util.OS;
-
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -46,7 +43,11 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
      */
     public static final String DEFAULT_MULTICAST_GROUP = "224.2.2.3";
     /**
-     * Default IPv6 group of multicast. It is transient with link-local scope.
+     * IPv6 multicast group (transient, link-local scope). It is not used by default.
+     * It can be set explicitly with {@link #setMulticastGroup(String)}, for example on macOS
+     * when the JVM uses the IPv6 stack. All members of the cluster must use the same group.
+     *
+     * @since 6.0
      */
     public static final String DEFAULT_MULTICAST_GROUP_IPV6 = "ff12::1";
     /**
@@ -66,7 +67,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
 
     private boolean enabled = DEFAULT_ENABLED;
 
-    private String multicastGroup = getDefaultMulticastGroup();
+    private String multicastGroup = DEFAULT_MULTICAST_GROUP;
 
     private int multicastPort = DEFAULT_MULTICAST_PORT;
 
@@ -337,14 +338,5 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
                 + ", trustedInterfaces=" + trustedInterfaces
                 + ", loopbackModeEnabled=" + loopbackModeEnabled
                 + "]";
-    }
-
-    private static String getDefaultMulticastGroup() {
-        boolean preferIPv4 = JavaIPvXProperties.INSTANCE.preferIPv4Stack();
-        // If we are mac with native IPv6 sockets then we need to use an IPv6
-        // group address to maximise compatibility with different network interfaces.
-        // The BSD dual-stack is quite strict and won't accept an IPv4 group on
-        // the loopback interface for example.
-        return OS.isMac() && !preferIPv4 ? DEFAULT_MULTICAST_GROUP_IPV6 : DEFAULT_MULTICAST_GROUP;
     }
 }
