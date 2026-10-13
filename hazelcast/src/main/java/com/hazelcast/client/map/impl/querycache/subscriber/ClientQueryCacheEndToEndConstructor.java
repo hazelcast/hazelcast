@@ -59,10 +59,8 @@ public class ClientQueryCacheEndToEndConstructor extends AbstractQueryCacheEndTo
             prepopulate(queryCache, result);
         }
 
-
         if (info.isPopulate()) {
             madePublishable(info.getMapName(), info.getCacheId(), urgent);
-            info.setPublishable(true);
         }
     }
 

@@ -16,7 +16,9 @@
 
 package com.hazelcast.client.map.impl.querycache;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.QueryCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.QueryCache;
@@ -103,5 +105,28 @@ public class ClientQueryCacheEventHandlingTest extends HazelcastTestSupport {
 
         assertTrue(queryCache.removeEntryListener(addEntryListener));
         assertFalse(queryCache.removeEntryListener(addEntryListener));
+    }
+
+    @Test
+    public void testEventsArePublishedImmediately_whenInitialPopulationDisabled() {
+        factory.newHazelcastInstance();
+
+        String mapName = randomMapName();
+        String cacheName = randomName();
+
+        ClientConfig clientConfig = new ClientConfig();
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName)
+                .setPopulate(false)
+                .setDelaySeconds(0);
+        queryCacheConfig.getPredicateConfig().setImplementation(TRUE_PREDICATE);
+        clientConfig.addQueryCacheConfig(mapName, queryCacheConfig);
+
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        IMap<Integer, Integer> map = getMap(client, mapName);
+        QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName);
+
+        map.put(1, 1);
+
+        assertTrueEventually(() -> assertEquals(1, queryCache.size()), 1);
     }
 }

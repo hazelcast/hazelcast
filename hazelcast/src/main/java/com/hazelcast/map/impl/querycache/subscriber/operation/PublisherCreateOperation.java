@@ -80,9 +80,7 @@ public class PublisherCreateOperation extends AbstractNamedOperation {
     @Override
     public void run() {
         boolean populate = info.isPopulate();
-        if (populate) {
-            info.setPublishable(false);
-        }
+        info.setPublishable(!populate);
         init();
         if (populate) {
             this.queryResult = createSnapshot();
