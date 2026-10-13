@@ -813,6 +813,11 @@ public class RaftNodeImpl implements RaftNode {
             // Happy Path: The follower is requesting
             // a chunk of the current snapshot.
             List<SnapshotChunk> snapshotChunks = extractChunksFrom(snapshotEntry);
+            if (requestedChunkNumber < 0 || requestedChunkNumber >= snapshotChunks.size()) {
+                logger.warning(format("Received invalid chunk number %d (total chunks: %d) from %s for snapshot index %d",
+                        requestedChunkNumber, snapshotChunks.size(), follower, currentSnapshotIndex));
+                return;
+            }
             chunkToSend = snapshotChunks.get(requestedChunkNumber);
             logger.fine("Sending snapshot chunk %d (0-based) of %d to follower %s for index %d.",
                     requestedChunkNumber, chunkToSend.chunkCount(), follower, currentSnapshotIndex);
@@ -1144,15 +1149,21 @@ public class RaftNodeImpl implements RaftNode {
 
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
     private void takeSnapshotIfCommitIndexAdvanced() {
-        final long commitIndex = state.commitIndex();
-        if ((commitIndex - state.log().snapshotIndex()) < commitIndexAdvanceCountToSnapshot) {
-            return;
-        }
-
         if (isTerminatedOrSteppedDown()) {
             // If the status is TERMINATING, it means the status is normally ACTIVE
             // and there is an appended but not committed RaftGroupCmd.
             // If the status is TERMINATED or STEPPED_DOWN, then there will not be any new appends.
+            return;
+        }
+
+        final long commitIndex = state.commitIndex();
+
+        // Regular appends may have made an incomplete received snapshot stale.
+        // Clean it up even when a new local snapshot is not yet due.
+        chunkedSnapshotInstaller.cleanupStaleTransferIfNeeded();
+
+        if ((commitIndex - state.log().snapshotIndex())
+                < commitIndexAdvanceCountToSnapshot) {
             return;
         }
 

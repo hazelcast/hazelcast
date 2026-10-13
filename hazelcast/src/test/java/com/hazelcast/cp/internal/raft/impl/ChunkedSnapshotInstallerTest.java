@@ -243,4 +243,19 @@ public class ChunkedSnapshotInstallerTest {
         assertEquals(13L, response.snapshotIndex());
         assertEquals(0, response.requestedChunkNumber());
     }
+
+    @Test
+    public void cleans_up_partial_transfer_when_commit_advances_past_it() throws IOException {
+        long transferIndex = 240L;
+        installer.processChunk(newRequest(newSnapshotChunk(transferIndex, 2, 0, 1)));
+        assertEquals(1, installer.getReceivedChunks().size());
+
+        // Simulate AppendEntries advancing the follower's commit index.
+        when(raftState.commitIndex()).thenReturn(241L);
+
+        installer.cleanupStaleTransferIfNeeded();
+
+        verify(stateStore).deleteSnapshotChunks(transferIndex);
+        assertEquals(0, installer.getReceivedChunks().size());
+    }
 }

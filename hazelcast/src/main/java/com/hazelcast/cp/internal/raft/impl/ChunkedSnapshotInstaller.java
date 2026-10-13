@@ -24,7 +24,6 @@ import com.hazelcast.cp.internal.raft.impl.log.SnapshotChunk;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
-import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.IterableUtil;
 import com.hazelcast.logging.ILogger;
 
@@ -94,6 +93,7 @@ public class ChunkedSnapshotInstaller {
         } catch (Throwable t) {
             logger.severe(format("Failed to install snapshot [index=%d, term=%d]: %s",
                     transferState.snapshotIndex(), transferState.snapshotTerm(), t.getMessage()));
+            deleteStaleChunkFile();
             throw t;
         } finally {
             reset();
@@ -102,6 +102,8 @@ public class ChunkedSnapshotInstaller {
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     private ChunkProcessingDecision validateAndStoreChunk(InstallSnapshotRequest request) {
+        cleanupStaleTransferIfNeeded();
+
         SnapshotChunk chunk = request.snapshotChunk();
 
         if (isStaleChunk(chunk)) {
@@ -223,7 +225,7 @@ public class ChunkedSnapshotInstaller {
     }
 
     private void startNewSnapshotTransfer(InstallSnapshotRequest request) {
-        cleanupPreviousSnapshot();
+        deleteStaleChunkFile();
         transferState = SnapshotTransferState.from(request);
     }
 
@@ -233,11 +235,11 @@ public class ChunkedSnapshotInstaller {
         try {
             stateStore.persistSnapshotChunk(chunk);
             transferState.trackReceivedChunk(chunk);
-        } catch (IOException e) {
+        } catch (Throwable t) {
             transferState.markChunkMissing(chunk.chunkNumber());
             logger.severe(format("Failed to persist snapshot chunk [index=%d, term=%d, chunk=%d(0-based)]: %s",
-                    chunk.index(), chunk.term(), chunk.chunkNumber(), e.getMessage()), e);
-            throw new HazelcastException(e);
+                    chunk.index(), chunk.term(), chunk.chunkNumber(), t.getMessage()), t);
+            throw new HazelcastException(t);
         }
     }
 
@@ -265,15 +267,22 @@ public class ChunkedSnapshotInstaller {
         transferState = SnapshotTransferState.empty();
     }
 
-    private void cleanupPreviousSnapshot() {
-        if (!CollectionUtil.isEmpty(transferState.receivedChunks())) {
-            try {
-                stateStore.deleteSnapshotChunks(transferState.snapshotIndex());
-            } catch (IOException e) {
-                logger.warning(String.format("Failed to delete previous snapshot chunks for index %d: %s",
-                        transferState.snapshotIndex(), e.getMessage()), e);
-                throw new HazelcastException(e);
-            }
+    /**
+     * Deletes the chunk file the state store holds for the tracked transfer, if any.
+     */
+    private void deleteStaleChunkFile() {
+        long snapshotIndex = transferState.snapshotIndex();
+        if (snapshotIndex < 0) {
+            return;
+        }
+
+        try {
+            stateStore.deleteSnapshotChunks(snapshotIndex);
+        } catch (IOException e) {
+            logger.warning(String.format(
+                    "Failed to delete the stale chunk file for snapshot index %d: %s",
+                    snapshotIndex, e.getMessage()), e);
+            throw new HazelcastException(e);
         }
     }
 
@@ -305,6 +314,27 @@ public class ChunkedSnapshotInstaller {
     }
 
     /**
+     * Cleans up an incomplete snapshot transfer when the local commit index has reached or passed the transfer's
+     * snapshot index. The transfer is stale at that point, and keeping its partial chunk file could block
+     * persistence of a local snapshot.
+     *
+     * <p>An empty transfer or one ahead of the commit index is left unchanged.
+     */
+    void cleanupStaleTransferIfNeeded() {
+        long transferSnapshotIndex = transferState.snapshotIndex();
+        long commitIndex = raftNode.state().commitIndex();
+
+        if (transferSnapshotIndex >= 0 && transferSnapshotIndex <= commitIndex) {
+            deleteStaleChunkFile();
+            reset();
+
+            logger.fine("Cleaned up stale snapshot transfer [index=%d] "
+                            + "because commit index is %d",
+                    transferSnapshotIndex, commitIndex);
+        }
+    }
+
+    /**
      * Decision on whether to proceed with or abort chunk processing.
      */
     private enum ChunkProcessingDecision {
@@ -322,5 +352,4 @@ public class ChunkedSnapshotInstaller {
     List<SnapshotChunk> getReceivedChunks() {
         return transferState.receivedChunks();
     }
-
 }
