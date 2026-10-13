@@ -40,7 +40,7 @@ public class SnapshotChunk extends LogEntry {
     /**
      * The position of this chunk in the sequence of chunks.
      * <p>
-     * Chunk numbering starts from 1.
+     * Chunk numbering starts from 0.
      */
     private int chunkNumber;
 
@@ -77,7 +77,7 @@ public class SnapshotChunk extends LogEntry {
     /**
      * Returns the position of this chunk in the sequence of chunks.
      *
-     * @return the chunk number, starting from 1
+     * @return the chunk number, starting from 0
      */
     public int chunkNumber() {
         return chunkNumber;
