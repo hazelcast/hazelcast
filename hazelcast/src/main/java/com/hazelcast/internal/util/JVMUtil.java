@@ -137,8 +137,11 @@ public final class JVMUtil {
     /**
      * Estimates the reference by comparing the address offset of two fields.
      * <p>
-     * We can't rely on Unsafe to get a real reference size when oops compression is enabled.
-     * Hence, we have to do a simple experiment: Let's have a class with 2 references.
+     * When running with CompressedOops on a 64-bit platform,
+     * the address size reported by Unsafe is going to be 8,
+     * while in reality it is equal to 4 bytes. As such,
+     * we can't rely on Unsafe to get a real reference size when CompressedOops is enabled.
+     * To get around this, we have to do a simple experiment: have a class with 2 references.
      * The difference between address offsets is the reference size in bytes.
      * <p>
      * It is not bullet-proof, it assumes a certain object layout, but this happens
