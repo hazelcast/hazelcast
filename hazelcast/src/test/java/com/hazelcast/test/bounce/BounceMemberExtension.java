@@ -26,7 +26,10 @@ import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
+import org.junit.jupiter.api.parallel.ExecutionMode;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Supplier;
 
@@ -49,8 +52,10 @@ import java.util.function.Supplier;
 public class BounceMemberExtension implements BeforeEachCallback, BeforeTestExecutionCallback,
         AfterTestExecutionCallback, AfterEachCallback {
 
-    public static final long STALENESS_DETECTOR_DISABLED = BounceMemberRule.STALENESS_DETECTOR_DISABLED;
+    private static final Namespace NAMESPACE = Namespace.create(BounceMemberExtension.class);
+    private static final String OWNER = "OWNER";
 
+    private final AtomicBoolean inUse = new AtomicBoolean();
     private BounceMemberRule delegate;
 
     private BounceMemberExtension(BounceMemberRule delegate) {
@@ -67,6 +72,15 @@ public class BounceMemberExtension implements BeforeEachCallback, BeforeTestExec
 
     @Override
     public void beforeEach(@NonNull ExtensionContext context) {
+        if (context.getExecutionMode() == ExecutionMode.CONCURRENT) {
+            throw new IllegalArgumentException("BounceMemberExtension cannot be used in ParallelTest. Please use "
+                                                   + "@SerialTest annotation instead.");
+        }
+        if (!inUse.compareAndSet(false, true)) {
+            throw new IllegalStateException("BounceMemberExtension is already used by a running test; "
+                                                + "register it as a non-static field and don't share it between concurrent tests");
+        }
+        context.getStore(NAMESPACE).put(OWNER, Boolean.TRUE);
         delegate = new BounceMemberRule(delegate.getBounceTestConfig());
         delegate.setup();
     }
@@ -83,10 +97,17 @@ public class BounceMemberExtension implements BeforeEachCallback, BeforeTestExec
 
     @Override
     public void afterEach(@NonNull ExtensionContext context) {
+        if (context.getStore(NAMESPACE).remove(OWNER) == null) {
+            return; // this test never owned the cluster
+        }
         try {
             delegate.stopBouncing();
         } finally {
-            delegate.tearDown();
+            try {
+                delegate.tearDown();
+            } finally {
+                inUse.set(false);
+            }
         }
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.test.bounce;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.ParallelTest;
 import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.jupiter.api.AfterAll;
@@ -39,6 +40,13 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.platform.engine.discovery.DiscoverySelectors.selectClass;
+import static org.junit.platform.testkit.engine.EventConditions.event;
+import static org.junit.platform.testkit.engine.EventConditions.finishedSuccessfully;
+import static org.junit.platform.testkit.engine.EventConditions.finishedWithFailure;
+import static org.junit.platform.testkit.engine.EventConditions.started;
+import static org.junit.platform.testkit.engine.EventConditions.test;
+import static org.junit.platform.testkit.engine.TestExecutionResultConditions.instanceOf;
+import static org.junit.platform.testkit.engine.TestExecutionResultConditions.message;
 
 @SerialTest
 @QuickTest
@@ -51,8 +59,12 @@ class BounceMemberExtensionTest {
         var results = EngineTestKit.engine("junit-jupiter")
                 .selectors(selectClass(LifecycleTest.class))
                 .execute();
-        results.testEvents().assertStatistics(stats -> stats.started(3).succeeded(1).failed(2));
-        results.containerEvents().assertStatistics(stats -> stats.failed(0));
+        results.testEvents().assertThatEvents()
+               .haveExactly(1, event(test("tasksAndBouncing"), finishedSuccessfully()))
+               .haveExactly(1, event(test("taskFailure"),
+                                     finishedWithFailure(instanceOf(IllegalStateException.class), message("task failure"))))
+               .haveExactly(1, event(test("setupFailure"),
+                                     finishedWithFailure(message("setup failure"))));
         assertEquals(3, LifecycleTest.tearDownCount);
     }
 
@@ -60,13 +72,30 @@ class BounceMemberExtensionTest {
     @SetSystemProperty(key = "hazelcast.test.enableBMRTest", value = "true")
     void cleansUpAfterDriverCreationFails() {
         EngineTestKit.engine("junit-jupiter")
-                .selectors(selectClass(FailingSetupTest.class))
-                .execute()
-                .testEvents()
-                .assertStatistics(stats -> stats.started(1).failed(1));
+                     .selectors(selectClass(FailingSetupTest.class))
+                     .execute()
+                     .testEvents()
+                     .assertThatEvents()
+                     .haveExactly(1, event(test("test"), started()))
+                     .haveExactly(1, event(test("test"),
+                                           finishedWithFailure(message("driver creation failure"))));
         for (HazelcastInstance member : FailingSetupTest.members) {
             assertFalse(member.getLifecycleService().isRunning());
         }
+    }
+
+    @Test
+    @SetSystemProperty(key = "hazelcast.test.enableBMRTest", value = "true")
+    void doesNotExecuteInParallel() {
+        EngineTestKit.engine("junit-jupiter")
+                     .selectors(selectClass(ParallelExecutionTest.class))
+                     .execute()
+                     .testEvents()
+                     .assertThatEvents()
+                     .haveExactly(1, event(test("test"), started()))
+                     .haveExactly(1, event(test("test"), finishedWithFailure(message(
+                         "BounceMemberExtension cannot be used in ParallelTest. "
+                             + "Please use @SerialTest annotation instead."))));
     }
 
     @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -147,6 +176,20 @@ class BounceMemberExtensionTest {
         @Test
         void test() {
             throw new AssertionError("Test must not run after driver creation failure");
+        }
+    }
+
+    @EnabledIfSystemProperty(named = "hazelcast.test.enableBMRTest", matches = "true")
+    @ParallelTest
+    static class ParallelExecutionTest {
+
+        @RegisterExtension
+        final BounceMemberExtension bounce = BounceMemberExtension.with(new Config())
+                                                                  .clusterSize(2).driverType(ALWAYS_UP_MEMBER).driverCount(1)
+                                                                  .build();
+
+        @Test
+        void test() {
         }
     }
 }
