@@ -32,15 +32,19 @@ import org.apache.pulsar.common.naming.NamespaceName;
 import org.apache.pulsar.common.naming.TopicName;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
-import static org.apache.commons.lang3.StringUtils.isNotBlank;
 
 /**
  * Represents Apache Pulsar {@link com.hazelcast.dataconnection.DataConnection}.
@@ -49,19 +53,28 @@ import static org.apache.commons.lang3.StringUtils.isNotBlank;
  */
 public class PulsarDataConnection extends DataConnectionBase {
     private static final ILogger LOG = Logger.getLogger(PulsarDataConnection.class);
+    private static final Duration CLOSE_TIMEOUT = Duration.ofMinutes(5);
     private volatile ConcurrentMemoizingSupplier<PulsarClient> pulsarClientSup;
     private final String brokerUrl;
     private final String serviceHttpUrl;
     private final String namespace;
     private final String tenant;
+    private final boolean enableTransactions;
     private volatile boolean destroyed;
 
     public PulsarDataConnection(DataConnectionConfig config) {
         super(config);
         brokerUrl = config.getProperty(Properties.BROKER_URL);
         serviceHttpUrl = config.getProperty(Properties.HTTP_SERVICE_URL);
+        if (isBlank(brokerUrl)) {
+            throw new IllegalArgumentException("Pulsar Broker URL is required");
+        }
+        if (isBlank(serviceHttpUrl)) {
+            throw new IllegalArgumentException("Pulsar HTTP Service URL is required");
+        }
         tenant = config.getProperty(Properties.TENANT);
         namespace = config.getProperty(Properties.NAMESPACE);
+        enableTransactions = Boolean.parseBoolean(config.getProperty(Properties.ENABLE_TRANSACTIONS, "false"));
         if (config.isShared()) {
             pulsarClientSup = memoizeConcurrent(
                     () -> new CloseablePulsarClient(createClient(),
@@ -84,7 +97,7 @@ public class PulsarDataConnection extends DataConnectionBase {
          */
         public static final String BROKER_URL = "brokerUrl";
         /**
-         * Pulsar HTTP endpoint URL for administrative tasks, like listing resources.
+         * Pulsar HTTP endpoint URL for administrative tasks, like listing resources or checking topic deduplication status.
          */
         public static final String HTTP_SERVICE_URL = "httpServiceUrl";
         /**
@@ -96,6 +109,14 @@ public class PulsarDataConnection extends DataConnectionBase {
          * Tenant name, optional. If set, it will filter only resources assigned to this tenant.
          */
         public static final String TENANT = "tenant";
+        /**
+         * If true, transactions will be activated on underlying PulsarClient.
+         * Please note, that transactions must be also enabled on broker side.
+         * <p>
+         *     This option is necessary if given data connection will be used in Jet job with Pulsar Sink and
+         *     {@link com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} processing guarantee.
+         */
+        public static final String ENABLE_TRANSACTIONS = "enableTransactions";
     }
 
     /**
@@ -116,6 +137,19 @@ public class PulsarDataConnection extends DataConnectionBase {
         } else {
             PulsarClient client = createClient();
             return new CloseablePulsarClient(client, client::close, client::shutdown, client::isClosed);
+        }
+    }
+
+    public PulsarAdmin getAdmin() {
+        if (serviceHttpUrl == null) {
+            throw new IllegalArgumentException("serviceHttpUrl is required for accessing admin API");
+        }
+        try {
+            return PulsarAdmin.builder()
+                              .serviceHttpUrl(serviceHttpUrl)
+                              .build();
+        } catch (PulsarClientException e) {
+            throw new HazelcastException(e);
         }
     }
 
@@ -185,10 +219,17 @@ public class PulsarDataConnection extends DataConnectionBase {
             pulsarClientSup = null;
             PulsarClient client = supplier.remembered();
             if (client != null) {
+                PulsarClient unwrapped = ((CloseablePulsarClient) client).unwrap();
                 try {
-                    ((CloseablePulsarClient) client).unwrap().close();
-                } catch (PulsarClientException e) {
-                    throw new HazelcastException("Error while trying to close PulsarClient by PulsarDataConnection", e);
+                    unwrapped.closeAsync().get(CLOSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                } catch (ExecutionException | InterruptedException | TimeoutException e) {
+                    Thread.currentThread().interrupt();
+                    try {
+                        unwrapped.shutdown();
+                    } catch (PulsarClientException ex) {
+                        ex.addSuppressed(e);
+                        throw new HazelcastException("Error while trying to close PulsarClient by PulsarDataConnection", e);
+                    }
                 }
             }
         }
@@ -199,6 +240,7 @@ public class PulsarDataConnection extends DataConnectionBase {
         try {
             return PulsarClient.builder()
                                .serviceUrl(brokerUrl)
+                               .enableTransaction(enableTransactions)
                                .build();
         } catch (PulsarClientException e) {
             throw new HazelcastException("Error while trying to create PulsarClient", e);
@@ -209,14 +251,26 @@ public class PulsarDataConnection extends DataConnectionBase {
      * Returns basic {@link DataConnectionConfig} with given name, brokerUrl and service url.
      */
     @Nonnull
-    public static DataConnectionConfig pulsarDataConnectionConf(String name, String brokerUrl, String serviceHttpUrl) {
+    public static DataConnectionConfig pulsarDataConnectionConf(@Nonnull String name, @Nonnull String brokerUrl,
+                                                                @Nullable String serviceHttpUrl) {
+        return pulsarDataConnectionConf(name, brokerUrl, serviceHttpUrl, false);
+    }
+
+    /**
+     * Returns basic {@link DataConnectionConfig} with given name, brokerUrl and service url
+     * and transactions activated/deactivated.
+     */
+    @Nonnull
+    public static DataConnectionConfig pulsarDataConnectionConf(@Nonnull String name,
+                                                                @Nonnull String brokerUrl,
+                                                                @Nullable String serviceHttpUrl,
+                                                                boolean enableTransactions) {
         DataConnectionConfig dataConnectionConfig = new DataConnectionConfig();
         dataConnectionConfig.setName(name);
         dataConnectionConfig.setShared(true);
         dataConnectionConfig.setProperty(Properties.BROKER_URL, brokerUrl);
-        if (isNotBlank(serviceHttpUrl)) {
-            dataConnectionConfig.setProperty(Properties.HTTP_SERVICE_URL, serviceHttpUrl);
-        }
+        dataConnectionConfig.setProperty(Properties.HTTP_SERVICE_URL, serviceHttpUrl);
+        dataConnectionConfig.setProperty(Properties.ENABLE_TRANSACTIONS, String.valueOf(enableTransactions));
         dataConnectionConfig.setType("Pulsar");
         return dataConnectionConfig;
     }

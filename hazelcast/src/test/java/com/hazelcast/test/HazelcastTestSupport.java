@@ -1074,7 +1074,11 @@ public abstract class HazelcastTestSupport {
 
     public static void assertClusterSize(int expectedSize, HazelcastInstance... instances) {
         for (int i = 0; i < instances.length; i++) {
-            int clusterSize = getClusterSize(instances[i]);
+            HazelcastInstance instance = instances[i];
+            if (instance == null) {
+                continue;
+            }
+            int clusterSize = getClusterSize(instance);
             if (expectedSize != clusterSize) {
                 fail("Cluster size is not correct. Expected: %d, actual: %d, instance index: %d",
                         expectedSize, clusterSize, i);

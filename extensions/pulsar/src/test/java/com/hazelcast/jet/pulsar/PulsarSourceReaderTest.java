@@ -1,0 +1,288 @@
+/*
+ * Copyright 2026 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.jet.pulsar;
+
+import com.hazelcast.config.Config;
+import com.hazelcast.config.DataConnectionConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.Job;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.impl.JobExecutionRecord;
+import com.hazelcast.jet.impl.JobRepository;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
+import com.hazelcast.test.SerialTest;
+import org.apache.pulsar.client.api.Message;
+import org.apache.pulsar.client.api.Schema;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletionException;
+import java.util.stream.IntStream;
+
+import static com.hazelcast.jet.core.JobAssertions.assertThat;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.test.JetAssert.assertTrue;
+import static com.hazelcast.jet.core.test.JetAssert.fail;
+import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
+import static com.hazelcast.jet.pipeline.test.AssertionSinks.assertCollectedEventually;
+import static com.hazelcast.jet.pulsar.PulsarSchema.bytes;
+import static com.hazelcast.jet.pulsar.PulsarSources.pulsarReaderBuilder;
+import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
+@SerialTest
+public class PulsarSourceReaderTest extends PulsarTestSupport {
+    private static final int ITEM_COUNT = 1_000;
+    private static final ILogger LOGGER = Logger.getLogger(PulsarSourceReaderTest.class);
+
+    private static StreamSource<String> setupReaderSource(String topicName,
+                                                            FunctionEx<Message<byte[]>, String> projectionFn) {
+        return pulsarReaderBuilder(() -> Schema.BYTES)
+                            .topic(topicName)
+                            .connectionSupplier(getConnectionSupplier())
+                            .projectionFn(projectionFn)
+                            .build();
+    }
+
+    @Test
+    public void when_readFromPulsarReader_then_jobGetsAllPublishedMessages() {
+        HazelcastInstance[] instances = new HazelcastInstance[2];
+        Arrays.setAll(instances, i -> createHazelcastInstance());
+
+        String topicName = randomName();
+        StreamSource<String> pulsarConsumerSrc = setupReaderSource(topicName,
+                                                                   x -> new String(x.getData(), StandardCharsets.UTF_8));
+
+        List<String> expectedItems = new ArrayList<>();
+        IntStream.range(0, ITEM_COUNT).forEach(i -> expectedItems.add("hello-pulsar-" + i));
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(pulsarConsumerSrc)
+                .withoutTimestamps()
+                .writeTo(assertCollectedEventually(60, list -> {
+                    assertThat(list).containsExactlyInAnyOrderElementsOf(expectedItems);
+                }));
+        Job job = instances[0].getJet().newJob(pipeline);
+        assertThat(job).eventuallyHasStatus(RUNNING);
+
+        produceMessages("hello-pulsar", topicName, ITEM_COUNT);
+
+        expectAssertion(job);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans =  {true, false})
+    public void when_readsByDifferentScheme_then_jobGetsAllPublishedMessages(boolean useFullName) {
+        String topicShortName = randomName();
+        String topicFullName = "persistent://public/default/" + topicShortName;
+        createTopic(topicShortName, true);
+
+        HazelcastInstance[] instances = new HazelcastInstance[2];
+        Arrays.setAll(instances, i -> createHazelcastInstance());
+
+        String topicName = useFullName ? topicFullName : topicShortName;
+        StreamSource<String> pulsarConsumerSrc = PulsarSources.pulsarReaderBuilder(bytes())
+                                                              .topic(topicName)
+                                                              .connectionSupplier(getConnectionSupplier())
+                                                              .projectionFn(x -> new String(x.getData(), StandardCharsets.UTF_8))
+                                                              .build();
+
+        List<String> expectedItems = new ArrayList<>();
+        IntStream.range(0, ITEM_COUNT).forEach(i -> expectedItems.add("hello-pulsar-" + i));
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(pulsarConsumerSrc)
+                .withoutTimestamps()
+                .writeTo(assertCollectedEventually(60, list -> {
+                    assertThat(list).containsExactlyInAnyOrderElementsOf(expectedItems);
+                }));
+        Job job = instances[0].getJet().newJob(pipeline);
+        assertThat(job).eventuallyHasStatus(RUNNING);
+
+        produceMessages("hello-pulsar", topicFullName, ITEM_COUNT);
+
+        expectAssertion(job);
+    }
+
+    @Test
+    public void when_readUsingDataConnection_then_jobGetsAllPublishedMessages() {
+        Config conf = smallInstanceConfig();
+        conf.addDataConnectionConfig(new DataConnectionConfig("myPulsar")
+                                         .setShared(true)
+                                         .setType("Pulsar")
+                                         .setProperty(PulsarDataConnection.Properties.BROKER_URL, getServiceUrl())
+                                         .setProperty(PulsarDataConnection.Properties.HTTP_SERVICE_URL,
+                                                      pulsarContainer.getHttpServiceUrl()));
+
+        HazelcastInstance[] instances = new HazelcastInstance[2];
+        Arrays.setAll(instances, i -> createHazelcastInstance(conf));
+
+        String topicName1 = randomName();
+        String topicName2 = randomName();
+        createTopic(topicName1, true);
+        createTopic(topicName2, true);
+        StreamSource<String> pulsarConsumerSrc = pulsarReaderBuilder(() -> Schema.BYTES)
+                                                     .topic(topicName1, topicName2)
+                                                     .projectionFn(x -> new String(x.getData(), StandardCharsets.UTF_8))
+                                                     .dataConnectionRef(dataConnectionRef("myPulsar"))
+                                                     .build();
+
+        IMap<Object, Object> resultMap = instances[0].getMap(randomMapName());
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(pulsarConsumerSrc)
+                .withNativeTimestamps(0)
+                .map(s -> Map.entry(s, s))
+                .writeTo(Sinks.map(resultMap));
+        Job job = instances[0].getJet().newJob(pipeline);
+        assertThat(job).eventuallyHasStatus(RUNNING);
+        List<Map.Entry<String, String>> messagesToSend = new ArrayList<>();
+        IntStream.range(0, ITEM_COUNT / 2).forEach(i -> messagesToSend.add(Map.entry(topicName1, "hello-pulsar-" + i)));
+        IntStream.range(ITEM_COUNT / 2, ITEM_COUNT).forEach(i -> messagesToSend.add(Map.entry(topicName2, "hello-pulsar-" + i)));
+        Collections.shuffle(messagesToSend);
+        messagesToSend.forEach(entry -> produceMessage(entry.getValue(), entry.getKey()));
+
+        List<String> expectedItems = new ArrayList<>();
+        IntStream.range(0, ITEM_COUNT).forEach(i -> expectedItems.add("hello-pulsar-" + i));
+        assertTrueEventually(() -> assertThat(resultMap.keySet()).containsOnlyOnceElementsOf(expectedItems));
+    }
+
+    @Test
+    public void when_projectionFunctionProvided_thenAppliedToReadRecords() {
+        String topicName1 = randomName();
+        String topicName2 = randomName();
+        // Add a suffix to messages so that this projectionFn does a bit more than byte->String conversion.
+        StreamSource<String> pulsarConsumerSrc =
+            PulsarSources.pulsarReaderBuilder(() -> Schema.BYTES)
+                         .topic(topicName1, topicName2)
+                         .connectionSupplier(getConnectionSupplier())
+                         .projectionFn(x -> new String(x.getData(), StandardCharsets.UTF_8) + "-suffix")
+                         .build();
+
+        List<String> expectedItems = new ArrayList<>();
+        IntStream.range(0, ITEM_COUNT).forEach(i -> expectedItems.add("hello-pulsar-" + i + "-suffix"));
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(pulsarConsumerSrc)
+                .withoutTimestamps()
+                .writeTo(assertCollectedEventually(60, list -> {
+                    assertThat(list).containsExactlyInAnyOrderElementsOf(expectedItems);
+                }));
+        Job job = createHazelcastInstance().getJet().newJob(pipeline);
+        assertThat(job).eventuallyHasStatus(RUNNING);
+
+        produceMessages("hello-pulsar", topicName1, ITEM_COUNT / 2);
+        produceMessages("hello-pulsar", topicName2, ITEM_COUNT / 2, ITEM_COUNT);
+
+        expectAssertion(job);
+    }
+
+    @Test
+    public void integrationTest() {
+        ProcessingGuarantee guarantee = ProcessingGuarantee.EXACTLY_ONCE;
+        HazelcastInstance[] instances = new HazelcastInstance[2];
+        Arrays.setAll(instances, i -> createHazelcastInstance());
+
+        String topicName = randomName();
+        StreamSource<String> pulsarReaderSrc = setupReaderSource(topicName,
+                x -> new String(x.getData(), StandardCharsets.UTF_8));
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(pulsarReaderSrc)
+                .withoutTimestamps()
+                .rebalance()
+                .writeTo(Sinks.list("test-list"));
+
+        JobConfig jobConfig = new JobConfig();
+        jobConfig.setProcessingGuarantee(guarantee);
+        jobConfig.setSnapshotIntervalMillis(SECONDS.toMillis(1));
+        Job job = instances[0].getJet().newJob(pipeline, jobConfig);
+        assertThat(job).eventuallyHasStatus(RUNNING);
+
+        produceMessages("before-restart", topicName, 2 * ITEM_COUNT);
+
+        Collection<Object> list = instances[0].getList("test-list");
+        List<String> expectedItemsBeforeRestart = new ArrayList<>();
+        IntStream.range(0, 2 * ITEM_COUNT).forEach(i -> expectedItemsBeforeRestart.add("before-restart-" + i));
+        assertTrueEventually(() -> assertThat(list).containsOnlyOnceElementsOf(expectedItemsBeforeRestart), 15);
+
+        // wait until a new snapshot appears
+        JobRepository jr = new JobRepository(instances[0]);
+        long currentMax = jr.getJobExecutionRecord(job.getId()).snapshotId();
+        assertTrueEventually(() -> {
+            JobExecutionRecord jobExecutionRecord = jr.getJobExecutionRecord(job.getId());
+            assertThat(jobExecutionRecord).isNotNull();
+            long newMax = jobExecutionRecord.snapshotId();
+            assertTrue("no snapshot produced", newMax > currentMax);
+            LOGGER.info("snapshot " + newMax + " found, previous was " + currentMax);
+        });
+        // Bring down one member. Job should restart and drain additional items (and maybe
+        // some of the previous duplicately).
+        Long lastExecutionId = assertThat(job).eventuallyJobRunning(instances[0], null);
+        instances[1].getLifecycleService().terminate();
+        assertThat(job).eventuallyJobRunning(instances[0], lastExecutionId);
+
+        produceMessages("after-restart", topicName, 2 * ITEM_COUNT);
+
+        List<String> expected = new ArrayList<>();
+        IntStream.range(0, 2 * ITEM_COUNT).forEach(i -> expected.add("before-restart-" + i));
+        IntStream.range(0, 2 * ITEM_COUNT).forEach(i -> expected.add("after-restart-" + i));
+        assertTrueEventually(() -> assertThat(list).containsExactlyInAnyOrderElementsOf(expected), 10);
+        assertFalse(job.getFuture().isDone());
+    }
+
+    @Test
+    void readerValidations() {
+        SupplierEx<Schema<byte[]>> schemaSupplier = () -> Schema.BYTES;
+        assertThatThrownBy(() -> pulsarReaderBuilder(schemaSupplier).build())
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("topics must not be null")
+            .hasMessageContaining("Either connectionSupplier or dataConnectionRef must be provided");
+        assertThatThrownBy(() -> pulsarReaderBuilder(schemaSupplier).connectionSupplier(notSerializableConnectionSupplier()).build())
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("\"connectionSupplier\" must be serializable");
+    }
+
+    private static void expectAssertion(Job job) {
+        try {
+            job.join();
+            fail("Job should have completed with an AssertionCompletedException, but completed normally");
+        } catch (CompletionException e) {
+            String errorMsg = e.getCause().getMessage();
+            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
+                           + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+        }
+    }
+}

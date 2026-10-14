@@ -30,6 +30,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
@@ -451,5 +452,19 @@ public final class ExceptionUtil {
             return (T) t;
         }
         return null;
+    }
+
+    /**
+     * If given closeable is not null, it closes it. In case of exception being thrown, it will be added to the provided
+     * list of exceptions.
+     */
+    public static void safeClose(AutoCloseable closeable, List<Exception> exceptions) {
+        if (closeable != null) {
+            try {
+                closeable.close();
+            } catch (Exception e) {
+                exceptions.add(e);
+            }
+        }
     }
 }

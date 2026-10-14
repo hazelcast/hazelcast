@@ -81,6 +81,7 @@
             -XX:HeapDumpPath=${project.build.directory}
             ${extraVmArgs}
         </argLine>
+        <dependenciesToScan>${project.parent.groupId}:hazelcast-archunit-rules</dependenciesToScan>
 
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>

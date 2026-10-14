@@ -27,5 +27,6 @@
         </Root>
         <Logger name="com.hazelcast.jet" level="INFO"/>
         <Logger name="com.hazelcast.jet.pulsar" level="TRACE"/>
+        <Logger name="org.apache.pulsar.client.impl" level="WARN"/>
     </Loggers>
 </Configuration>

@@ -16,12 +16,14 @@
 
 package com.hazelcast.jet.pulsar;
 
-import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.TestedVersions;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.pipeline.Sink;
-import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.test.ILoggerLogConsumer;
+import org.apache.pulsar.client.admin.PulsarAdmin;
+import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.PulsarClient;
@@ -40,6 +42,7 @@ import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PulsarContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -55,9 +58,11 @@ import static org.junit.jupiter.params.provider.Arguments.arguments;
 @ParameterizedClass
 @MethodSource("pulsarVersions")
 public abstract class PulsarTestSupport extends JetTestSupport {
+    private static final ILogger LOGGER = Logger.getLogger(PulsarTestSupport.class.getName());
     public static PulsarContainer pulsarContainer;
+    static final int NUM_PARTITIONS = 12;
     protected static final String BROKER_HOST = "pulsar-broker";
-    protected static Network network = Network.newNetwork();
+    protected static final Network NETWORK = Network.newNetwork();
 
     private static final Map<String, Producer<byte[]>> producerMap = new HashMap<>();
     private static final Map<String, Consumer<Double>> consumerMap = new HashMap<>();
@@ -68,11 +73,18 @@ public abstract class PulsarTestSupport extends JetTestSupport {
     static DockerImageName imageName;
 
     @BeforeParameterizedClassInvocation
-    static void startContainer(DockerImageName dockerImageName) {
+    static void startContainer(DockerImageName dockerImageName) throws PulsarClientException, PulsarAdminException {
         pulsarContainer = new PulsarContainer(dockerImageName)
-                              .withNetwork(network)
-                              .withNetworkAliases(BROKER_HOST);
+                              .withNetwork(NETWORK)
+                              .withTransactions()
+                              .withNetworkAliases(BROKER_HOST)
+                              .withEnv("transactionBufferClientOperationTimeoutInMills", "9")
+                              .withEnv("PULSAR_LOG_LEVEL", "ERROR")
+                              .withLogConsumer(new ILoggerLogConsumer(LOGGER));
         pulsarContainer.start();
+        try (var admin = PulsarAdmin.builder().serviceHttpUrl(pulsarContainer.getHttpServiceUrl()).build()) {
+            admin.namespaces().setDeduplicationStatus("public/default", true);
+        }
     }
 
     @AfterParameterizedClassInvocation
@@ -98,36 +110,49 @@ public abstract class PulsarTestSupport extends JetTestSupport {
         return client;
     }
 
-    private static Producer<byte[]> getProducer(String topicName) throws PulsarClientException {
+    protected static @Nonnull SupplierEx<PulsarClient> getConnectionSupplier() {
+        return () -> PulsarClient.builder().serviceUrl(getServiceUrl()).enableTransaction(true).build();
+    }
+
+    protected static Producer<byte[]> getProducer(String topicName) {
         // If there exists a producer with same name returns it.
-        if (!producerMap.containsKey(topicName)) {
-            Producer<byte[]> newProducer = getClient()
-                    .newProducer()
-                    .topic(topicName)
-                    .batchingMaxPublishDelay(10, TimeUnit.MILLISECONDS)
-                    .sendTimeout(10, TimeUnit.SECONDS)
-                    .blockIfQueueFull(true)
-                    .create();
-            producerMap.put(topicName, newProducer);
-            return newProducer;
-        } else {
-            return producerMap.get(topicName);
+        try {
+            if (!producerMap.containsKey(topicName)) {
+                Producer<byte[]> newProducer = getClient()
+                                                   .newProducer()
+                                                   .topic(topicName)
+                                                   .batchingMaxPublishDelay(10, TimeUnit.MILLISECONDS)
+                                                   .sendTimeout(10, TimeUnit.SECONDS)
+                                                   .blockIfQueueFull(true)
+                                                   .autoUpdatePartitions(true)
+                                                   .autoUpdatePartitionsInterval(1, TimeUnit.SECONDS)
+                                                   .create();
+                producerMap.put(topicName, newProducer);
+                return newProducer;
+            } else {
+                return producerMap.get(topicName);
+            }
+        } catch (PulsarClientException e) {
+            throw sneakyThrow(e);
         }
     }
 
     protected static void produceMessages(String message, String topicName, int count) {
-        for (int i = 0; i < count; i++) {
-            try {
-                produceMessage(message + "-" + i, topicName);
-            } catch (PulsarClientException e) {
-                sneakyThrow(e);
-            }
+        produceMessages(message, topicName, 0, count);
+    }
+
+    protected static void produceMessages(String message, String topicName, int start, int end) {
+        for (int i = start; i < end; i++) {
+            produceMessage(message + "-" + i, topicName);
         }
     }
 
-    protected static void produceMessage(String message, String topicName)
-            throws PulsarClientException {
-        getProducer(topicName).send(message.getBytes(StandardCharsets.UTF_8));
+    protected static void produceMessage(String message, String topicName) {
+        try {
+            getProducer(topicName).send(message.getBytes(StandardCharsets.UTF_8));
+        } catch (PulsarClientException e) {
+            sneakyThrow(e);
+        }
     }
 
 
@@ -165,34 +190,16 @@ public abstract class PulsarTestSupport extends JetTestSupport {
         }
     }
 
-    protected static StreamSource<String> setupConsumerSource(String topicName,
-                                                              FunctionEx<Message<byte[]>, String> projectionFn) {
-        return PulsarSources.pulsarConsumerBuilder(() -> Schema.BYTES)
-                   .topic(topicName)
-                   .projectionFn(projectionFn)
-                   .connectionSupplier(() -> PulsarClient.builder().serviceUrl(getServiceUrl()).build())
-                   .build();
-    }
-
-    protected static StreamSource<String> setupReaderSource(String topicName,
-                                                            FunctionEx<Message<byte[]>, String> projectionFn) {
-        return PulsarSources.pulsarReaderBuilder(() -> Schema.BYTES)
-                            .topic(topicName)
-                            .connectionSupplier(() -> PulsarClient.builder().serviceUrl(getServiceUrl()).build())
-                            .projectionFn(projectionFn)
-                            .build();
-    }
-
-    protected static Sink<Integer> setupSink(String topicName) {
-        return PulsarSinks.pulsarSink(topicName,
-                                      () -> PulsarClient.builder().serviceUrl(getServiceUrl()).build(),
-                                      () -> Schema.DOUBLE, Integer::doubleValue);
-    }
-
     public static Stream<Arguments> pulsarVersions() {
+        String property = System.getProperty("testWithAllPulsarVersions", "false");
+        if (property.equalsIgnoreCase("true")) {
+            return Stream.of(
+                arguments(TestedVersions.PULSAR_4_IMAGE),
+                arguments(TestedVersions.PULSAR_5_IMAGE)
+            );
+        }
         return Stream.of(
-            arguments(TestedVersions.PULSAR_4_IMAGE),
-            arguments(TestedVersions.PULSAR_5_IMAGE)
+            arguments(TestedVersions.PULSAR_4_IMAGE)
         );
     }
 
@@ -207,5 +214,22 @@ public abstract class PulsarTestSupport extends JetTestSupport {
                 return null;
             }
         };
+    }
+
+    static void createTopic(String topicName, boolean partitioned) {
+        createTopic(topicName, partitioned ? NUM_PARTITIONS : null);
+    }
+
+    static void createTopic(String topicName, Integer partitionCount) {
+        boolean partitioned = partitionCount != null;
+        try (var admin = PulsarAdmin.builder().serviceHttpUrl(pulsarContainer.getHttpServiceUrl()).build()) {
+            if (partitioned) {
+                admin.topics().createPartitionedTopic(topicName, partitionCount);
+            } else {
+                admin.topics().createNonPartitionedTopic(topicName);
+            }
+        } catch (PulsarClientException | PulsarAdminException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

@@ -29,6 +29,7 @@ import static java.lang.String.format;
 /**
  * A utility class for validating arguments and state.
  */
+@SuppressWarnings("unchecked")
 public final class Preconditions {
 
     private Preconditions() {
@@ -389,5 +390,17 @@ public final class Preconditions {
         }
         String value = properties.getProperty(key);
         return checkHasText(value, "Property '" + key + "' is required");
+    }
+
+    /**
+     * Checks if given array is not null and has at least one element
+     * @param array array to validate
+     * @param name name of the array to appear in exception message
+     * @throws IllegalArgumentException if array is null or has zero elements
+     */
+    public static void checkNotEmpty(String[] array, String name) throws IllegalArgumentException {
+        if (array == null || array.length == 0) {
+            throw new IllegalArgumentException(name + " must not be empty");
+        }
     }
 }

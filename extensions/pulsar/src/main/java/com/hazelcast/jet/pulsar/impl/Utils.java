@@ -13,21 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.pulsar;
+package com.hazelcast.jet.pulsar.impl;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.RestartableException;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
+import com.hazelcast.jet.pulsar.PulsarDataConnection;
+import com.hazelcast.spi.annotation.PrivateApi;
 import org.apache.pulsar.client.api.PulsarClient;
+import org.apache.pulsar.client.api.PulsarClientException;
 
-final class Utils {
+import static com.hazelcast.jet.impl.util.JetExceptionUtil.peel;
+
+/**
+ * Utility methods to work with Pulsar
+ */
+@PrivateApi
+public final class Utils {
+    public static final int MAX_TOPICS_LENGTH = 200;
 
     private Utils() {
     }
 
-    static PulsarClient getClient(Processor.Context ctx,
-                                  SupplierEx<PulsarClient> clientSupplier,
-                                  DataConnectionRef dataConnectionRef) {
+    public static PulsarClient getClient(ProcessorSupplier.Context ctx,
+                                         SupplierEx<PulsarClient> clientSupplier,
+                                         DataConnectionRef dataConnectionRef) {
         if (clientSupplier != null) {
             return clientSupplier.get();
         } else if (dataConnectionRef != null) {
@@ -44,7 +56,19 @@ final class Utils {
         }
     }
 
-    static boolean exactlyOnlyOneIsNotNull(Object first, Object second) {
+    public static boolean exactlyOnlyOneIsNotNull(Object first, Object second) {
         return (first == null) != (second == null);
+    }
+
+    /**
+     * Wraps failure in either {@link JetException} or {@link RestartableException}.
+     */
+    public static JetException wrapFailure(String message, Throwable cause0) {
+        var cause = peel(cause0);
+        // A previous execution may still be closing its exclusive consumer after member loss.
+        if (cause instanceof PulsarClientException.ConsumerBusyException || PulsarClientException.isRetriableError(cause)) {
+            return new RestartableException(message, cause);
+        }
+        return new JetException(message, cause);
     }
 }

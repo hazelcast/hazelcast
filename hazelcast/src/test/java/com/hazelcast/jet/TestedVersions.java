@@ -54,5 +54,5 @@ public final class TestedVersions {
     public static final DockerImageName LOCALSTACK_IMAGE = DockerImageName.parse("localstack/localstack:4");
 
     public static final DockerImageName PULSAR_4_IMAGE = DockerImageName.parse("apachepulsar/pulsar:4.2.3");
-    public static final DockerImageName PULSAR_5_IMAGE = DockerImageName.parse("apachepulsar/pulsar:5.0.0-M1");
+    public static final DockerImageName PULSAR_5_IMAGE = DockerImageName.parse("apachepulsar/pulsar:5.0.0-M2");
 }

@@ -16,17 +16,21 @@
 
 package com.hazelcast.jet.pulsar;
 
+import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ThrowingSupplier;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.jet.pulsar.impl.PulsarSourceConfig;
 import com.hazelcast.logging.ILogger;
 import org.apache.pulsar.client.api.BatchReceivePolicy;
 import org.apache.pulsar.client.api.Consumer;
+import org.apache.pulsar.client.api.ConsumerBuilder;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.Messages;
 import org.apache.pulsar.client.api.PulsarClient;
@@ -34,19 +38,18 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionInitialPosition;
 import org.apache.pulsar.client.api.SubscriptionType;
+import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotEmpty;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
-import static com.hazelcast.jet.impl.util.Validation.validate;
-import static com.hazelcast.jet.pulsar.Utils.exactlyOnlyOneIsNotNull;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -54,23 +57,22 @@ import static java.util.Objects.requireNonNull;
  *
  * @param <M> the type of the value of message read by {@code PulsarConsumer}
  * @param <T> the type of the emitted item after projection.
+ *
+ * @since 6.0
  */
-public final class PulsarConsumerBuilder<M, T> implements Serializable {
-    private List<String> topics;
-    private SupplierEx<PulsarClient> connectionSupplier;
-    private DataConnectionRef dataConnectionRef;
-    private final SupplierEx<Schema<M>> schemaSupplier;
+public final class PulsarConsumerBuilder<M, T> {
+    private static final int PREFERRED_LOCAL_PARALLELISM = 4;
+    private final PulsarSourceConfig<M, T> conf = new PulsarSourceConfig<>();
     private FunctionEx<Message<M>, T> projectionFn;
-
-    private Map<String, Object> consumerConfig;
-    private SupplierEx<BatchReceivePolicy> batchReceivePolicySupplier;
 
     public PulsarConsumerBuilder(@Nonnull SupplierEx<Schema<M>> schemaSupplier, @Nonnull FunctionEx<Message<M>, T> projectionFn) {
         checkNonNullAndSerializable(schemaSupplier, "schemaSupplier");
-        this.schemaSupplier = schemaSupplier;
-        this.consumerConfig = getDefaultConsumerConfig();
-        this.batchReceivePolicySupplier = getDefaultBatchReceivePolicySupplier();
-        this.projectionFn = checkNonNullAndSerializable(projectionFn, "projectionFn");
+        checkNonNullAndSerializable(projectionFn, "projectionFn");
+        conf.setLocalParallelism(PREFERRED_LOCAL_PARALLELISM);
+        conf.setSchemaSupplier(schemaSupplier);
+        conf.setOptions(getDefaultConsumerConfig());
+        conf.setBatchReceivePolicy(getDefaultBatchReceivePolicySupplier().get());
+        this.projectionFn = projectionFn;
     }
 
     /**
@@ -86,53 +88,68 @@ public final class PulsarConsumerBuilder<M, T> implements Serializable {
                                  @Nonnull SupplierEx<PulsarClient> connectionSupplier,
                                  @Nonnull SupplierEx<Schema<M>> schemaSupplier,
                                  @Nonnull FunctionEx<Message<M>, T> projectionFn) {
+        this(schemaSupplier, projectionFn);
         checkSerializable(topics, "topics");
         checkSerializable(connectionSupplier, "connectionSupplier");
-        checkSerializable(schemaSupplier, "schemaSupplier");
-        checkSerializable(projectionFn, "projectionFn");
 
-        this.topics = topics;
-        this.connectionSupplier = connectionSupplier;
-        this.schemaSupplier = schemaSupplier;
-        this.projectionFn = projectionFn;
-        this.consumerConfig = getDefaultConsumerConfig();
-        this.batchReceivePolicySupplier = getDefaultBatchReceivePolicySupplier();
+        conf.setTopics(topics);
+        conf.setConnectionSupplier(connectionSupplier);
     }
 
     @Nonnull
     public PulsarConsumerBuilder<M, T> topic(@Nonnull String... topics) {
-        this.topics = List.of(topics);
+        checkNotEmpty(topics, "topics");
+        conf.setTopics(List.of(topics));
         return this;
     }
 
     @Nonnull
-    public PulsarConsumerBuilder<M, T> connectionSupplier(SupplierEx<PulsarClient> connectionSupplier) {
-        this.connectionSupplier = connectionSupplier;
+    public PulsarConsumerBuilder<M, T> subscriberName(@Nonnull String subscriberName) {
+        checkNotNull(subscriberName, "subscriberName");
+        conf.setSubscriberName(subscriberName);
+        return this;
+    }
+
+    @Nonnull
+    public PulsarConsumerBuilder<M, T> connectionSupplier(@Nonnull SupplierEx<PulsarClient> connectionSupplier) {
+        checkSerializable(connectionSupplier, "connectionSupplier");
+        conf.setConnectionSupplier(connectionSupplier);
         return this;
     }
 
     @Nonnull
     public PulsarConsumerBuilder<M, T> dataConnectionRef(@Nonnull DataConnectionRef dataConnectionRef) {
         requireNonNull(dataConnectionRef, "dataConnectionRef");
-        this.dataConnectionRef = dataConnectionRef;
+        conf.setDataConnectionRef(dataConnectionRef);
         return this;
     }
 
     @SuppressWarnings("unchecked")
     @Nonnull
-    public <NEW_T> PulsarConsumerBuilder<M, NEW_T> projectionFn(FunctionEx<Message<M>, NEW_T> projectionFn) {
+    public <NEW_T> PulsarConsumerBuilder<M, NEW_T> projectionFn(@Nonnull FunctionEx<@NonNull Message<M>, NEW_T> projectionFn) {
         this.projectionFn = (FunctionEx<Message<M>, T>) projectionFn;
         return (PulsarConsumerBuilder<M, NEW_T>) this;
     }
 
     /**
-     * @param consumerConfig Pulsar consumer configurations that must
-     *                       contain consumer name, and subscription name.
+     * Allows additional customization and invocation of other {@link ConsumerBuilder} method,
+     * that doesn't have a representative here.
+     */
+    @Nonnull
+    public PulsarConsumerBuilder<M, T> consumerCustomizer(@Nonnull ConsumerEx<@NonNull ConsumerBuilder<M>> consumerCustomizer) {
+        checkNonNullAndSerializable(consumerCustomizer, "consumerCustomizer");
+        conf.setConsumerCustomizer(consumerCustomizer);
+        return this;
+    }
+
+    /**
+     * @param consumerConfig Pulsar consumer settings, subject to the same
+     *                       restrictions as {@link #consumerCustomizer(ConsumerEx)}
      */
     @Nonnull
     public PulsarConsumerBuilder<M, T> consumerConfig(@Nonnull Map<String, Object> consumerConfig) {
         checkSerializable(consumerConfig, "consumerConfig");
-        this.consumerConfig = consumerConfig;
+        conf.setOptions(consumerConfig);
         return this;
     }
 
@@ -151,7 +168,7 @@ public final class PulsarConsumerBuilder<M, T> implements Serializable {
             @Nonnull SupplierEx<BatchReceivePolicy> batchReceivePolicySupplier
     ) {
         checkSerializable(batchReceivePolicySupplier, "batchReceivePolicySupplier");
-        this.batchReceivePolicySupplier = batchReceivePolicySupplier;
+        conf.setBatchReceivePolicy(batchReceivePolicySupplier.get());
         return this;
     }
 
@@ -164,30 +181,45 @@ public final class PulsarConsumerBuilder<M, T> implements Serializable {
                                        .build();
     }
 
+    /**
+     * Preferred local parallelism for every processor created by this builder.
+     */
+    public PulsarConsumerBuilder<M, T> preferredLocalParallelism(int preferredLocalParallelism) {
+        this.conf.setLocalParallelism(Vertex.checkLocalParallelism(preferredLocalParallelism));
+        return this;
+    }
 
     /**
-     * Creates and returns the Pulsar Consumer {@link StreamSource} with using builder configurations set before.
+     * Creates a Pulsar consumer source with the configured projection.
+     *
+     * <p>Each physical topic is assigned to one processor using an exclusive,
+     * durable subscription. Use a subscription name dedicated to this source.
+     * Partition changes are discovered when the job restarts.
+     *
+     * <p>With {@code AT_LEAST_ONCE} or {@code EXACTLY_ONCE}, the source acknowledges
+     * messages only after a successful snapshot and filters replayed messages
+     * using snapshotted positions. With {@code NONE}, messages are acknowledged
+     * after emission. The broker must retain unacknowledged messages: message TTL,
+     * backlog eviction and subscription expiration must not discard them.
+     * Non-persistent topics cannot be used with snapshotting.
+     *
+     * <p>Recovery uses the latest committed snapshot and the existing subscription.
+     * Restoring an older exported snapshot after newer acknowledgements is not
+     * supported. Snapshots written by the earlier consumer implementation are
+     * incompatible. End-to-end exactly-once also requires suitable downstream
+     * processors and sinks.
      */
     @Nonnull
     public StreamSource<T> build() {
-        validate()
-            .checkNotNull(topics, "topics")
-            .checkNotNull(consumerConfig, "consumerConfig")
-            .checkNotNullAndSerializable(schemaSupplier, "schemaSupplier")
-            .checkNotNullAndSerializable(batchReceivePolicySupplier, "batchReceivePolicySupplier")
-            .checkNotNullAndSerializable(projectionFn, "projectionFn")
-            .checkSerializableIfNotNull(connectionSupplier, "connectionSupplier")
-            .check(exactlyOnlyOneIsNotNull(connectionSupplier, dataConnectionRef),
-                   "Either connectionSupplier or dataConnectionRef must be provided")
-            .throwIfErrors();
+        conf.setProjectionFn(projectionFn);
+        conf.validate();
+        var localConf = new PulsarSourceConfig<>(conf);
         return SourceBuilder.timestampedStream("pulsar-consumer-source",
-                                               ctx -> new PulsarConsumerBuilder.ConsumerContext<>(
-                                                   ctx, connectionSupplier, dataConnectionRef, topics, consumerConfig,
-                                                   schemaSupplier, batchReceivePolicySupplier, projectionFn))
+                                               ctx -> new PulsarConsumerBuilder.ConsumerContext<>(ctx, localConf))
                             .<T>fillBufferFn(PulsarConsumerBuilder.ConsumerContext::fillBuffer)
                             .initFn(ctx -> requireNonNull(ctx).init())
                             .destroyFn(ctx -> requireNonNull(ctx).destroy())
-                            .distributed(2)
+                            .distributed(conf.getLocalParallelism())
                             .build();
     }
 
@@ -203,29 +235,29 @@ public final class PulsarConsumerBuilder<M, T> implements Serializable {
         private Consumer<M> consumer;
         private final FunctionEx<Message<M>, T> projectionFn;
 
-        private ThrowingSupplier<PulsarClient> clientSupplier;
+        private SupplierEx<PulsarClient> clientSupplier;
         private ThrowingSupplier<Consumer<M>> consumerSupplier;
 
         private ConsumerContext(
-                @Nonnull Processor.Context ctx,
-                @Nullable SupplierEx<PulsarClient> clientSupplier,
-                @Nullable DataConnectionRef dataConnectionRef,
-                @Nonnull List<String> topics,
-                @Nonnull Map<String, Object> consumerConfig,
-                @Nonnull SupplierEx<Schema<M>> schemaSupplier,
-                @Nonnull SupplierEx<BatchReceivePolicy> batchReceivePolicySupplier,
-                @Nonnull FunctionEx<Message<M>, T> projectionFn
+                @Nonnull Processor.Context ctx, @Nonnull PulsarSourceConfig<M, T> conf
         ) {
             this.logger = ctx.logger();
+
             // we use lambdas to avoid flooding the class with a lot of one-use fields.
-            this.clientSupplier = () -> Utils.getClient(ctx, clientSupplier, dataConnectionRef);
-            this.consumerSupplier = () -> client.newConsumer(schemaSupplier.get()).topics(topics)
-                                                .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
-                                                .loadConf(consumerConfig)
-                                                .batchReceivePolicy(batchReceivePolicySupplier.get())
-                                                .subscriptionType(SubscriptionType.Shared)
-                                                .subscribe();
-            this.projectionFn = projectionFn;
+            this.clientSupplier = conf.getTargetConnectionSupplier(ctx);
+            this.consumerSupplier = () -> {
+                ConsumerBuilder<M> builder = client.newConsumer(conf.getSchemaSupplier().get());
+                conf.getConsumerCustomizer().accept(builder);
+                return builder
+                      .subscriptionName(conf.getSubscriberName())
+                      .topics(conf.getTopics())
+                      .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+                      .loadConf(conf.getOptions())
+                      .batchReceivePolicy(conf.getBatchReceivePolicy())
+                      .subscriptionType(SubscriptionType.Shared)
+                      .subscribe();
+            };
+            this.projectionFn = conf.getProjectionFn();
         }
 
         public void init() {
@@ -247,7 +279,7 @@ public final class PulsarConsumerBuilder<M, T> implements Serializable {
          * In this method, emitted items are created by applying the projection function
          * to the messages received from Pulsar client. If there is an event time
          * associated with the message, it sets the event time as the timestamp of the
-         * emitted item. Otherwise, it sets the publish time(which always exists)
+         * emitted item. Otherwise, it sets the publishing time(which always exists)
          * of the message as the timestamp.
          */
         private void fillBuffer(SourceBuilder.TimestampedSourceBuffer<T> sourceBuffer) throws PulsarClientException {

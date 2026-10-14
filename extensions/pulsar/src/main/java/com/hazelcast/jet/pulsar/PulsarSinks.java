@@ -48,8 +48,6 @@ public final class PulsarSinks {
      * @param schemaSupplier     Pulsar messaging schema supplier.
      * @param <E>                the type of stream items that sink accepts
      * @param <M>                the type of the message published by {@code PulsarProducer}
-     *
-     * @since 6.0
      */
     @Nonnull
     public static <E, M> PulsarSinkBuilder<E, M> builder(
@@ -69,8 +67,6 @@ public final class PulsarSinks {
      * @param <E>                the type of stream items that sink accepts
      * @param <M>                the type of stream items that will be written to Pulsar's {@link Producer}.
      * @param schemaSupplier     Pulsar messaging schema supplier.
-     *
-     * @since 6.0
      */
     @Nonnull
     public static <E, M> PulsarSinkBuilder<E, M> builder(@Nonnull SupplierEx<Schema<M>> schemaSupplier,
@@ -86,8 +82,6 @@ public final class PulsarSinks {
      * This version sets {@link FunctionEx#identity()} as {@link PulsarSinkBuilder#extractValueFn(FunctionEx)}.
      *
      * @param schemaSupplier     Pulsar messaging schema supplier.
-     *
-     * @since 6.0
      */
     @Nonnull
     public static <M> PulsarSinkBuilder<M, M> builder(@Nonnull SupplierEx<Schema<M>> schemaSupplier) {
@@ -99,8 +93,6 @@ public final class PulsarSinks {
      * a custom Pulsar {@link Sink} for the Pipeline API.
      *
      * @param schema             schema of pulsar message value.
-     *
-     * @since 6.0
      */
     @Nonnull
     public static <M> PulsarSinkBuilder<M, M> builder(@Nonnull PulsarSchema<M> schema) {
@@ -108,6 +100,21 @@ public final class PulsarSinks {
         //noinspection unchecked
         SupplierEx<Schema<M>> schemaSupplier = schema.supplierV4();
         return builder(schemaSupplier);
+    }
+
+    /**
+     * Returns a builder object that offers a step-by-step fluent API to build
+     * a custom Pulsar {@link Sink} for the Pipeline API.
+     *
+     * @param schema             schema of pulsar message value.
+     */
+    @Nonnull
+    public static <E, M> PulsarSinkBuilder<E, M> builder(@Nonnull PulsarSchema<M> schema,
+                                                      @Nonnull FunctionEx<? super E, M> extractValueFn) {
+        checkNotNull(schema, "schema");
+        //noinspection unchecked
+        SupplierEx<Schema<M>> schemaSupplier = schema.supplierV4();
+        return builder(schemaSupplier, extractValueFn);
     }
 
     /**
@@ -120,8 +127,6 @@ public final class PulsarSinks {
      * @param extractValueFn     Pulsar messaging schema supplier.
      * @param <E>                the type of stream items that sink accepts
      * @param <M>                the type of the message published by {@code PulsarProducer}
-     *
-     * @since 6.0
      */
     @Nonnull
     public static <E, M> Sink<E> pulsarSink(
@@ -132,5 +137,4 @@ public final class PulsarSinks {
     ) {
         return PulsarSinks.<E, M>builder(topic, connectionSupplier, schemaSupplier, extractValueFn).build();
     }
-
 }

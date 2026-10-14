@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
-final class CloseablePulsarClient implements PulsarClient {
+public final class CloseablePulsarClient implements PulsarClient {
     private final PulsarClient delegate;
     private final ThrowingRunnable closeAction;
     private final Supplier<Boolean> isDestroyed;
@@ -43,6 +43,13 @@ final class CloseablePulsarClient implements PulsarClient {
         this.closeAction = closeAction;
         this.shutdownAction = shutdownAction;
         this.isDestroyed = isDestroyed;
+    }
+
+    public static PulsarClient unwrap(PulsarClient delegate) {
+        if (delegate instanceof CloseablePulsarClient closeablePulsarClient) {
+            return closeablePulsarClient.unwrap();
+        }
+        return delegate;
     }
 
     public PulsarClient unwrap() {
