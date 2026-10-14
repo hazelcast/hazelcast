@@ -40,6 +40,7 @@ import com.hazelcast.core.HazelcastInstanceAware;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.CPSubsystem;
 import com.hazelcast.cp.internal.CPSubsystemImpl;
+import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.datastructures.cpmap.CPMapService;
 import com.hazelcast.cp.internal.persistence.CPPersistenceService;
 import com.hazelcast.cp.internal.persistence.NopCPPersistenceService;
@@ -473,6 +474,7 @@ public class DefaultNodeExtension implements NodeExtension {
 
         if (node.nodeEngine.getConfig().getCPSubsystemConfig().getCPMemberCount() > 0) {
             services.put(CPMapService.SERVICE_NAME, createCPMapService());
+            services.put(AtomicRefService.SERVICE_NAME, createAtomicRefService());
         }
 
         return services;
@@ -481,6 +483,11 @@ public class DefaultNodeExtension implements NodeExtension {
     protected CPMapService createCPMapService() {
         return new CPMapService(node.nodeEngine);
     }
+
+    protected AtomicRefService createAtomicRefService() {
+        return new AtomicRefService(node.nodeEngine);
+    }
+
 
     @Override
     public MemberSocketInterceptor getSocketInterceptor(EndpointQualifier endpointQualifier) {

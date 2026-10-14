@@ -57,7 +57,8 @@ public class AtomicRefService extends RaftAtomicValueService<Data, AtomicRef, At
      * Name of the service
      */
     public static final String SERVICE_NAME = AtomicRefServiceUtil.SERVICE_NAME;
-    private long maxChunkSizeInBytes;
+
+    protected long maxChunkSizeInBytes;
 
     public AtomicRefService(NodeEngine nodeEngine) {
         super(nodeEngine);
@@ -137,5 +138,10 @@ public class AtomicRefService extends RaftAtomicValueService<Data, AtomicRef, At
     @Override
     public void prepareForSnapshotRestore(@Nonnull CPGroupId groupId) {
         reset();
+    }
+
+    @Override
+    public String toString() {
+        return "AtomicRefService{} " + super.toString();
     }
 }

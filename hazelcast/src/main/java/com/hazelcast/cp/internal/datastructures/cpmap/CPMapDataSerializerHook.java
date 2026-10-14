@@ -69,7 +69,7 @@ public class CPMapDataSerializerHook implements DataSerializerHook {
         constructors[CAS_OP] = CPMapCompareAndSetOp::new;
         constructors[GET_OP] = CPMapGetOp::new;
         constructors[PUT_IF_ABSENT_OP] = CPMapPutIfAbsentOp::new;
-        // 12..17 stay null here: they are owned by the enterprise hook,
+        // 10..17 stay null here: they are owned by the enterprise hook,
         // which merges them into this factory instance in afterFactoriesCreated().
 
         return new ArrayDataSerializableFactory(constructors);

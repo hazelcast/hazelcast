@@ -78,7 +78,7 @@ public class RaftDataService implements ChunkedSnapshotAwareService<Map<Long, Ob
         return createChunks(snapshot).iterator();
     }
 
-    private static List<DataChunkGroup<Map<Long, Object>>> createChunks(Map<Long, Object> snap) {
+    protected static List<DataChunkGroup<Map<Long, Object>>> createChunks(Map<Long, Object> snap) {
         List<DataChunkGroup<Map<Long, Object>>> dataChunks = new ArrayList<>();
 
         List<Map<Long, Object>> maps = splitMap(snap, MAX_AMOUNT_IN_A_CHUNK);

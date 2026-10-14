@@ -54,7 +54,7 @@ public class HeapCPMapStore implements CPMapStore {
     protected volatile int size;
 
     // package-private for testing needs
-    long capacityInBytes;
+    protected int capacityInBytes;
 
     public HeapCPMapStore(int capacityInMb) {
         this.capacityInBytes = checkedCapacityBytes(capacityInMb);
@@ -63,7 +63,7 @@ public class HeapCPMapStore implements CPMapStore {
         this.logger = Logger.getLogger(getClass());
     }
 
-    private static long checkedCapacityBytes(int capacityInMb) {
+    private static int checkedCapacityBytes(int capacityInMb) {
         if (capacityInMb < 1) {
             throw new IllegalArgumentException(
                     "'capacityInMb' must be >= 1 MB, got: " + capacityInMb + " MB"

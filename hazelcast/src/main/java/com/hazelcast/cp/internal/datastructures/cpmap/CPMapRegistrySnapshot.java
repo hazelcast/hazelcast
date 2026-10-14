@@ -31,8 +31,8 @@ import java.util.Set;
 
 public class CPMapRegistrySnapshot {
 
-    private Map<String, CPMapStore> mapStores = new HashMap<>();
-    private Set<String> destroyed = new HashSet<>();
+    protected Map<String, CPMapStore> mapStores = new HashMap<>();
+    protected Set<String> destroyed = new HashSet<>();
 
     public CPMapRegistrySnapshot() {
     }

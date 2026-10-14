@@ -36,6 +36,7 @@ public class RestoredRaftState {
     private final RaftEndpoint votedFor;
     private final SnapshotEntry snapshot;
     private final LogEntry[] entries;
+    private final String restoredFileName;
 
     public RestoredRaftState(
             @Nonnull RaftEndpoint localEndpoint,
@@ -43,7 +44,8 @@ public class RestoredRaftState {
             int term,
             @Nullable RaftEndpoint votedFor,
             @Nullable SnapshotEntry snapshot,
-            @Nonnull LogEntry[] entries
+            @Nonnull LogEntry[] entries,
+            @Nullable String restoredFileName
     ) {
         this.localEndpoint = localEndpoint;
         this.initialMembers = initialMembers;
@@ -51,6 +53,12 @@ public class RestoredRaftState {
         this.votedFor = votedFor;
         this.snapshot = snapshot;
         this.entries = entries;
+        this.restoredFileName = restoredFileName;
+    }
+
+    @Nullable
+    public String restoredFileName() {
+        return restoredFileName;
     }
 
     @Nonnull

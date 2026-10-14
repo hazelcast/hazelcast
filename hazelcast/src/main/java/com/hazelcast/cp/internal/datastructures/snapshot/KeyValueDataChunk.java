@@ -30,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import static com.hazelcast.internal.cluster.Versions.V5_7;
 
 /**
  * Represents the state of a map during snapshotting.
@@ -133,10 +134,13 @@ public final class KeyValueDataChunk extends AbstractDataChunk implements Versio
             IOUtil.writeData(out, keyValuePairs.get(i));
         }
 
-        final int tsSize = entryTimestamps == null ? 0 : entryTimestamps.size();
-        out.writeInt(tsSize);
-        for (int i = 0; i < tsSize; i++) {
-            out.writeLong(entryTimestamps.get(i));
+        // RU_COMPAT_5_6
+        if (out.getVersion().isGreaterOrEqual(V5_7)) {
+            final int tsSize = entryTimestamps == null ? 0 : entryTimestamps.size();
+            out.writeInt(tsSize);
+            for (int i = 0; i < tsSize; i++) {
+                out.writeLong(entryTimestamps.get(i));
+            }
         }
     }
 
@@ -148,10 +152,15 @@ public final class KeyValueDataChunk extends AbstractDataChunk implements Versio
             keyValuePairs.add(IOUtil.readData(in));
         }
 
-        final int timestampCount = in.readInt();
-        entryTimestamps = timestampCount == 0 ? null : new ArrayList<>(timestampCount);
-        for (int i = 0; i < timestampCount; i++) {
-            entryTimestamps.add(in.readLong());
+        // RU_COMPAT_5_6
+        if (in.getVersion().isGreaterOrEqual(V5_7)) {
+            final int timestampCount = in.readInt();
+            entryTimestamps = timestampCount == 0 ? null : new ArrayList<>(timestampCount);
+            for (int i = 0; i < timestampCount; i++) {
+                entryTimestamps.add(in.readLong());
+            }
+        } else {
+            entryTimestamps = null;
         }
     }
 

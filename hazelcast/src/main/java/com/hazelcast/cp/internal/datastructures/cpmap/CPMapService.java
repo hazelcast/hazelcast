@@ -65,12 +65,12 @@ public class CPMapService implements RaftManagedService, RaftRemoteService,
     public static final String SERVICE_NAME = CPMapServiceUtil.SERVICE_NAME;
 
     protected final NodeEngine nodeEngine;
+    protected final long maxChunkSizeInBytes;
 
     protected volatile RaftService raftService;
 
     private final ConcurrentMap<CPGroupId, CPMapRegistry> mapRegistries = new ConcurrentHashMap<>();
     private final CPSubsystemConfig cpSubsystemConfig;
-    private final long maxChunkSizeInBytes;
     private final CPMapOperationProvider cpMapOperationProvider;
 
     public CPMapService(NodeEngine nodeEngine) {
@@ -239,9 +239,13 @@ public class CPMapService implements RaftManagedService, RaftRemoteService,
     public CPMapRegistrySnapshot takeSnapshot(CPGroupId groupId, long commitIndex) {
         CPMapRegistry cpMapRegistry = mapRegistries.get(groupId);
         if (cpMapRegistry == null) {
-            return new CPMapRegistrySnapshot();
+            return newCpMapRegistrySnapshot();
         }
         return cpMapRegistry.takeSnapshot();
+    }
+
+    protected CPMapRegistrySnapshot newCpMapRegistrySnapshot() {
+        return new CPMapRegistrySnapshot();
     }
 
     @Override

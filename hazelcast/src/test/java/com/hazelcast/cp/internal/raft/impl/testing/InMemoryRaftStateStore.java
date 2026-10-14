@@ -117,7 +117,7 @@ public class InMemoryRaftStateStore implements RaftStateStore {
             entries = new LogEntry[0];
         }
 
-        return new RestoredRaftState(localEndpoint, initialMembers, term, votedFor, raftLog.snapshot(), entries);
+        return new RestoredRaftState(localEndpoint, initialMembers, term, votedFor, raftLog.snapshot(), entries, null);
     }
 
     private static class SnapshotPersistenceState {

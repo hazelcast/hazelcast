@@ -128,6 +128,10 @@ public class CPMapRegistry {
     }
 
     public CPMapRegistrySnapshot takeSnapshot() {
+        return newCpMapRegistrySnapshot();
+    }
+
+    protected CPMapRegistrySnapshot newCpMapRegistrySnapshot() {
         return new CPMapRegistrySnapshot(this);
     }
 }
