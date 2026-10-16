@@ -200,11 +200,7 @@ public final class AddressUtil {
         if (!(address instanceof Inet6Address)) {
             return false;
         }
-        if (!Arrays.equals(address.getAddress(), inet6Address.getAddress())) {
-            return false;
-        }
-
-        return true;
+        return Arrays.equals(address.getAddress(), inet6Address.getAddress());
     }
 
     public static Inet6Address getInetAddressFor(final Inet6Address inetAddress, String scope)
