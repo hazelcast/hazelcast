@@ -27,6 +27,10 @@ package com.hazelcast.core;
  * <li>Shut down completed</li>
  * <li>Merging</li>
  * <li>Merged</li>
+ * <li>Client connected</li>
+ * <li>Client disconnected</li>
+ * <li>Client changed cluster (failover)</li>
+ * <li>Client cluster id changed (cluster restarted, no failover configured)</li>
  * </ul>
  *
  * @see com.hazelcast.core.LifecycleListener
@@ -87,9 +91,33 @@ public final class LifecycleEvent {
         CLIENT_DISCONNECTED,
 
         /**
-         * Fired when a client is connected to a new cluster.
+         * Fired when a client configured with failover clusters connects to a cluster
+         * through the failover path. The target may be another configured cluster or a
+         * restarted instance of the cluster the client was connected to, since a failover
+         * client is always switched through that path when the cluster id changes.
+         * Complementary to {@link #CLIENT_CLUSTER_ID_CHANGED}, which covers a client
+         * without failover configuration; the two never fire together. An application
+         * that must react to every cluster identity change should handle both states.
          */
-        CLIENT_CHANGED_CLUSTER
+        CLIENT_CHANGED_CLUSTER,
+
+        /**
+         * Fired when a client without failover configuration reconnects and finds that the
+         * cluster has a different cluster id than before. This means the cluster was fully
+         * shut down and started again, so any state the client registered on it, such as
+         * listeners or query caches, is gone. Never fired on the first connection.
+         * <p>
+         * This state and {@link #CLIENT_CHANGED_CLUSTER} are complementary and never fire
+         * together. A client configured with failover clusters receives
+         * {@link #CLIENT_CHANGED_CLUSTER} for every cluster id change; a client without
+         * failover configuration receives this state. An application that must react
+         * whenever the cluster identity changes, regardless of how the client is
+         * configured, should handle both states, for example with the same listener code.
+         * <p>
+         * The event does not carry the previous cluster id. The new one is available
+         * through {@link com.hazelcast.cluster.Cluster#getClusterId()}.
+         */
+        CLIENT_CLUSTER_ID_CHANGED
     }
 
     final LifecycleState state;
