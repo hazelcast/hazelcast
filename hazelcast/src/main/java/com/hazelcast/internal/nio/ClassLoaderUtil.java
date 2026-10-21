@@ -384,6 +384,28 @@ public final class ClassLoaderUtil {
         return interfaces.toArray(new Class<?>[0]);
     }
 
+    public static String retrieveClassLoaderID(ClassLoader classLoader) {
+
+        if (classLoader == null) {
+            return "bootstrap";
+        }
+
+        return String.format("%s@%s", classLoader.getClass().getName(), Integer.toHexString(System.identityHashCode(classLoader)));
+
+    }
+
+    public static String checkStackForClassNotFound(Throwable t) {
+
+        for(; t != null; t = t.getCause()) {
+            if (t instanceof ClassNotFoundException) {
+                return t.getMessage();
+            }
+        }
+
+        return "";
+
+    }
+
     private static void addOwnInterfaces(Class<?> clazz, Collection<Class<?>> allInterfaces) {
         Class<?>[] interfaces = clazz.getInterfaces();
         Collections.addAll(allInterfaces, interfaces);
