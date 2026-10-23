@@ -104,7 +104,7 @@ abstract class AbstractConfigConstructor extends AbstractStarterObjectConstructo
                     updateConfig(setter, otherConfigObject, otherList);
                 } else if (Enum.class.isAssignableFrom(returnType)) {
                     Enum thisSubConfigObject = (Enum) method.invoke(thisConfigObject);
-                    Class otherEnumClass = classloader.loadClass(thisSubConfigObject.getClass().getName());
+                    Class otherEnumClass = classloader.loadClass(thisSubConfigObject.getDeclaringClass().getName());
                     Object otherEnumValue = Enum.valueOf(otherEnumClass, thisSubConfigObject.name());
                     updateConfig(setter, otherConfigObject, otherEnumValue);
                 } else if (returnTypeName.startsWith("java") || returnType.isPrimitive()) {

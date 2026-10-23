@@ -149,7 +149,7 @@ public class ComplexTestDataStructure {
             firstLimb = reader.readPortable("firstLimb");
             secondLimb = reader.readPortable("secondLimb");
             int healthOrdinal = reader.readInt("health");
-            if (healthOrdinal > 0) {
+            if (healthOrdinal >= 0) {
                 health = Health.values()[healthOrdinal];
             }
         }
