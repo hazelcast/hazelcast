@@ -620,6 +620,8 @@ public class RaftNodeImpl implements RaftNode {
      * <ul>
      * <li>Node is terminating, terminated or stepped down.
      * See {@link RaftNodeStatus}.</li>
+     * <li>The leader has applied its own removal from the group, hence it is no
+     * longer part of the quorum that would have to acknowledge the query.</li>
      * <li>If the leader has not yet marked an entry from its current term
      * committed. See Section 6.4 of Raft Dissertation.</li>
      * <li>There are already
@@ -629,6 +631,11 @@ public class RaftNodeImpl implements RaftNode {
      */
     public boolean canQueryLinearizable() {
         if (isTerminatedOrSteppedDown()) {
+            return false;
+        }
+
+        // a leaving leader is no longer part of the query quorum, so it stops serving these reads
+        if (!state.lastGroupMembers().isKnownMember(getLocalMember())) {
             return false;
         }
 
@@ -1393,7 +1400,35 @@ public class RaftNodeImpl implements RaftNode {
      */
     public void updateGroupMembers(long logIndex, Collection<RaftEndpoint> members) {
         state.updateGroupMembers(logIndex, members);
+        failPendingQueriesIfLeaving();
         printMemberState();
+    }
+
+    /**
+     * Fails the queries that are waiting for a heartbeat round if the local Raft
+     * node has just applied its own removal. Those queries were admitted while
+     * this node was still a member, so completing them would count the vote of
+     * a non-member towards the quorum of the new member list.
+     * <p>
+     * Although {@link LeaderDemotedException} is designed for another case, we use
+     * it here since invocations internally retry when they receive it.
+     */
+    private void failPendingQueriesIfLeaving() {
+        LeaderState leaderState = state.leaderState();
+        if (leaderState == null || state.lastGroupMembers().isKnownMember(getLocalMember())) {
+            return;
+        }
+
+        QueryState queryState = leaderState.queryState();
+        if (queryState.queryCount() == 0) {
+            return;
+        }
+
+        logger.warning("Failing " + queryState.queryCount() + " queries since this node is leaving the group");
+        for (BiTuple<Object, InternalCompletableFuture> t : queryState.operations()) {
+            t.element2.completeExceptionally(new LeaderDemotedException(state.localEndpoint(), null));
+        }
+        queryState.reset();
     }
 
     /**
