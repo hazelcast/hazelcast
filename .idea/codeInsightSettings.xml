@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavaProjectCodeInsightSettings">
+    <included-static-names>
+      <name>javax.annotation.Nonnull</name>
+      <name>javax.annotation.Nullable</name>
+    </included-static-names>
+  </component>
+</project>
