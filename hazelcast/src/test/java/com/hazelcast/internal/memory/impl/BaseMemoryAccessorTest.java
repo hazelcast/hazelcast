@@ -665,7 +665,7 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
     }
 
     @Test
-    @RequiresUnalignedMemoryAccessSupport
+    @RequiresUnalignedAtomicMemoryAccessSupport
     public void test_compareAndSwapInt_whenUnaligned() {
         do_test_compareAndSwapInt(false);
     }
@@ -698,7 +698,7 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
     }
 
     @Test
-    @RequiresUnalignedMemoryAccessSupport
+    @RequiresUnalignedAtomicMemoryAccessSupport
     public void test_compareAndSwapLong_whenUnaligned() {
         do_test_compareAndSwapLong(false);
     }
@@ -753,7 +753,7 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
     }
 
     @Test
-    @RequiresUnalignedMemoryAccessSupport
+    @RequiresUnalignedAtomicMemoryAccessSupport
     public void test_putOrderedInt_whenUnaligned() {
         do_test_putOrderedInt(false);
     }
@@ -776,7 +776,7 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
     }
 
     @Test
-    @RequiresUnalignedMemoryAccessSupport
+    @RequiresUnalignedAtomicMemoryAccessSupport
     public void test_putOrderedLong_whenUnaligned() {
         do_test_putOrderedLong(false);
     }
