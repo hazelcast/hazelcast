@@ -80,10 +80,7 @@ public class EntryEventFilter implements EventFilter, IdentifiedDataSerializable
         if (includeValue != that.includeValue) {
             return false;
         }
-        if (key != null ? !key.equals(that.key) : that.key != null) {
-            return false;
-        }
-        return true;
+        return key != null ? key.equals(that.key) : that.key == null;
     }
 
     @Override

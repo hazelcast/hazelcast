@@ -62,9 +62,6 @@ public abstract class ClusterPermission extends Permission {
         if (getName() == null && other.getName() != null) {
             return false;
         }
-        if (!getName().equals(other.getName())) {
-            return false;
-        }
-        return true;
+        return getName().equals(other.getName());
     }
 }

@@ -284,10 +284,7 @@ public class OutboundResponseHandlerTest {
             if (no != that.no) {
                 return false;
             }
-            if (street != null ? !street.equals(that.street) : that.street != null) {
-                return false;
-            }
-            return true;
+            return street != null ? street.equals(that.street) : that.street == null;
         }
 
         @Override

@@ -206,11 +206,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
             if (k != that.k) {
                 return false;
             }
-            if (s != null ? !s.equals(that.s) : that.s != null) {
-                return false;
-            }
-
-            return true;
+            return s != null ? s.equals(that.s) : that.s == null;
         }
 
         @Override

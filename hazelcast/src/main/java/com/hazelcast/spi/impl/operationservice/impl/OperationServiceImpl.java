@@ -460,11 +460,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
         ClusterClock clusterClock = nodeEngine.getClusterService().getClusterClock();
         long now = clusterClock.getClusterTime();
-        if (expireTime < now) {
-            return true;
-        }
-
-        return false;
+        return expireTime < now;
     }
 
     @Override

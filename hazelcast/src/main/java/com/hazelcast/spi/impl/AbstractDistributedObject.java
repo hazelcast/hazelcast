@@ -164,11 +164,7 @@ public abstract class AbstractDistributedObject<S extends RemoteService> impleme
         }
 
         String serviceName = getServiceName();
-        if (serviceName != null ? !serviceName.equals(that.getServiceName()) : that.getServiceName() != null) {
-            return false;
-        }
-
-        return true;
+        return serviceName != null ? serviceName.equals(that.getServiceName()) : that.getServiceName() == null;
     }
 
     @Override

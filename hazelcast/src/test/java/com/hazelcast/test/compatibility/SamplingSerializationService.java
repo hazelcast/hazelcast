@@ -332,10 +332,7 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     public static boolean isTestClass(String className) {
-        if (className.contains(TEST_CLASS_SUFFIX) || className.contains(TEST_PACKAGE_INFIX)
-                || className.contains(DUMMY_CLASS_PREFIX) || className.startsWith(EXAMPLE_PACKAGE_PREFIX)) {
-            return true;
-        }
-        return false;
+        return className.contains(TEST_CLASS_SUFFIX) || className.contains(TEST_PACKAGE_INFIX)
+                || className.contains(DUMMY_CLASS_PREFIX) || className.startsWith(EXAMPLE_PACKAGE_PREFIX);
     }
 }
