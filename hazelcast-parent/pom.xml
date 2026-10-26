@@ -128,7 +128,7 @@
         <org.springframework6.version>6.2.19</org.springframework6.version>
         <tomcat10.version>10.1.61</tomcat10.version>
 
-        <spring.boot4.version>4.1.1</spring.boot4.version>
+        <spring.boot4.version>4.1.2</spring.boot4.version>
         <org.springframework7.version>7.0.7</org.springframework7.version>
 
         <!--
