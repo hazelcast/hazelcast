@@ -176,7 +176,7 @@
                 <configuration combine.children="append">
                     <additionalClasspathElements>
                         <additionalClasspathElement>
-                            ${project.build.directory}/redis-redis-kafka-connect-0.9.0/lib/redis-kafka-connect-0.9.0-all.jar
+                            ${project.build.directory}/test-classes/redis-redis-kafka-connect-0.9.0/lib/redis-kafka-connect-0.9.0-all.jar
                         </additionalClasspathElement>
                     </additionalClasspathElements>
                 </configuration>
