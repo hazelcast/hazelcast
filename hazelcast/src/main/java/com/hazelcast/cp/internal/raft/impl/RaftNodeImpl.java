@@ -332,9 +332,7 @@ public class RaftNodeImpl implements RaftNode {
                 invalidateFuturesFrom(state.commitIndex() + 1);
                 LeaderState leaderState = state.leaderState();
                 if (leaderState != null) {
-                    for (BiTuple<Object, InternalCompletableFuture> t : leaderState.queryState().operations()) {
-                        t.element2.completeExceptionally(new LeaderDemotedException(state.localEndpoint(), null));
-                    }
+                    leaderState.queryState().fail(new LeaderDemotedException(state.localEndpoint(), null));
                 }
                 state.completeLeadershipTransfer(new LeaderDemotedException(state.localEndpoint(), null));
                 setStatus(TERMINATED);
@@ -1425,10 +1423,7 @@ public class RaftNodeImpl implements RaftNode {
         }
 
         logger.warning("Failing " + queryState.queryCount() + " queries since this node is leaving the group");
-        for (BiTuple<Object, InternalCompletableFuture> t : queryState.operations()) {
-            t.element2.completeExceptionally(new LeaderDemotedException(state.localEndpoint(), null));
-        }
-        queryState.reset();
+        queryState.fail(new LeaderDemotedException(state.localEndpoint(), null));
     }
 
     /**
@@ -1478,9 +1473,7 @@ public class RaftNodeImpl implements RaftNode {
     public void toFollower(int term) {
         LeaderState leaderState = state.leaderState();
         if (leaderState != null) {
-            for (BiTuple<Object, InternalCompletableFuture> t : leaderState.queryState().operations()) {
-                t.element2.completeExceptionally(new LeaderDemotedException(state.localEndpoint(), null));
-            }
+            leaderState.queryState().fail(new LeaderDemotedException(state.localEndpoint(), null));
         }
 
         // Suppress pre-voting for one leader election timeout after this demotion.
