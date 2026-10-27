@@ -111,7 +111,7 @@ class PulsarSinkSendRetryTest extends PulsarTestSupport {
                 assertThat(inbox.isEmpty()).isTrue();
 
                 sink.saveToSnapshot();
-                sink.snapshotCommitPrepare();
+                assertTrueEventually(() -> assertThat(sink.snapshotCommitPrepare()).isTrue(), 30);
                 sink.snapshotCommitFinish(true);
 
                 List<String> actual = readThroughEndMarker(reader);
