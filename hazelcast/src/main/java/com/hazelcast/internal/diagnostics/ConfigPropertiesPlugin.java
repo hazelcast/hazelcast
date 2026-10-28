@@ -17,6 +17,7 @@
 package com.hazelcast.internal.diagnostics;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.internal.config.SensitiveDataMasker;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
@@ -81,14 +82,14 @@ public class ConfigPropertiesPlugin extends DiagnosticsPlugin {
         writer.startSection("ConfigProperties");
         for (String key : keyList) {
             String value = properties.get(key);
-            writer.writeKeyValueEntry(key, value);
+            writer.writeKeyValueEntry(key, SensitiveDataMasker.mask(key, value));
         }
 
         // If diagnostics belong to client, then there is no nodeEngine.
         if (nodeEngine != null) {
             Map<String, String> pluginProperties = nodeEngine.getDiagnostics().getDiagnosticsConfig().getPluginProperties();
             for (Map.Entry<String, String> entry : pluginProperties.entrySet()) {
-                writer.writeKeyValueEntry(entry.getKey(), entry.getValue());
+                writer.writeKeyValueEntry(entry.getKey(), SensitiveDataMasker.mask(entry.getKey(), entry.getValue()));
             }
         }
 

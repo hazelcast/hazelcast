@@ -37,7 +37,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.spi.utils.RetryUtils;
 import org.apache.pulsar.client.admin.PulsarAdmin;
-import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.Producer;
 import org.apache.pulsar.client.api.ProducerBuilder;
 import org.apache.pulsar.client.api.PulsarClient;
@@ -58,9 +57,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.util.ExceptionUtil.safeClose;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -83,6 +82,7 @@ import static java.util.stream.Collectors.joining;
  */
 public class WritePulsarP<E, M> extends AbstractProcessor {
     private static final int NUM_DEDUPLICATION_CHECK = 5;
+    private static final int MAX_IN_FLY_MESSAGES = 1000;
     private ILogger logger;
     private PulsarClient client;
     private Producer<M> producer;
@@ -95,6 +95,8 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
     private final PulsarSinkConfig<E, M> pulsarConfig;
     private UnboundedTransactionsProcessorUtility<PulsarTransactionId, PulsarTransaction> transactionUtility;
     private volatile Throwable error;
+
+    private final AtomicInteger inFlightMessages = new AtomicInteger();
 
     public WritePulsarP(PulsarSinkConfig<E, M> pulsarConfig) {
         this.pulsarConfig = pulsarConfig;
@@ -200,12 +202,23 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
     }
 
     @Override
+    public boolean tryProcess() {
+        checkError();
+        return true;
+    }
+
+    @Override
     @SuppressWarnings("unchecked")
     public void process(int ordinal, @Nonnull Inbox inbox) {
         try {
             E element;
-            List<CompletableFuture<MessageId>> futures = new ArrayList<>();
             while ((element = (E) inbox.peek()) != null) {
+                checkError();
+                int currentInFly = inFlightMessages.get();
+                if (currentInFly >= MAX_IN_FLY_MESSAGES) {
+                    return;
+                }
+                inFlightMessages.incrementAndGet();
                 M value = extractValueFn.apply(element);
                 String key = extractKeyFn.apply(element);
                 Map<String, String> properties = extractPropertiesFn.apply(element);
@@ -214,27 +227,28 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
                 if (transactionUtility.usesTransactionLifecycle()) {
                     PulsarTransaction pulsarTransaction = transactionUtility.activeTransaction();
                     checkNotNull(pulsarTransaction, "there is no active transaction");
-                    futures.add(pulsarTransaction.add(key, value, timestamp, properties));
+                    pulsarTransaction.add(key, value, timestamp, properties);
                 } else {
-                    var sendFuture = sendMessage(key, value, timestamp, properties, null);
-                    futures.add(sendFuture);
+                    sendMessage(key, value, timestamp, properties, null);
                 }
                 inbox.remove();
             }
-            if (!futures.isEmpty()) {
-                waitForSending(futures);
-            }
-            Throwable throwable = error;
-            if (throwable != null) {
-                error = null;
-                throw new JetException(throwable);
-            }
+            checkError();
+        } catch (JetException e) {
+            throw e;
         } catch (Exception e) {
-            throw wrapFailure(e.getMessage(), e);
+            throw wrapFailure(e);
         }
     }
 
-    private CompletableFuture<MessageId> sendMessage(String key, M value, Long timestamp, Map<String, String> properties,
+    private void checkError() {
+        Throwable throwable = error;
+        if (throwable != null) {
+            throw wrapFailure(throwable);
+        }
+    }
+
+    private void sendMessage(String key, M value, Long timestamp, Map<String, String> properties,
                                                      Transaction transaction) {
         TypedMessageBuilder<M> builder =
             transactionUtility.usesTransactionLifecycle()
@@ -250,10 +264,11 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             builder = builder.key(key);
         }
 
-        return builder.sendAsync().whenComplete((result, e) -> {
+        builder.sendAsync().whenComplete((result, e) -> {
             if (e != null) {
                 error = e;
             }
+            inFlightMessages.decrementAndGet();
         });
     }
 
@@ -264,6 +279,9 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
     @Override
     public boolean snapshotCommitPrepare() {
+        if (!flush()) {
+            return false;
+        }
         return transactionUtility.snapshotCommitPrepare();
     }
 
@@ -281,9 +299,21 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
+        if (!flush()) {
+            return false;
+        }
         if (transactionUtility.usesTransactionLifecycle()) {
             transactionUtility.afterCompleted();
         }
+        return true;
+    }
+
+    private boolean flush() {
+        checkError();
+        if (inFlightMessages.get() != 0) {
+            return false;
+        }
+        checkError();
         return true;
     }
 
@@ -385,21 +415,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
                                     + "hit and and data may be lost.")
                                    .formatted(transactionId));
             } else {
-                throw wrapFailure(e.getMessage(), e);
-            }
-        }
-    }
-
-    private void waitForSending(List<CompletableFuture<MessageId>> futures) {
-        if (!futures.isEmpty()) {
-            try {
-                CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                                 .get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw wrapFailure(e.getMessage(), e);
-            } catch (ExecutionException e) {
-                throw wrapFailure(e.getMessage(), e);
+                throw wrapFailure(e);
             }
         }
     }
@@ -460,7 +476,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
                                     .build().get();
                 transactionId.txId = transaction.getTxnID();
             } catch (Exception e) {
-                throw wrapFailure(e.getMessage(), e);
+                throw wrapFailure(e);
             }
         }
 
@@ -473,7 +489,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             try {
                 transaction.abort().get();
             } catch (IllegalStateException | InterruptedException | ExecutionException e) {
-                throw wrapFailure(e.getMessage(), e);
+                throw wrapFailure(e);
             }
         }
 
@@ -481,8 +497,8 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         public void release() {
         }
 
-        CompletableFuture<MessageId> add(String key, M value, Long timestamp, Map<String, String> properties) {
-            return sendMessage(key, value, timestamp, properties, transaction);
+        void add(String key, M value, Long timestamp, Map<String, String> properties) {
+            sendMessage(key, value, timestamp, properties, transaction);
         }
     }
 

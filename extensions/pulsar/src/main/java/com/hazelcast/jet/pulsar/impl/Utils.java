@@ -71,4 +71,11 @@ public final class Utils {
         }
         return new JetException(message, cause);
     }
+
+    /**
+     * Wraps failure in either {@link JetException} or {@link RestartableException}.
+     */
+    public static JetException wrapFailure(Throwable cause0) {
+        return wrapFailure(cause0.getMessage(), cause0);
+    }
 }

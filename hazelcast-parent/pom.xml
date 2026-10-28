@@ -128,7 +128,7 @@
         <org.springframework6.version>6.2.19</org.springframework6.version>
         <tomcat10.version>10.1.61</tomcat10.version>
 
-        <spring.boot4.version>4.1.1</spring.boot4.version>
+        <spring.boot4.version>4.1.2</spring.boot4.version>
         <org.springframework7.version>7.0.7</org.springframework7.version>
 
         <!--
@@ -145,7 +145,7 @@
 
         <!-- test dependencies -->
         <artemis.version>2.57.0</artemis.version>
-        <bytebuddy.version>1.18.15</bytebuddy.version>
+        <bytebuddy.version>1.18.16</bytebuddy.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <hazelcast-hibernate53.version>5.2.0</hazelcast-hibernate53.version>
         <system-stubs.version>2.1.8</system-stubs.version>
@@ -769,7 +769,7 @@
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>7.4.13.Final</version>
+                <version>7.4.14.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>
@@ -916,7 +916,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>3.6.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.jacoco</groupId>
