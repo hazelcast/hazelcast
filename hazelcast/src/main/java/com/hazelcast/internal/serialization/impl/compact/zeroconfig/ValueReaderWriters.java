@@ -199,7 +199,7 @@ public final class ValueReaderWriters {
                     = createReaderWriterForArray(compactStreamSerializer, clazz, componentTypes.element2, fieldName + "!values");
             return new HashMapReaderWriter(fieldName, componentTypes.element1,
                     componentTypes.element2, keyReaderWriter, valueReaderWriter);
-        } else if (Enum.class.isAssignableFrom(type)) {
+        } else if (type.isEnum()) {
             return new EnumReaderWriter(fieldName, (Class<? extends Enum>) type);
         }
 
@@ -220,7 +220,7 @@ public final class ValueReaderWriters {
     private static ValueReaderWriter createReaderWriterForArray(CompactStreamSerializer compactStreamSerializer,
                                                                 Class<?> clazz, Class<?> componentType,
                                                                 String fieldName) {
-        if (Enum.class.isAssignableFrom(componentType)) {
+        if (componentType.isEnum()) {
             return new EnumArrayReaderWriter(fieldName, (Class<? extends Enum>) componentType);
         }
 
