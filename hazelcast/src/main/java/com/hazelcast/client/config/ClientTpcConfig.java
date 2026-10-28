@@ -135,11 +135,7 @@ public final class ClientTpcConfig {
             return false;
         }
 
-        if (that.connectionCount != this.connectionCount) {
-            return false;
-        }
-
-        return true;
+        return that.connectionCount == this.connectionCount;
     }
 
     @Override

@@ -108,10 +108,7 @@ public class SimpleTokenCredentials implements TokenCredentials, IdentifiedDataS
             return false;
         }
         SimpleTokenCredentials other = (SimpleTokenCredentials) obj;
-        if (!Arrays.equals(token, other.token)) {
-            return false;
-        }
-        return true;
+        return Arrays.equals(token, other.token);
     }
 
 }

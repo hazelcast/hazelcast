@@ -200,11 +200,7 @@ public final class SampleTestObjects {
             if (name != null ? !name.equals(value.name) : value.name != null) {
                 return false;
             }
-            if (type != null ? !type.equals(value.type) : value.type != null) {
-                return false;
-            }
-
-            return true;
+            return type != null ? type.equals(value.type) : value.type == null;
         }
 
         @Override
@@ -364,10 +360,7 @@ public final class SampleTestObjects {
             if (Double.compare(employee.salary, salary) != 0) {
                 return false;
             }
-            if (name != null ? !name.equals(employee.name) : employee.name != null) {
-                return false;
-            }
-            return true;
+            return name != null ? name.equals(employee.name) : employee.name == null;
         }
 
         @Override

@@ -41,14 +41,10 @@ public class NumericPrecedenceParameterConverter extends AbstractParameterConver
             return true;
         }
 
-        if (targetType.getTypeFamily().isNumericInteger() && valueConverter.getTypeFamily().isNumericInteger()) {
-            // we allow conversion among any integer types. If the value is out of range, it will fail later.
-            return true;
-        }
-
+        // we allow conversion among any integer types. If the value is out of range, it will fail later.
         // we don't allow conversion from numeric types with higher precedence to lower precedence types.
         // For example conversion from DOUBLE to DECIMAL isn't allowed, or from DECIMAL to integer types.
         // The reason is that precision loss is possible.
-        return false;
+        return targetType.getTypeFamily().isNumericInteger() && valueConverter.getTypeFamily().isNumericInteger();
     }
 }

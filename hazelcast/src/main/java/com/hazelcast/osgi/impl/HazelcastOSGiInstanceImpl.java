@@ -333,11 +333,7 @@ class HazelcastOSGiInstanceImpl
         if (!delegatedInstance.equals(that.delegatedInstance)) {
             return false;
         }
-        if (!ownerService.equals(that.ownerService)) {
-            return false;
-        }
-
-        return true;
+        return ownerService.equals(that.ownerService);
     }
 
     @Override
