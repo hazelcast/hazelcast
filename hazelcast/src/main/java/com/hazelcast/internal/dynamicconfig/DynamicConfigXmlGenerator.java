@@ -667,6 +667,7 @@ public final class DynamicConfigXmlGenerator {
                 gen.open("query-cache", "name", queryCacheConfig.getName());
                 gen.node("include-value", queryCacheConfig.isIncludeValue());
                 gen.node("in-memory-format", queryCacheConfig.getInMemoryFormat());
+                gen.node("mode", queryCacheConfig.getMode());
                 gen.node("populate", queryCacheConfig.isPopulate());
                 gen.node("coalesce", queryCacheConfig.isCoalesce());
                 gen.node("delay-seconds", queryCacheConfig.getDelaySeconds());

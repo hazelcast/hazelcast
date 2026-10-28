@@ -357,6 +357,7 @@ public class ConfigCompatibilityChecker {
                 && c1.isPopulate() == c2.isPopulate()
                 && c1.isCoalesce() == c2.isCoalesce()
                 && c1.getInMemoryFormat() == c2.getInMemoryFormat()
+                && c1.getMode() == c2.getMode()
                 && isCompatible(c1.getEvictionConfig(), c2.getEvictionConfig())
                 && isCollectionCompatible(c1.getEntryListenerConfigs(), c2.getEntryListenerConfigs(), new EntryListenerConfigChecker())
                 && isCollectionCompatible(c1.getIndexConfigs(), c2.getIndexConfigs(), new IndexConfigChecker())

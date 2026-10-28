@@ -16,10 +16,13 @@
 
 package com.hazelcast.map.impl.querycache;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EvictionConfig;
+import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.PredicateConfig;
 import com.hazelcast.config.QueryCacheConfig;
+import com.hazelcast.config.QueryCacheMode;
 import com.hazelcast.core.EntryAdapter;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.IFunction;
@@ -132,6 +135,28 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         assertTrueEventually(() -> assertEquals(0, queryCache.size()));
         assertTrueEventually(() -> assertEquals("Count of add events wrong!", 9, countAddEvent.get()));
         assertTrueEventually(() -> assertEquals("Count of remove events wrong!", 9, countRemoveEvent.get()));
+    }
+
+    @Test
+    public void testQueryCache_whenPassThroughMode_doesNotStoreEntries() {
+        Config config = new Config();
+        QueryCacheConfig queryCacheConfig = new QueryCacheConfig(cacheName)
+                .setMode(QueryCacheMode.PASS_THROUGH)
+                .setPredicateConfig(new PredicateConfig(Predicates.alwaysTrue()))
+                .setEvictionConfig(new EvictionConfig()
+                        .setMaxSizePolicy(MaxSizePolicy.ENTRY_COUNT)
+                        .setSize(0));
+        config.getMapConfig(mapName).addQueryCacheConfig(queryCacheConfig);
+
+        IMap<Integer, Integer> map = getIMap(config);
+        QueryCache<Integer, Integer> queryCache = map.getQueryCache(cacheName);
+        CountDownLatch added = new CountDownLatch(1);
+        queryCache.addEntryListener((EntryAddedListener<Integer, Integer>) event -> added.countDown(), true);
+
+        map.put(1, 1);
+
+        assertOpenEventually(added);
+        assertTrueEventually(() -> assertEquals(0, queryCache.size()));
     }
 
     @Test
