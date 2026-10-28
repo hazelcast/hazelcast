@@ -43,6 +43,7 @@ import com.hazelcast.config.vector.Metric;
 import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.config.SensitiveDataMasker;
 import com.hazelcast.nio.SocketInterceptor;
 import com.hazelcast.spi.MemberAddressProvider;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -96,6 +97,9 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
+        String licenseKey = "HazelcastLicenseKey";
+        String maskedLicenseKey = SensitiveDataMasker.mask("license-key", licenseKey);
+
         Config cfg = new Config();
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", "Hazelcast")
@@ -107,7 +111,7 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         symmetricEncryptionConfig.setSalt("theSalt");
 
         cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
-        cfg.setLicenseKey("HazelcastLicenseKey");
+        cfg.setLicenseKey(licenseKey);
 
         Config newConfigViaGenerator = getNewConfigViaGenerator(cfg, true);
         SSLConfig generatedSSLConfig = newConfigViaGenerator.getNetworkConfig().getSSLConfig();
@@ -119,7 +123,7 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         String theSalt = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
         assertEquals(MASK_FOR_SENSITIVE_DATA, secPassword);
         assertEquals(MASK_FOR_SENSITIVE_DATA, theSalt);
-        assertEquals(MASK_FOR_SENSITIVE_DATA, newConfigViaGenerator.getLicenseKey());
+        assertEquals(maskedLicenseKey, newConfigViaGenerator.getLicenseKey());
     }
 
     @Test

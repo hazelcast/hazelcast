@@ -41,6 +41,7 @@ import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.dataconnection.impl.DataConnectionServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
+import com.hazelcast.internal.config.SensitiveDataMasker;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
@@ -107,6 +108,9 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
+        String licenseKey = "HazelcastLicenseKey";
+        String maskedLicenseKey = SensitiveDataMasker.mask("license-key", licenseKey);
+
         Config cfg = new Config();
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", "Hazelcast")
@@ -118,7 +122,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         symmetricEncryptionConfig.setSalt("theSalt");
 
         cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
-        cfg.setLicenseKey("HazelcastLicenseKey");
+        cfg.setLicenseKey(licenseKey);
 
         cfg.getSecurityConfig().addRealmConfig("simple",
                         new RealmConfig().setSimpleAuthenticationConfig(new SimpleAuthenticationConfig().addUser("test", "pass"))
@@ -137,7 +141,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         String theSalt = newConfigViaXMLGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
         assertEquals(MASK_FOR_SENSITIVE_DATA, secPassword);
         assertEquals(MASK_FOR_SENSITIVE_DATA, theSalt);
-        assertEquals(MASK_FOR_SENSITIVE_DATA, newConfigViaXMLGenerator.getLicenseKey());
+        assertEquals(maskedLicenseKey, newConfigViaXMLGenerator.getLicenseKey());
         RealmConfig simpleRealm = secCfg.getRealmConfig("simple");
         assertEquals(MASK_FOR_SENSITIVE_DATA, simpleRealm.getSimpleAuthenticationConfig().getPassword("test"));
         assertEquals(MASK_FOR_SENSITIVE_DATA, simpleRealm.getUsernamePasswordIdentityConfig().getPassword());

@@ -843,7 +843,7 @@ public final class DynamicConfigXmlGenerator {
                 gen.node("use-public-ip", "true");
             }
             for (String key : c.getProperties().keySet()) {
-                gen.node(key, c.getProperties().get(key));
+                gen.node(key, gen.propertyValue(key, c.getProperties().get(key)));
             }
             gen.close();
         }

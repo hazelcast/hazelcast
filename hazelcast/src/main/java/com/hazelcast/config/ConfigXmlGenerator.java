@@ -38,6 +38,7 @@ import com.hazelcast.config.security.UsernamePasswordIdentityConfig;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigXmlGeneratorHelper;
 import com.hazelcast.internal.config.PersistenceAndHotRestartPersistenceMerger;
+import com.hazelcast.internal.config.SensitiveDataMasker;
 import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.internal.util.MapUtil;
@@ -143,7 +144,7 @@ public class ConfigXmlGenerator {
         isNotNull(config, "Config");
 
         StringBuilder xml = new StringBuilder();
-        XmlGenerator gen = new XmlGenerator(xml);
+        XmlGenerator gen = new XmlGenerator(xml, maskSensitiveFields);
 
         PersistenceAndHotRestartPersistenceMerger.merge(config.getHotRestartPersistenceConfig(),
                 config.getPersistenceConfig());
@@ -155,7 +156,7 @@ public class ConfigXmlGenerator {
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-")
                 .append(Versions.CURRENT_CLUSTER_VERSION)
                 .append(".xsd\">");
-        gen.node("license-key", getOrMaskValue(config.getLicenseKey()))
+        gen.node("license-key", getOrMaskValue("license-key", config.getLicenseKey()))
                 .node("instance-name", config.getInstanceName())
                 .node("cluster-name", config.getClusterName())
         ;
@@ -210,6 +211,10 @@ public class ConfigXmlGenerator {
 
         String xmlString = xml.toString();
         return formatted ? format(xmlString, INDENT) : xmlString;
+    }
+
+    private String getOrMaskValue(String key, String value) {
+        return maskSensitiveFields ? SensitiveDataMasker.mask(key, value) : value;
     }
 
     private String getOrMaskValue(String value) {
@@ -1331,10 +1336,35 @@ public class ConfigXmlGenerator {
         private static final int CAPACITY = 64;
 
         private final StringBuilder xml;
+        private final boolean maskSensitiveFields;
         private final ArrayDeque<String> openNodes = new ArrayDeque<>();
 
         public XmlGenerator(StringBuilder xml) {
+            this(xml, false);
+        }
+
+        /**
+         * @param maskSensitiveFields whether free-form property values are masked with
+         *                            {@link SensitiveDataMasker#mask(String, String)}.
+         *                            Leave it {@code false} for any output that is parsed
+         *                            back as configuration.
+         */
+        public XmlGenerator(StringBuilder xml, boolean maskSensitiveFields) {
             this.xml = xml;
+            this.maskSensitiveFields = maskSensitiveFields;
+        }
+
+        /**
+         * Returns the value to write for a free-form property. If this generator masks
+         * sensitive fields and the value is a string, the result of
+         * {@link SensitiveDataMasker#mask(String, String)}, which masks values of
+         * sensitive keys and credentials embedded in URLs, the value itself otherwise.
+         */
+        public Object propertyValue(String key, Object value) {
+            if (maskSensitiveFields && value instanceof String stringValue) {
+                return SensitiveDataMasker.mask(key, stringValue);
+            }
+            return value;
         }
 
         public XmlGenerator open(String name, Object... attributes) {
@@ -1376,7 +1406,8 @@ public class ConfigXmlGenerator {
                 open("properties");
                 Set keys = props.keySet();
                 for (Object key : keys) {
-                    node("property", props.getProperty(key.toString()), "name", key.toString());
+                    String name = key.toString();
+                    node("property", propertyValue(name, props.getProperty(name)), "name", name);
                 }
                 close();
             }
@@ -1393,7 +1424,7 @@ public class ConfigXmlGenerator {
             if (!MapUtil.isNullOrEmpty(props)) {
                 open("properties");
                 for (Map.Entry<String, ?> entry : props.entrySet()) {
-                    node("property", entry.getValue(), "name", entry.getKey());
+                    node("property", propertyValue(entry.getKey(), entry.getValue()), "name", entry.getKey());
                 }
                 close();
             }
