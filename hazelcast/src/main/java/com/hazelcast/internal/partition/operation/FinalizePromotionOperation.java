@@ -86,13 +86,26 @@ final class FinalizePromotionOperation extends AbstractPromotionOperation {
 
     @Override
     public void afterRun() {
-        InternalPartitionServiceImpl service = getService();
-        PartitionStateManager partitionStateManager = service.getPartitionStateManager();
-        partitionStateManager.clearMigratingFlag(getPartitionId());
-
+        clearMigratingFlag();
         if (finalizePromotionsCallback != null) {
             finalizePromotionsCallback.onComplete(migrationInfo);
         }
+    }
+
+    @Override
+    public void onExecutionFailure(Throwable e) {
+        // afterRun() does not run after a failure. Without this, the migrating flag set by BeforePromotionOperation stays,
+        // and PromotionCommitOperation waits for this operation forever and keeps the promotion permit.
+        clearMigratingFlag();
+        if (finalizePromotionsCallback != null) {
+            finalizePromotionsCallback.onFailure(migrationInfo);
+        }
+    }
+
+    private void clearMigratingFlag() {
+        InternalPartitionServiceImpl service = getService();
+        PartitionStateManager partitionStateManager = service.getPartitionStateManager();
+        partitionStateManager.clearMigratingFlag(getPartitionId());
     }
 
     /**

@@ -451,6 +451,11 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
         }
 
         long callTimeout = op.getCallTimeout();
+        if (callTimeout == Long.MAX_VALUE) {
+            // infinite call timeout
+            return false;
+        }
+
         long invocationTime = op.getInvocationTime();
         long expireTime = invocationTime + callTimeout;
 

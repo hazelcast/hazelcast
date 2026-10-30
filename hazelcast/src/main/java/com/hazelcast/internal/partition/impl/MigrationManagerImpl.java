@@ -126,6 +126,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_MIGRATION_T
 public class MigrationManagerImpl implements MigrationManager {
 
     private static final int MIGRATION_PAUSE_DURATION_SECONDS_ON_MIGRATION_FAILURE = 3;
+    private static final long PROMOTION_RETRY_DELAY_MILLIS = 250;
     private static final int PUBLISH_COMPLETED_MIGRATIONS_BATCH_SIZE = 10;
     private static final long CHECK_CLUSTER_PARTITION_RUNTIME_STATES_SYNC_TIMEOUT_SECONDS = 2;
 
@@ -1696,6 +1697,12 @@ public class MigrationManagerImpl implements MigrationManager {
                 }
             }
 
+            if (!success) {
+                // Do not retry at once. For example, a promotion fails while another operation keeps the migrating flag
+                // of a partition, and an immediate retry fails again until the flag is cleared (busy spin).
+                sleepBeforePromotionRetry();
+            }
+
             partitionServiceLock.lock();
             try {
                 if (success) {
@@ -1706,6 +1713,14 @@ public class MigrationManagerImpl implements MigrationManager {
                 }
             } finally {
                 partitionServiceLock.unlock();
+            }
+        }
+
+        private void sleepBeforePromotionRetry() {
+            try {
+                Thread.sleep(PROMOTION_RETRY_DELAY_MILLIS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
 
