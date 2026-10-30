@@ -498,7 +498,7 @@
             </dependency>
             <!--
                 Addresses convergence between:
-                - `com.fasterxml.woodstox:woodstox-core` (transitively via `org.apache.hadoop:hadoop-client`)
+                - `com.fasterxml.woodstox:woodstox-core`
                 - com.google.cloud:google-cloud-storage (transitively via `com.google.cloud.bigdataoss:gcs-connector`)
             -->
             <dependency>
