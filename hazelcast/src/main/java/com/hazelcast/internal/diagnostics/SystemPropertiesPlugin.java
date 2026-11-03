@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.diagnostics;
 
+import com.hazelcast.internal.config.SensitiveDataMasker;
 import com.hazelcast.logging.ILogger;
 
 import java.lang.management.ManagementFactory;
@@ -68,7 +69,7 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
 
         StringBuilder sb = new StringBuilder();
         for (String argument : arguments) {
-            sb.append(argument);
+            sb.append(SensitiveDataMasker.maskSystemPropertyArg(argument));
             sb.append(' ');
         }
         return sb.toString();
@@ -118,7 +119,7 @@ public class SystemPropertiesPlugin extends DiagnosticsPlugin {
         if (keyString.equals(JVM_ARGS)) {
             return inputArgs;
         } else {
-            return System.getProperty(keyString);
+            return SensitiveDataMasker.mask(keyString, System.getProperty(keyString));
         }
     }
 }

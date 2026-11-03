@@ -36,6 +36,8 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
     private static final String FAKE_PROPERTY = "hazelcast.fake.property";
     private static final String FAKE_PROPERTY_VALUE = "foobar";
+    private static final String FAKE_SENSITIVE_PROPERTY = "hazelcast.fake.password";
+    private static final String FAKE_SENSITIVE_PROPERTY_VALUE = "s3cr3t";
 
     private SystemPropertiesPlugin plugin;
 
@@ -45,11 +47,13 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
         plugin = new SystemPropertiesPlugin(getNodeEngineImpl(hz).getLogger(SystemPropertiesPlugin.class));
         plugin.onStart();
         System.setProperty(FAKE_PROPERTY, "foobar");
+        System.setProperty(FAKE_SENSITIVE_PROPERTY, FAKE_SENSITIVE_PROPERTY_VALUE);
     }
 
     @After
     public void tearDown() {
         System.clearProperty(FAKE_PROPERTY);
+        System.clearProperty(FAKE_SENSITIVE_PROPERTY);
     }
 
     @Test
@@ -76,5 +80,13 @@ public class SystemPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
 
         // we don't want to have awt
         assertNotContains("java.awt");
+    }
+
+    @Test
+    public void testRun_masksSensitiveProperties() {
+        plugin.run(logWriter);
+
+        assertContains(FAKE_SENSITIVE_PROPERTY + "=****");
+        assertNotContains(FAKE_SENSITIVE_PROPERTY_VALUE);
     }
 }

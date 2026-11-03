@@ -90,7 +90,7 @@
         <avro.version>1.12.0</avro.version>
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
-        <aws.sdk2.version>2.56.0</aws.sdk2.version>
+        <aws.sdk2.version>2.57.8</aws.sdk2.version>
         <calcite.version>1.35.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
@@ -267,6 +267,14 @@
                 <version>4.1.138.Final</version>
                 <scope>import</scope>
                 <type>pom</type>
+            </dependency>
+            <!-- 8.x uses Vert.x 5, which requires Netty 4.2; keep 7.x until we move to Netty 4.2, issue #7938 -->
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client-bom</artifactId>
+                <version>7.9.0</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
@@ -454,7 +462,7 @@
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc11</artifactId>
-                <version>23.26.3.0.0</version>
+                <version>23.26.4.0.0</version>
                 <scope>test</scope>
             </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
@@ -498,7 +506,7 @@
             </dependency>
             <!--
                 Addresses convergence between:
-                - `com.fasterxml.woodstox:woodstox-core` (transitively via `org.apache.hadoop:hadoop-client`)
+                - `com.fasterxml.woodstox:woodstox-core`
                 - com.google.cloud:google-cloud-storage (transitively via `com.google.cloud.bigdataoss:gcs-connector`)
             -->
             <dependency>
@@ -648,13 +656,6 @@
                 <version>4.3.0</version>
             </dependency>
             <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-client-bom</artifactId>
-                <version>8.0.0</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>com.google.j2objc</groupId>
                 <artifactId>j2objc-annotations</artifactId>
                 <version>3.1</version>
@@ -685,7 +686,7 @@
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.90.0</version>
+                <version>26.91.0</version>
                 <type>pom</type>
                 <scope>import</scope>
                 <!-- we specify explicit versions of these packages elsewhere, avoid conflicts -->
@@ -769,7 +770,7 @@
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>7.4.13.Final</version>
+                <version>7.4.14.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>
@@ -921,7 +922,7 @@
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.15</version>
+                    <version>0.8.16</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1094,7 +1095,7 @@
                 </plugin>
                 <plugin>
                     <artifactId>maven-enforcer-plugin</artifactId>
-                    <version>3.6.3</version>
+                    <version>3.7.0</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>

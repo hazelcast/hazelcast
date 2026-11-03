@@ -90,6 +90,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_PR
 import static com.hazelcast.jet.impl.execution.ProcessorState.WAITING_FOR_SNAPSHOT_COMPLETED;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
+import static com.hazelcast.jet.impl.processor.ProcessorWrapper.unwrap;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;
@@ -722,7 +723,7 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext mContext) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, this.context.vertexName())
-                       .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
+                       .withTag(MetricTags.PROCESSOR_TYPE, unwrap(this.processor).getClass().getSimpleName())
                        .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
 
         if (isSource) {

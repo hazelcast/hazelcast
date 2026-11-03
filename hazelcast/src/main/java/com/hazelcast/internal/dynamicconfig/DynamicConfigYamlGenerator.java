@@ -94,6 +94,7 @@ import com.hazelcast.config.vector.VectorCollectionConfig;
 import com.hazelcast.config.vector.VectorIndexConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
+import com.hazelcast.internal.config.SensitiveDataMasker;
 import com.hazelcast.internal.namespace.ResourceDefinition;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.memory.Capacity;
@@ -132,11 +133,8 @@ import static java.lang.Boolean.TRUE;
 public class DynamicConfigYamlGenerator {
 
     private static final int INDENT = 2;
-    private static final boolean DEFAULT_MASK_SENSITIVE_FIELDS = false;
-    private static volatile boolean maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
 
     public String generate(Config config, boolean maskSensitiveFields) {
-        DynamicConfigYamlGenerator.maskSensitiveFields = maskSensitiveFields;
         Map<String, Object> document = new LinkedHashMap<>();
         Map<String, Object> root = new LinkedHashMap<>();
         document.put("hazelcast", root);
@@ -149,7 +147,7 @@ public class DynamicConfigYamlGenerator {
         }
         root.put("properties", propertiesMap);
 
-        licenseKeyYamlGenerator(root, config);
+        licenseKeyYamlGenerator(root, config, maskSensitiveFields);
         mapYamlGenerator(root, config);
         cacheYamlGenerator(root, config);
         queueYamlGenerator(root, config);
@@ -167,16 +165,13 @@ public class DynamicConfigYamlGenerator {
         flakeIdGeneratorYamlGenerator(root, config);
         pnCounterYamlGenerator(root, config);
         wanReplicationYamlGenerator(root, config);
-        networkConfigYamlGenerator(root, config);
-        advancedNetworkConfigYamlGenerator(root, config);
+        networkConfigYamlGenerator(root, config, maskSensitiveFields);
+        advancedNetworkConfigYamlGenerator(root, config, maskSensitiveFields);
         dataConnectionYamlGenerator(root, config);
         namespacesConfigGenerator(root, config);
         metricsConfigGenerator(root, config);
         splitBrainProtectionConfigsGenerator(root, config);
         vectorCollectionYamlGenerator(root, config);
-
-        // Reset maskSensitiveFields to default
-        DynamicConfigYamlGenerator.maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
 
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
@@ -188,7 +183,12 @@ public class DynamicConfigYamlGenerator {
     }
 
     public static void licenseKeyYamlGenerator(Map<String, Object> parent, Config config) {
-        addNonNullToMap(parent, LICENSE_KEY.getName(), getOrMaskValue(config.getLicenseKey()));
+        licenseKeyYamlGenerator(parent, config, false);
+    }
+
+    private static void licenseKeyYamlGenerator(Map<String, Object> parent, Config config, boolean maskSensitiveFields) {
+        addNonNullToMap(parent, LICENSE_KEY.getName(),
+                getOrMaskValue(LICENSE_KEY.getName(), config.getLicenseKey(), maskSensitiveFields));
     }
 
     @SuppressWarnings("checkstyle:MethodLength")
@@ -745,7 +745,7 @@ public class DynamicConfigYamlGenerator {
         parent.put("wan-replication", child);
     }
 
-    private void networkConfigYamlGenerator(Map<String, Object> parent, Config config) {
+    private void networkConfigYamlGenerator(Map<String, Object> parent, Config config, boolean maskSensitiveFields) {
         if (config.getAdvancedNetworkConfig().isEnabled()) {
             return;
         }
@@ -774,9 +774,9 @@ public class DynamicConfigYamlGenerator {
         addNonNullToMap(child, "join", joinSubConfig);
 
         interfacesConfigYamlGenerator(child, netCfg.getInterfaces());
-        sslConfigYamlGenerator(child, netCfg.getSSLConfig());
+        sslConfigYamlGenerator(child, netCfg.getSSLConfig(), maskSensitiveFields);
         socketInterceptorConfigYamlGenerator(child, netCfg.getSocketInterceptorConfig());
-        symmetricEncInterceptorConfigYamlGenerator(child, netCfg.getSymmetricEncryptionConfig());
+        symmetricEncInterceptorConfigYamlGenerator(child, netCfg.getSymmetricEncryptionConfig(), maskSensitiveFields);
         memberAddressProviderConfigYamlGenerator(child, netCfg.getMemberAddressProviderConfig());
         failureDetectorConfigYamlGenerator(child, netCfg.getIcmpFailureDetectorConfig());
         restApiYamlGenerator(child, netCfg.getRestApiConfig());
@@ -784,7 +784,7 @@ public class DynamicConfigYamlGenerator {
         parent.put("network", child);
     }
 
-    private void advancedNetworkConfigYamlGenerator(Map<String, Object> parent, Config config) {
+    private void advancedNetworkConfigYamlGenerator(Map<String, Object> parent, Config config, boolean maskSensitiveFields) {
         AdvancedNetworkConfig netCfg = config.getAdvancedNetworkConfig();
         if (!netCfg.isEnabled()) {
             return;
@@ -804,7 +804,7 @@ public class DynamicConfigYamlGenerator {
         failureDetectorConfigYamlGenerator(child, netCfg.getIcmpFailureDetectorConfig());
         memberAddressProviderConfigYamlGenerator(child, netCfg.getMemberAddressProviderConfig());
         for (EndpointConfig endpointConfig : netCfg.getEndpointConfigs().values()) {
-            endpointConfigYamlGenerator(child, endpointConfig);
+            endpointConfigYamlGenerator(child, endpointConfig, maskSensitiveFields);
         }
         parent.put("advanced-network", child);
     }
@@ -895,7 +895,7 @@ public class DynamicConfigYamlGenerator {
         parent.put("discovery-strategies", child);
     }
 
-    private static void sslConfigYamlGenerator(Map<String, Object> parent, SSLConfig sslConfig) {
+    private static void sslConfigYamlGenerator(Map<String, Object> parent, SSLConfig sslConfig, boolean maskSensitiveFields) {
         if (sslConfig == null) {
             return;
         }
@@ -948,15 +948,16 @@ public class DynamicConfigYamlGenerator {
         parent.put("socket-interceptor", child);
     }
 
-    private static void symmetricEncInterceptorConfigYamlGenerator(Map<String, Object> parent, SymmetricEncryptionConfig sec) {
+    private static void symmetricEncInterceptorConfigYamlGenerator(Map<String, Object> parent, SymmetricEncryptionConfig sec,
+                                                                   boolean maskSensitiveFields) {
         if (sec == null) {
             return;
         }
         Map<String, Object> child = new LinkedHashMap<>();
         child.put("enabled", sec.isEnabled());
         addNonNullToMap(child, "algorithm", sec.getAlgorithm());
-        addNonNullToMap(child, "salt", getOrMaskValue(sec.getSalt()));
-        addNonNullToMap(child, "password", getOrMaskValue(sec.getPassword()));
+        addNonNullToMap(child, "salt", getOrMaskValue(sec.getSalt(), maskSensitiveFields));
+        addNonNullToMap(child, "password", getOrMaskValue(sec.getPassword(), maskSensitiveFields));
         addNonNullToMap(child, "iteration-count", sec.getIterationCount());
         parent.put("symmetric-encryption", child);
     }
@@ -1023,7 +1024,8 @@ public class DynamicConfigYamlGenerator {
         parent.put("memcache-protocol", wrapObjectWithMap("enabled", memcacheProtocolConfig.isEnabled()));
     }
 
-    private static void endpointConfigYamlGenerator(Map<String, Object> parent, EndpointConfig endpointConfig) {
+    private static void endpointConfigYamlGenerator(Map<String, Object> parent, EndpointConfig endpointConfig,
+                                                    boolean maskSensitiveFields) {
         Map<String, Object> child = new LinkedHashMap<>();
 
         if (endpointConfig.getName() != null && endpointConfig.getProtocolType() != ProtocolType.WAN) {
@@ -1035,9 +1037,9 @@ public class DynamicConfigYamlGenerator {
             addNonNullToMap(child, "outbound-ports", new ArrayList<>(outboundPortDefinitions));
         }
         interfacesConfigYamlGenerator(child, endpointConfig.getInterfaces());
-        sslConfigYamlGenerator(child, endpointConfig.getSSLConfig());
+        sslConfigYamlGenerator(child, endpointConfig.getSSLConfig(), maskSensitiveFields);
         socketInterceptorConfigYamlGenerator(child, endpointConfig.getSocketInterceptorConfig());
-        symmetricEncInterceptorConfigYamlGenerator(child, endpointConfig.getSymmetricEncryptionConfig());
+        symmetricEncInterceptorConfigYamlGenerator(child, endpointConfig.getSymmetricEncryptionConfig(), maskSensitiveFields);
 
         if (endpointConfig instanceof RestServerEndpointConfig restServerEndpointConfig) {
             Map<String, Object> endpointGroupsAsMap = new LinkedHashMap<>();
@@ -1968,7 +1970,11 @@ public class DynamicConfigYamlGenerator {
         }
     }
 
-    private static String getOrMaskValue(String value) {
+    private static String getOrMaskValue(String key, String value, boolean maskSensitiveFields) {
+        return maskSensitiveFields ? SensitiveDataMasker.mask(key, value) : value;
+    }
+
+    private static String getOrMaskValue(String value, boolean maskSensitiveFields) {
         return maskSensitiveFields ? MASK_FOR_SENSITIVE_DATA : value;
     }
 }

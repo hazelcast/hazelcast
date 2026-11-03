@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ResettableSingletonTraverser;
 import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
@@ -458,6 +459,25 @@ public class MetricsTest extends JetTestSupport {
         assertSourceSinkTags(metrics, "src", false, true, false);
         assertSourceSinkTags(metrics, "mid", false, false, false);
         assertSourceSinkTags(metrics, "sink", false, false, true);
+    }
+
+    @Test
+    public void testProcTypeForWrappedProcessors() {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.itemStream(1))
+            .withIngestionTimestamps()
+            .writeTo(Sinks.fromProcessor("sink", ProcessorMetaSupplier.of(Processors.noopP())));
+
+        Job job = instance.getJet().newJob(pipeline,
+                new JobConfig()
+                        .setProcessingGuarantee(EXACTLY_ONCE)
+                        .setSnapshotIntervalMillis(100));
+        assertThat(job).eventuallyHasStatus(RUNNING);
+        JobMetrics metrics = assertJobHasExecutionMetricsEventually(job);
+        Measurement measurement = metrics.filter(MetricTags.VERTEX, "sink")
+                                         .get(MetricNames.EMITTED_COUNT)
+                                         .get(0);
+        assertEquals("NoopP", measurement.tag(MetricTags.PROCESSOR_TYPE));
     }
 
     public static JobMetrics assertJobHasExecutionMetricsEventually(Job job) {

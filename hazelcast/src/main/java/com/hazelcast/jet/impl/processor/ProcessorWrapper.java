@@ -44,6 +44,17 @@ public abstract class ProcessorWrapper implements Processor, DynamicMetricsProvi
         this.wrapped = wrapped;
     }
 
+    /**
+     * If given processor is a {@link ProcessorWrapper}, the method returns wrapped processor.
+     * Otherwise, it returns the input parameter.
+     */
+    public static Processor unwrap(Processor processor) {
+        if (processor instanceof ProcessorWrapper processorWrapper) {
+            return unwrap(processorWrapper.wrapped);
+        }
+        return processor;
+    }
+
     public Processor getWrapped() {
         return wrapped;
     }

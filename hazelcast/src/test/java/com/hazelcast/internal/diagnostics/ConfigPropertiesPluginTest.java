@@ -39,10 +39,13 @@ public class ConfigPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
     @Before
     public void setup() {
         Config config = new Config()
-                .setProperty("property1", "value1");
+                .setProperty("property1", "value1")
+                .setProperty("property.password", "s3cr3t");
         HazelcastInstance hz = createHazelcastInstance(config);
         NodeEngineImpl nodeEngine = getNodeEngineImpl(hz);
-        nodeEngine.getDiagnostics().setConfig(new DiagnosticsConfig().setProperty("property2", "value2"));
+        nodeEngine.getDiagnostics().setConfig(new DiagnosticsConfig()
+                .setProperty("property2", "value2")
+                .setProperty("property2.secret", "s3cr3t"));
         plugin = new ConfigPropertiesPlugin(nodeEngine);
         plugin.onStart();
     }
@@ -57,5 +60,13 @@ public class ConfigPropertiesPluginTest extends AbstractDiagnosticsPluginTest {
         plugin.run(logWriter);
         assertContains("property1=value1");
         assertContains("property2=value2");
+    }
+
+    @Test
+    public void testRun_masksSensitiveProperties() {
+        plugin.run(logWriter);
+        assertContains("property.password=****");
+        assertContains("property2.secret=****");
+        assertNotContains("s3cr3t");
     }
 }

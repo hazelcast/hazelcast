@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractCallableMessageTask;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.internal.config.SensitiveDataMasker;
 import com.hazelcast.internal.management.ManagementCenterService;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.security.permission.ManagementPermission;
@@ -43,7 +44,10 @@ public class GetSystemPropertiesMessageTask extends AbstractCallableMessageTask<
     @Override
     protected Object call() throws Exception {
         return System.getProperties().entrySet().stream()
-                .map(e -> new SimpleEntry<>(Objects.toString(e.getKey()), Objects.toString(e.getValue())))
+                .map(e ->
+                        new SimpleEntry<>(
+                                Objects.toString(e.getKey()),
+                                SensitiveDataMasker.mask(Objects.toString(e.getKey()), Objects.toString(e.getValue()))))
                 .collect(toList());
     }
 
