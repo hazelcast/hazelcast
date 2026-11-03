@@ -268,6 +268,14 @@
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
+            <!-- 8.x uses Vert.x 5, which requires Netty 4.2; keep 7.x until we move to Netty 4.2, issue #7938 -->
+            <dependency>
+                <groupId>io.fabric8</groupId>
+                <artifactId>kubernetes-client-bom</artifactId>
+                <version>7.9.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
@@ -646,13 +654,6 @@
                 <groupId>org.awaitility</groupId>
                 <artifactId>awaitility</artifactId>
                 <version>4.3.0</version>
-            </dependency>
-            <dependency>
-                <groupId>io.fabric8</groupId>
-                <artifactId>kubernetes-client-bom</artifactId>
-                <version>8.0.0</version>
-                <type>pom</type>
-                <scope>import</scope>
             </dependency>
             <dependency>
                 <groupId>com.google.j2objc</groupId>
