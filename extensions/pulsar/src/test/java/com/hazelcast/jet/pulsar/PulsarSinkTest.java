@@ -168,7 +168,7 @@ public class PulsarSinkTest extends PulsarTestSupport {
     public void happyPathNoTransactions() throws IOException {
         String topicName = randomName();
         createTopic(topicName, true);
-        Sink<Integer> pulsarSink = PulsarSinks.builder(PulsarSchema.doubles())
+        Sink<Integer> pulsarSink = PulsarSinks.builder(PulsarSchema.float64())
                                               .connectionSupplier(() -> PulsarClient.builder()
                                                                                     .serviceUrl(getServiceUrl())
                                                                                     .build())

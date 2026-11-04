@@ -174,6 +174,7 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
                     client.newReader(pulsarConfig.getSchemaSupplier().get());
                 pulsarConfig.getReaderCustomizer().accept(builder);
                 reader = builder.autoUpdatePartitions(false)
+                                .subscriptionName(pulsarConfig.getSubscriberName())
                                 .topics(List.copyOf(assignedPartitions))
                                 .poolMessages(false)
                                 .startMessageId(offsets.isEmpty() ? MessageId.earliest : MessageId.latest)

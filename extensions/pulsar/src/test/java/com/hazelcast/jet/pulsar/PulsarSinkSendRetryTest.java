@@ -93,7 +93,7 @@ class PulsarSinkSendRetryTest extends PulsarTestSupport {
                                      .create()) {
             var config = createConfig(topic, client);
 
-            var sink = new WritePulsarP<>(config);
+            var sink = new WritePulsarP<>(config, client);
             var dc = PulsarDataConnection.pulsarDataConnectionConf("pulsar",
                                                                    pulsarContainer.getPulsarBrokerUrl(),
                                                                    pulsarContainer.getHttpServiceUrl(),

@@ -30,8 +30,10 @@ import org.apache.pulsar.client.api.Message;
 import java.io.IOException;
 import java.io.Serial;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * @param <M> type of message we receive from Pulsar
@@ -51,6 +53,7 @@ public class PulsarSourceConfig<M, T> extends PulsarConfig<M> implements DataSer
 
     public PulsarSourceConfig() {
         super();
+        super.setOptions(getDefaultConsumerConfig());
         batchReceivePolicy = BatchReceivePolicy.DEFAULT_POLICY;
         subscriberName = "jet-job-subscriber-" + UuidUtil.newUnsecureUuidString().toLowerCase(Locale.ROOT);
     }
@@ -69,6 +72,12 @@ public class PulsarSourceConfig<M, T> extends PulsarConfig<M> implements DataSer
         setLocalParallelism(other.getLocalParallelism());
         setSubscriptionInitialPosition(other.getSubscriptionInitialPosition());
         setHttpServiceUrl(other.getHttpServiceUrl());
+    }
+
+    public static Map<String, Object> getDefaultConsumerConfig() {
+        Map<String, Object> consumerConfig = new HashMap<>();
+        consumerConfig.put("consumerName", "hazelcast-jet-consumer");
+        return consumerConfig;
     }
 
     public List<String> getTopics() {
