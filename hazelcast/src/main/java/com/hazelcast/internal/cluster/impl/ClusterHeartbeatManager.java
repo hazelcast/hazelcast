@@ -506,12 +506,13 @@ public class ClusterHeartbeatManager {
     }
 
     /**
-     * Removes the {@code member} if it has not sent any heartbeats in {@link ClusterProperty#MAX_NO_HEARTBEAT_SECONDS}.
+     * Suspects (or, on the master, removes) the {@code member} if it has not sent any heartbeats in
+     * {@link ClusterProperty#MAX_NO_HEARTBEAT_SECONDS}.
      * If it has not sent any heartbeats in {@link #HEART_BEAT_INTERVAL_FACTOR} heartbeat intervals, it will log a warning.
      *
      * @param now    the current cluster clock time
      * @param member the member which needs to be checked
-     * @return if the member has been removed
+     * @return if the member is suspected or has been removed
      */
     private boolean suspectMemberIfNotHeartBeating(long now, Member member) {
         if (clusterService.getMembershipManager().isMemberSuspected((MemberImpl) member)) {
@@ -538,23 +539,25 @@ public class ClusterHeartbeatManager {
 
     /**
      * Sends heartbeat to each of the cluster members.
-     * Checks whether the master member has failed to send a heartbeat (see {@link #maxNoHeartbeatMillis})
-     * and removes that master member from cluster, if it fails on heartbeat.
+     * Checks whether any member has failed to send a heartbeat (see {@link #maxNoHeartbeatMillis})
+     * and suspects that member, if it fails on heartbeat. Suspected members after the master in the
+     * member list still receive heartbeats, so that they can clear their own suspicion of this member.
      * <p></p>
      * This method is called on NON-master members.
      */
     private void heartbeatWhenSlave(long now) {
-        MembershipManager membershipManager = clusterService.getMembershipManager();
-
         for (Member member : clusterService.getMembers(NON_LOCAL_MEMBER_SELECTOR)) {
             try {
                 logIfConnectionToEndpointIsMissing(now, member);
 
                 if (suspectMemberIfNotHeartBeating(now, member)) {
-                    continue;
-                }
-
-                if (membershipManager.isMemberSuspected((MemberImpl) member)) {
+                    // Heartbeats to suspected members after the master let mutual suspicion between non-masters clear.
+                    // The master (which may have just changed through a mastership claim) and members before it get
+                    // none, so that they can stop seeing this member as alive.
+                    if (!isMaster((MemberImpl) member)
+                            && !clusterService.getMembershipManager().isBeforeMaster(member.getAddress())) {
+                        sendHeartbeat(member);
+                    }
                     continue;
                 }
 
