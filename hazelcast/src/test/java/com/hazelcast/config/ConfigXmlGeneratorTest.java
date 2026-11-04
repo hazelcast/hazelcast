@@ -1542,7 +1542,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         expectedConfig.addDataConnectionConfig(dataConnectionConfig);
 
-        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+        // the masked output hides the JDBC URL, so the round trip needs the unmasked one
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig, false);
 
         assertEquals(expectedConfig.getDataConnectionConfigs(), actualConfig.getDataConnectionConfigs());
     }
