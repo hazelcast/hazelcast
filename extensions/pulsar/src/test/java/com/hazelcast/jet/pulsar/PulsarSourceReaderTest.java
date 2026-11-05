@@ -202,11 +202,11 @@ public class PulsarSourceReaderTest extends PulsarTestSupport {
         String topicName1 = randomName();
         String topicName2 = randomName();
         // Add a suffix to messages so that this projectionFn does a bit more than byte->String conversion.
-        StreamSource<String> pulsarConsumerSrc =
+        StreamSource<Message<byte[]>> pulsarConsumerSrc =
             PulsarSources.pulsarReaderBuilder(() -> Schema.BYTES)
                          .topic(topicName1, topicName2)
                          .connectionSupplier(getConnectionSupplier())
-                         .projectionFn(x -> new String(x.getData(), StandardCharsets.UTF_8) + "-suffix")
+                         .identityProjectionFn()
                          .build();
 
         List<String> expectedItems = new ArrayList<>();
@@ -215,6 +215,7 @@ public class PulsarSourceReaderTest extends PulsarTestSupport {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(pulsarConsumerSrc)
                 .withoutTimestamps()
+                .map(item -> new String(item.getData(), StandardCharsets.UTF_8) + "-suffix")
                 .writeTo(assertCollectedEventually(60, list -> {
                     assertThat(list).containsExactlyInAnyOrderElementsOf(expectedItems);
                 }));

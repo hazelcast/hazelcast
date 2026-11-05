@@ -133,11 +133,10 @@
 				- `io.opentelemetry:opentelemetry-context`
 				- `org.bouncycastle:bcprov-jdk18on`
 			-->
-            <!-- DO NOT upgrade to M2 due to https://github.com/apache/pulsar/issues/26694 -->
             <dependency>
                 <groupId>org.apache.pulsar</groupId>
                 <artifactId>pulsar-bom</artifactId>
-                <version>5.0.0-M1</version>
+                <version>5.0.1</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -147,51 +146,22 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.pulsar</groupId>
-            <artifactId>pulsar-client</artifactId>
+            <artifactId>pulsar-client-v5-shaded</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>org.jspecify</groupId>
                     <artifactId>jspecify</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jakarta.xml.bind</groupId>
-                    <artifactId>jakarta.xml.bind-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.github.ben-manes.caffeine</groupId>
-                    <artifactId>caffeine</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.github.merlimat.slog</groupId>
-                    <artifactId>slog</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.pulsar</groupId>
-            <artifactId>pulsar-client-admin</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.jspecify</groupId>
-                    <artifactId>jspecify</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>jakarta.xml.bind</groupId>
-                    <artifactId>jakarta.xml.bind-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>com.github.ben-manes.caffeine</groupId>
-                    <artifactId>caffeine</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>io.github.merlimat.slog</groupId>
-                    <artifactId>slog</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jspecify</groupId>
+            <artifactId>jspecify</artifactId>
+            <version>1.0.0</version>
         </dependency>
         <dependency>
             <groupId>com.hazelcast.jet</groupId>
@@ -205,28 +175,6 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
-        <!-- for Pulsar dependency convergence -->
-        <dependency>
-            <groupId>org.jspecify</groupId>
-            <artifactId>jspecify</artifactId>
-            <version>1.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>4.0.5</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
-            <version>3.2.4</version>
-        </dependency>
-        <dependency>
-            <groupId>io.github.merlimat.slog</groupId>
-            <artifactId>slog</artifactId>
-            <version>0.10.0</version>
-        </dependency>
-        <!-- /for Pulsar -->
 
         <dependency>
             <groupId>org.testcontainers</groupId>

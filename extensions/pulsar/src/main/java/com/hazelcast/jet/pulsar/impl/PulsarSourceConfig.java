@@ -23,6 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import org.apache.pulsar.client.api.BatchReceivePolicy;
 import org.apache.pulsar.client.api.ConsumerBuilder;
+import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.ReaderBuilder;
 import org.apache.pulsar.client.api.SubscriptionInitialPosition;
 import org.apache.pulsar.client.api.Message;
@@ -50,6 +51,8 @@ public class PulsarSourceConfig<M, T> extends PulsarConfig<M> implements DataSer
     private ConsumerEx<ConsumerBuilder<M>> consumerCustomizer = ConsumerEx.noop();
     private ConsumerEx<ReaderBuilder<M>> readerCustomizer = ConsumerEx.noop();
     private int subscriptionInitialPosition = SubscriptionInitialPosition.Earliest.getValue();
+    private MessageId initialOffset = MessageId.earliest;
+    private boolean enableMessagePooling = true;
 
     public PulsarSourceConfig() {
         super();
@@ -66,6 +69,8 @@ public class PulsarSourceConfig<M, T> extends PulsarConfig<M> implements DataSer
         batchReceivePolicy = other.batchReceivePolicy;
         consumerCustomizer = other.consumerCustomizer;
         readerCustomizer = other.readerCustomizer;
+        initialOffset = other.initialOffset;
+        enableMessagePooling = other.enableMessagePooling;
         setConnectionSupplier(other.getConnectionSupplier());
         setDataConnectionRef(other.getDataConnectionRef());
         setOptions(other.getOptions());
@@ -138,6 +143,21 @@ public class PulsarSourceConfig<M, T> extends PulsarConfig<M> implements DataSer
         this.subscriptionInitialPosition = subscriptionInitialPosition.getValue();
     }
 
+    public  void setInitialOffset(MessageId initialOffset) {
+        this.initialOffset = initialOffset;
+    }
+
+    public void setEnableMessagePooling(boolean enableMessagePooling) {
+        this.enableMessagePooling = enableMessagePooling;
+    }
+
+    public boolean isEnableMessagePooling() {
+        return enableMessagePooling;
+    }
+
+    public MessageId getInitialOffset() {
+        return initialOffset;
+    }
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         super.writeData(out);
@@ -148,6 +168,8 @@ public class PulsarSourceConfig<M, T> extends PulsarConfig<M> implements DataSer
         out.writeObject(consumerCustomizer);
         out.writeInt(subscriptionInitialPosition);
         out.writeObject(readerCustomizer);
+        out.writeByteArray(initialOffset.toByteArray());
+        out.writeBoolean(enableMessagePooling);
     }
 
     @Override
@@ -161,6 +183,8 @@ public class PulsarSourceConfig<M, T> extends PulsarConfig<M> implements DataSer
         consumerCustomizer = in.readObject();
         subscriptionInitialPosition = in.readInt();
         readerCustomizer = in.readObject();
+        initialOffset = MessageId.fromByteArray(in.readByteArray());
+        enableMessagePooling = in.readBoolean();
     }
 
     public void validate() {

@@ -15,8 +15,6 @@
  */
 package com.hazelcast.jet.pulsar.sql;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.hazelcast.function.SupplierEx;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericDatumWriter;
@@ -32,6 +30,8 @@ import org.apache.pulsar.client.api.schema.SchemaReader;
 import org.apache.pulsar.client.api.schema.SchemaWriter;
 import org.apache.pulsar.common.schema.SchemaInfo;
 import org.apache.pulsar.common.schema.SchemaType;
+import org.apache.pulsar.shade.com.github.benmanes.caffeine.cache.Cache;
+import org.apache.pulsar.shade.com.github.benmanes.caffeine.cache.Caffeine;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -142,8 +142,8 @@ final class PulsarAvroSchema {
 
         private final SchemaInfoProvider provider;
         private final Cache<ByteBuffer, org.apache.avro.Schema> schemas = Caffeine.newBuilder()
-                .maximumSize(MAX_CACHED_SCHEMAS)
-                .build();
+                                                                                  .maximumSize(MAX_CACHED_SCHEMAS)
+                                                                                  .build();
 
         private SchemaVersions(SchemaInfoProvider provider) {
             this.provider = provider;

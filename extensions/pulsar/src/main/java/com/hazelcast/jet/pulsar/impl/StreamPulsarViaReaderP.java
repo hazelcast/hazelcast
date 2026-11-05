@@ -37,7 +37,7 @@ import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.Reader;
 import org.apache.pulsar.client.api.ReaderBuilder;
 import org.apache.pulsar.client.api.TopicMessageId;
-import org.apache.pulsar.common.naming.TopicName;
+import org.apache.pulsar.shade.org.apache.pulsar.common.naming.TopicName;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -178,13 +178,14 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
                 ReaderBuilder<M> builder =
                     client.newReader(pulsarConfig.getSchemaSupplier().get());
                 pulsarConfig.getReaderCustomizer().accept(builder);
+                boolean enableMessagePooling = pulsarConfig.isEnableMessagePooling();
                 reader = builder.autoUpdatePartitions(false)
                                 .subscriptionName(pulsarConfig.getSubscriberName())
                                 .topics(List.copyOf(assignedPartitions))
-                                .poolMessages(false)
-                                .startMessageId(offsets.isEmpty() ? MessageId.earliest : MessageId.latest)
+                                .poolMessages(enableMessagePooling)
+                                .startMessageId(pulsarConfig.getInitialOffset())
                                 .create();
-                reader.seek(topic -> offsets.getOrDefault(topic, MessageId.earliest));
+                reader.seek(topic -> offsets.getOrDefault(topic, pulsarConfig.getInitialOffset()));
                 nextMessageFuture = reader.readNextAsync();
             } catch (IOException e) {
                 throw wrapFailure(e.getMessage(), e.getCause());
@@ -238,19 +239,23 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
     }
 
     private Traverser<Object> processMessage(Message<M> message) {
-        String topicName = message.getTopicName();
-        Integer partitionIndex = assignedPartitionIndexesForWatermarks.get(topicName);
-        if (partitionIndex == null) {
-            throw new JetException("Received a message from a removed Pulsar partition and"
-                                       + " connector does not support removal of partitions");
+        try {
+            String topicName = message.getTopicName();
+            Integer partitionIndex = assignedPartitionIndexesForWatermarks.get(topicName);
+            if (partitionIndex == null) {
+                throw new JetException("Received a message from a removed Pulsar partition and"
+                                           + " connector does not support removal of partitions");
+            }
+            MessageId messageId = message.getMessageId();
+            T projectedRecord = projectionFn.apply(message);
+            offsets.put(topicName, messageId);
+            long timestamp = message.getEventTime() != 0 ? message.getEventTime() : message.getPublishTime();
+            return projectedRecord == null
+                   ? eventTimeMapper.flatMapIdle()
+                   : eventTimeMapper.flatMapEvent(projectedRecord, partitionIndex, timestamp);
+        } finally {
+            message.release();
         }
-        MessageId messageId = message.getMessageId();
-        T projectedRecord = projectionFn.apply(message);
-        offsets.put(topicName, messageId);
-        long timestamp = message.getEventTime() != 0 ? message.getEventTime() : message.getPublishTime();
-        return projectedRecord == null
-               ? eventTimeMapper.flatMapIdle()
-               : eventTimeMapper.flatMapEvent(projectedRecord, partitionIndex, timestamp);
     }
 
     @Override

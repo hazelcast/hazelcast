@@ -47,11 +47,10 @@ import org.apache.pulsar.client.api.transaction.Transaction;
 import org.apache.pulsar.client.api.transaction.TransactionCoordinatorClient;
 import org.apache.pulsar.client.api.transaction.TransactionCoordinatorClientException;
 import org.apache.pulsar.client.api.transaction.TxnID;
-import org.apache.pulsar.client.impl.PulsarClientImpl;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import org.apache.pulsar.shade.org.apache.pulsar.client.impl.PulsarClientImpl;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
@@ -571,7 +570,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         }
 
         @Override
-        public @NonNull Collection<? extends Processor> get(int count) {
+        public @Nonnull Collection<? extends Processor> get(int count) {
             List<Processor> processors = new ArrayList<>(count);
             for (int i = 0; i < count; i++) {
                 processors.add(new WritePulsarP<>(config, client));

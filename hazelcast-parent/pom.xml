@@ -778,14 +778,17 @@
                 <version>20260814</version>
             </dependency>
             <!--
-                Addresses convergence between:
-                - `com.google.cloud.bigdataoss`
-                - `org.apache.pulsar:pulsar-client`
+                Addresses dependency convergence between:
+                 - `com.google.cloud.bigdataoss:gcs-connector`
+                 - `com.google.cloud.bigdataoss:gcsio`
+                 - `org.apache.pulsar:pulsar-client-original`
             -->
             <dependency>
                 <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-context</artifactId>
-                <version>1.65.0</version>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>1.66.0</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
             <!-- `org.apache.pulsar:pulsar-bom` has internal dependency convergence -->
             <dependency>

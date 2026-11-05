@@ -16,7 +16,7 @@
 package com.hazelcast.jet.pulsar.impl;
 
 import com.hazelcast.jet.core.Processor;
-import org.apache.pulsar.common.naming.TopicName;
+import org.apache.pulsar.shade.org.apache.pulsar.common.naming.TopicName;
 
 import java.util.List;
 
