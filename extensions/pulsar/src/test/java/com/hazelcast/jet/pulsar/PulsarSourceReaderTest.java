@@ -24,6 +24,9 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.core.metrics.JobMetrics;
+import com.hazelcast.jet.core.metrics.Measurement;
+import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -95,7 +98,7 @@ public class PulsarSourceReaderTest extends PulsarTestSupport {
                 .writeTo(assertCollectedEventually(60, list -> {
                     assertThat(list).containsExactlyInAnyOrderElementsOf(expectedItems);
                 }));
-        Job job = instances[0].getJet().newJob(pipeline);
+        Job job = instances[0].getJet().newJob(pipeline, new JobConfig().setStoreMetricsAfterJobCompletion(true));
         assertThat(job).eventuallyHasStatus(RUNNING);
 
         produceMessages("hello-pulsar", topicName, ITEM_COUNT);
@@ -166,7 +169,7 @@ public class PulsarSourceReaderTest extends PulsarTestSupport {
                 .withNativeTimestamps(0)
                 .map(s -> Map.entry(s, s))
                 .writeTo(Sinks.map(resultMap));
-        Job job = instances[0].getJet().newJob(pipeline);
+        Job job = instances[0].getJet().newJob(pipeline, new JobConfig().setStoreMetricsAfterJobCompletion(true));
         assertThat(job).eventuallyHasStatus(RUNNING);
         List<Map.Entry<String, String>> messagesToSend = new ArrayList<>();
         IntStream.range(0, ITEM_COUNT / 2).forEach(i -> messagesToSend.add(Map.entry(topicName1, "hello-pulsar-" + i)));
@@ -177,6 +180,21 @@ public class PulsarSourceReaderTest extends PulsarTestSupport {
         List<String> expectedItems = new ArrayList<>();
         IntStream.range(0, ITEM_COUNT).forEach(i -> expectedItems.add("hello-pulsar-" + i));
         assertTrueEventually(() -> assertThat(resultMap.keySet()).containsOnlyOnceElementsOf(expectedItems));
+
+        assertTrueEventually(() -> {
+            JobMetrics metrics = job.getMetrics();
+            assertThat(metrics.metrics()).isNotEmpty();
+            long partitions = metrics.get(PulsarMetricNames.ASSIGNED_PARTITION_COUNT).stream().mapToLong(Measurement::value).sum();
+            assertThat(partitions).isEqualTo(NUM_PARTITIONS * 2);
+            long items = metrics.get(MetricNames.EMITTED_COUNT).stream()
+                                .filter(m -> {
+                                    String vertex = m.tag("vertex");
+                                    return vertex != null && vertex.contains("pulsarReader");
+                                })
+                                .mapToLong(Measurement::value)
+                                .sum();
+            assertThat(items).isEqualTo(ITEM_COUNT);
+        });
     }
 
     @Test

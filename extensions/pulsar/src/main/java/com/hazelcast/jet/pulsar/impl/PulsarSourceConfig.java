@@ -56,6 +56,7 @@ public class PulsarSourceConfig<M, T> extends PulsarConfig<M> implements DataSer
         super.setOptions(getDefaultConsumerConfig());
         batchReceivePolicy = BatchReceivePolicy.DEFAULT_POLICY;
         subscriberName = "jet-job-subscriber-" + UuidUtil.newUnsecureUuidString().toLowerCase(Locale.ROOT);
+
     }
 
     public PulsarSourceConfig(PulsarSourceConfig<M, T> other) {

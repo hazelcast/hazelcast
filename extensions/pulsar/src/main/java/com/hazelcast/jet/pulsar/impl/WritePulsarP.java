@@ -18,6 +18,7 @@ package com.hazelcast.jet.pulsar.impl;
 import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.ThrowingSupplier;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.RestartableException;
@@ -69,6 +70,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.pulsar.PulsarMetricNames.IN_FLIGHT_MESSAGES;
 import static com.hazelcast.jet.pulsar.impl.Utils.wrapFailure;
 import static java.lang.System.lineSeparator;
 import static java.util.stream.Collectors.joining;
@@ -101,6 +103,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
     private UnboundedTransactionsProcessorUtility<PulsarTransactionId, PulsarTransaction> transactionUtility;
     private volatile Throwable error;
 
+    @Probe(name = IN_FLIGHT_MESSAGES)
     private final AtomicInteger inFlightMessages = new AtomicInteger();
 
     public WritePulsarP(PulsarSinkConfig<E, M> pulsarConfig, PulsarClient client) {
@@ -116,7 +119,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        var processorIndex = context.globalProcessorIndex();
+        int globalProcessorIndex = context.globalProcessorIndex();
         logger = context.logger();
 
         ProcessingGuarantee guarantee = context.processingGuarantee() == EXACTLY_ONCE && !pulsarConfig.isTransactional()
@@ -138,7 +141,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             getOutbox(),
             context,
             guarantee,
-            () -> new PulsarTransactionId(context, processorIndex),
+            () -> new PulsarTransactionId(context, globalProcessorIndex),
             txId -> new PulsarTransaction(client, txId, logger),
             this::recoverTransaction,
             () -> {
@@ -294,7 +297,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
     @Override
     public boolean snapshotCommitPrepare() {
-        if (!flush()) {
+        if (notYetConsistentState()) {
             return false;
         }
         return transactionUtility.snapshotCommitPrepare();
@@ -314,7 +317,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        if (!flush()) {
+        if (notYetConsistentState()) {
             return false;
         }
         if (transactionUtility.usesTransactionLifecycle()) {
@@ -323,13 +326,13 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         return true;
     }
 
-    private boolean flush() {
+    private boolean notYetConsistentState() {
         checkError();
         if (inFlightMessages.get() != 0) {
-            return false;
+            return true;
         }
         checkError();
-        return true;
+        return false;
     }
 
     @Override
@@ -423,8 +426,8 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             tcClient.commit(transactionId.txId);
         } catch (TransactionCoordinatorClientException e) {
             if (e instanceof TransactionCoordinatorClientException.TransactionNotFoundException) {
-                logger.warning(("transaction %s is no longer reachable to perform commit, most likely a timeout was hit "
-                                    + "or transaction was committed earlier."
+                logger.warning(("transaction %s is no longer reachable to perform commit, it was committed/rolled back before "
+                                    + "or timeout was hit."
                                     + "Check how long the transaction lasted; in case of long duration the timeout may have been "
                                     + "hit and and data may be lost.")
                                    .formatted(transactionId));

@@ -230,11 +230,13 @@ public class PulsarDataConnection extends DataConnectionBase {
                 try {
                     unwrapped.closeAsync().get(CLOSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                 } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                    Thread.currentThread().interrupt();
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                     try {
                         unwrapped.shutdown();
                     } catch (PulsarClientException ex) {
-                        ex.addSuppressed(e);
+                        e.addSuppressed(ex);
                         throw new HazelcastException("Error while trying to close PulsarClient by PulsarDataConnection", e);
                     }
                 }

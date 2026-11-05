@@ -28,7 +28,6 @@ import com.hazelcast.function.ThrowingRunnable;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.config.ProcessingGuarantee;
-import com.hazelcast.jet.core.JobAssertions;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.JournalInitialPosition;
 import com.hazelcast.jet.pipeline.Pipeline;
@@ -49,7 +48,6 @@ import org.apache.pulsar.client.api.Schema;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import org.junit.jupiter.api.Timeout;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -147,13 +145,13 @@ public class PulsarSinkTest extends PulsarTestSupport {
         p.readFrom(TestSources.items(numbers))
          .writeTo(pulsarSink);
 
-        var conf = new JobConfig();
-        conf.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        job = instances[0].getJet().newJob(p, conf);
-        JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
-
         List<Double> results = Collections.synchronizedList(new ArrayList<>());
         try (var reader = PulsarUtils.newReader(topicName, Schema.DOUBLE, results)) {
+            var conf = new JobConfig();
+            conf.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
+            job = instances[0].getJet().newJob(p, conf);
+            assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
+
             reader.hasMessageAvailable();
             assertTrueEventually(() -> {
                 assertThat(results).hasSize(ITEM_COUNT);
@@ -187,7 +185,7 @@ public class PulsarSinkTest extends PulsarTestSupport {
         var conf = new JobConfig();
         conf.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         job = instances[0].getJet().newJob(p, conf);
-        JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
+        assertThat(job).eventuallyHasStatus(JobStatus.RUNNING);
 
         List<Double> results = Collections.synchronizedList(new ArrayList<>());
         try (var reader = PulsarUtils.newReader(topicName, Schema.DOUBLE, results)) {
@@ -235,7 +233,7 @@ public class PulsarSinkTest extends PulsarTestSupport {
         var conf = new JobConfig();
         conf.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
         job = instances[0].getJet().newJob(p, conf);
-        JobAssertions.assertThat(job).eventuallyHasStatus(JobStatus.COMPLETED);
+        assertThat(job).eventuallyHasStatus(JobStatus.COMPLETED);
 
         List<String> results = Collections.synchronizedList(new ArrayList<>());
         try (var reader = PulsarUtils.newReader(topicName, Schema.STRING, results)) {
