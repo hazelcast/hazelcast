@@ -43,10 +43,7 @@ public class ManagementPermission extends ClusterPermission {
         ManagementPermission that = (ManagementPermission) permission;
         String name = getName();
         String thatName = that.getName();
-        if (name == null || name.equals("*") || name.equals(thatName) || (prefix != null && thatName.startsWith(prefix))) {
-            return true;
-        }
-        return false;
+        return name == null || name.equals("*") || name.equals(thatName) || (prefix != null && thatName.startsWith(prefix));
     }
 
     @Override

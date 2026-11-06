@@ -129,11 +129,8 @@ public abstract class AbstractReplicatedMapAddEntryListenerMessageTask<Parameter
         }
 
         Member originatedMember = event.getMember();
-        if (isLocalOnly() && !nodeEngine.getLocalMember().equals(originatedMember)) {
-            //if listener is registered local only, do not let the events originated from other members pass through
-            return false;
-        }
-        return true;
+        //if listener is registered local only, do not let the events originated from other members pass through
+        return !isLocalOnly() || nodeEngine.getLocalMember().equals(originatedMember);
     }
 
 

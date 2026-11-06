@@ -372,11 +372,7 @@ public class TopicTest extends HazelcastTestSupport {
             if (data != null ? !data.equals(that.data) : that.data != null) {
                 return false;
             }
-            if (publisher != null ? !publisher.equals(that.publisher) : that.publisher != null) {
-                return false;
-            }
-
-            return true;
+            return publisher != null ? publisher.equals(that.publisher) : that.publisher == null;
         }
 
         @Override
