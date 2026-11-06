@@ -89,7 +89,7 @@ repository and use Maven install (or package) to build:
 
 ```bash
 $ git pull origin master
-$ ./mvnw clean package -DskipTests
+$ ./mvnw clean package -DskipTests -DskipITs
 ```
 
 It is recommended to use the included Maven wrapper script.
