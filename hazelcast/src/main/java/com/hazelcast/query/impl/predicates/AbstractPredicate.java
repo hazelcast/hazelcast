@@ -157,7 +157,7 @@ public abstract class AbstractPredicate<K, V> implements Predicate<K, V>, Identi
     }
 
     Object convertEnumValue(Object attributeValue) {
-        if (attributeValue != null && attributeValue.getClass().isEnum()) {
+        if (attributeValue instanceof Enum) {
             attributeValue = attributeValue.toString();
         }
         return attributeValue;
