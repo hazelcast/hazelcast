@@ -31,7 +31,6 @@ import com.hazelcast.jet.pulsar.impl.WritePulsarP;
 import org.apache.pulsar.client.api.ProducerBuilder;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.Schema;
-import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nonnull;
 import java.time.Duration;
@@ -231,7 +230,7 @@ public final class PulsarSinkBuilder<E, M> {
      * Customizer of the {@link ProducerBuilder} created by this sink.
      */
     @Nonnull
-    public PulsarSinkBuilder<E, M> producerCustomizer(@Nonnull ConsumerEx<@NonNull ProducerBuilder<M>> producerCustomizer) {
+    public PulsarSinkBuilder<E, M> producerCustomizer(@Nonnull ConsumerEx<ProducerBuilder<M>> producerCustomizer) {
         checkNonNullAndSerializable(producerCustomizer, "producerCustomizer");
         config.setProducerCustomizer(producerCustomizer);
         return this;

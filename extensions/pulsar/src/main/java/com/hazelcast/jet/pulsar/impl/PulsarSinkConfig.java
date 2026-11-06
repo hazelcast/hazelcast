@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import org.apache.pulsar.client.api.ProducerBuilder;
-import org.jspecify.annotations.NonNull;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
@@ -197,11 +197,11 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
             .throwIfErrors();
     }
 
-    public void setProducerCustomizer(ConsumerEx<@NonNull ProducerBuilder<M>> producerCustomizer) {
+    public void setProducerCustomizer(ConsumerEx<ProducerBuilder<M>> producerCustomizer) {
         this.producerCustomizer = producerCustomizer;
     }
 
-    @NonNull
+    @Nonnull
     public ConsumerEx<ProducerBuilder<M>> getProducerCustomizer() {
         return producerCustomizer == null ? ConsumerEx.noop() : producerCustomizer;
     }

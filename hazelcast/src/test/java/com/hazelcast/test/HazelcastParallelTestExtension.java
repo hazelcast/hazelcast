@@ -16,10 +16,11 @@
 
 package com.hazelcast.test;
 
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import javax.annotation.Nonnull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -64,7 +65,7 @@ public class HazelcastParallelTestExtension extends AbstractHazelcastExtension
     }
 
     @Override
-    public void afterAll(@NonNull ExtensionContext context) throws Exception {
+    public void afterAll(@Nonnull ExtensionContext context) throws Exception {
         try {
             super.afterAll(context);
         } finally {
@@ -186,17 +187,17 @@ public class HazelcastParallelTestExtension extends AbstractHazelcastExtension
         }
 
         @Override
-        public @NonNull Set<Object> keySet() {
+        public @Nonnull Set<Object> keySet() {
             return getThreadLocal().keySet();
         }
 
         @Override
-        public @NonNull Set<Map.Entry<Object, Object>> entrySet() {
+        public @Nonnull Set<Map.Entry<Object, Object>> entrySet() {
             return getThreadLocal().entrySet();
         }
 
         @Override
-        public @NonNull Collection<Object> values() {
+        public @Nonnull Collection<Object> values() {
             return getThreadLocal().values();
         }
 

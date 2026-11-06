@@ -26,13 +26,14 @@ import com.hazelcast.spi.exception.DistributedObjectDestroyedException;
 import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
-import org.jspecify.annotations.NonNull;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import javax.annotation.Nonnull;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -62,7 +63,7 @@ public class CPMapProxyTest extends HazelcastRaftTestSupport {
         client = factory.newHazelcastClient();
     }
 
-    private @NonNull Config getConfig(int nodeCount) {
+    private @Nonnull Config getConfig(int nodeCount) {
         Config config = new Config();
         CPSubsystemConfig cpSubsystemConfig = new CPSubsystemConfig();
         cpSubsystemConfig.setCPMemberCount(nodeCount);

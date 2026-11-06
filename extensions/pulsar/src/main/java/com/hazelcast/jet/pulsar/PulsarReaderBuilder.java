@@ -33,7 +33,6 @@ import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.ReaderBuilder;
 import org.apache.pulsar.client.api.Schema;
-import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nonnull;
 import java.io.Serial;
@@ -151,7 +150,7 @@ public final class PulsarReaderBuilder<M, T> {
      * that doesn't have a representative here.
      */
     @Nonnull
-    public PulsarReaderBuilder<M, T> readerCustomizer(@Nonnull ConsumerEx<@NonNull ReaderBuilder<M>> readerCustomizer) {
+    public PulsarReaderBuilder<M, T> readerCustomizer(@Nonnull ConsumerEx<ReaderBuilder<M>> readerCustomizer) {
         checkNonNullAndSerializable(readerCustomizer, "readerCustomizer");
         conf.setReaderCustomizer(readerCustomizer);
         return this;

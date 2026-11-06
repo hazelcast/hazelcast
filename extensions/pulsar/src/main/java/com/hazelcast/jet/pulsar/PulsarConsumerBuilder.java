@@ -38,7 +38,6 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionInitialPosition;
 import org.apache.pulsar.client.api.SubscriptionType;
-import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -126,7 +125,7 @@ public final class PulsarConsumerBuilder<M, T> {
 
     @SuppressWarnings("unchecked")
     @Nonnull
-    public <NEW_T> PulsarConsumerBuilder<M, NEW_T> projectionFn(@Nonnull FunctionEx<@NonNull Message<M>, NEW_T> projectionFn) {
+    public <NEW_T> PulsarConsumerBuilder<M, NEW_T> projectionFn(@Nonnull FunctionEx<Message<M>, NEW_T> projectionFn) {
         this.projectionFn = (FunctionEx<Message<M>, T>) projectionFn;
         return (PulsarConsumerBuilder<M, NEW_T>) this;
     }
@@ -136,7 +135,7 @@ public final class PulsarConsumerBuilder<M, T> {
      * that doesn't have a representative here.
      */
     @Nonnull
-    public PulsarConsumerBuilder<M, T> consumerCustomizer(@Nonnull ConsumerEx<@NonNull ConsumerBuilder<M>> consumerCustomizer) {
+    public PulsarConsumerBuilder<M, T> consumerCustomizer(@Nonnull ConsumerEx<ConsumerBuilder<M>> consumerCustomizer) {
         checkNonNullAndSerializable(consumerCustomizer, "consumerCustomizer");
         conf.setConsumerCustomizer(consumerCustomizer);
         return this;

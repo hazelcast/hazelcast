@@ -37,10 +37,10 @@ import org.apache.pulsar.shade.org.apache.pulsar.client.impl.metrics.InstrumentP
 import org.apache.pulsar.shade.org.apache.pulsar.common.api.proto.CommandSendReceipt;
 import org.apache.pulsar.shade.org.apache.pulsar.common.util.netty.EventLoopUtil;
 import org.apache.pulsar.shade.io.netty.channel.EventLoopGroup;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -126,7 +126,7 @@ class PulsarSinkSendRetryTest extends PulsarTestSupport {
         }
     }
 
-    private static @NonNull PulsarSinkConfig<String, String> createConfig(String topic, PulsarClientImpl client) {
+    private static @Nonnull PulsarSinkConfig<String, String> createConfig(String topic, PulsarClientImpl client) {
         var config = new PulsarSinkConfig<String, String>();
         config.setTopic(topic);
         config.setConnectionSupplier(() -> client);
