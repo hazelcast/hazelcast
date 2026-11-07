@@ -24,6 +24,7 @@ import org.apache.pulsar.client.api.ReaderBuilder;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.TableViewBuilder;
 import org.apache.pulsar.client.api.transaction.TransactionBuilder;
+import org.apache.pulsar.client.api.transaction.TransactionCoordinatorClient;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -135,5 +136,10 @@ public final class CloseablePulsarClient implements PulsarClient {
     @Override
     public TransactionBuilder newTransaction() {
         return delegate.newTransaction();
+    }
+
+    @Override
+    public TransactionCoordinatorClient getTransactionCoordinatorClient() {
+        return delegate.getTransactionCoordinatorClient();
     }
 }

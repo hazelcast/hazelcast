@@ -16,10 +16,11 @@
 
 package com.hazelcast.test;
 
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import javax.annotation.Nonnull;
 
 import java.util.Properties;
 
@@ -55,7 +56,7 @@ public class HazelcastSerialTestExtension extends AbstractHazelcastExtension
     }
 
     @Override
-    public void afterEach(@NonNull ExtensionContext context) {
+    public void afterEach(@Nonnull ExtensionContext context) {
         try {
             super.afterEach(context);
         } finally {

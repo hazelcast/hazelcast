@@ -26,7 +26,8 @@ import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.test.archunit.BackupOperationShouldNotImplementMutatingOperation.notImplementMutatingOperation;
 import static com.hazelcast.test.archunit.CompletableFutureUsageCondition.useExplicitExecutorServiceInCFAsyncMethods;
-import static com.hazelcast.test.archunit.MatchersUsageCondition.notUseHamcrestMatchers;
+import static com.hazelcast.test.archunit.HamcrestMatchersUsageCondition.notUseHamcrestMatchers;
+import static com.hazelcast.test.archunit.UseConsistentNullabilityAnnotationCondition.useConsistentNullabilityAnnotation;
 import static com.hazelcast.test.archunit.MixTestAnnotationsCondition.notMixDifferentJUnitVersionsAnnotations;
 import static com.hazelcast.test.archunit.NotCreateInstanceWithNetworkCondition.notCreateInstanceWithNetwork;
 import static com.hazelcast.test.archunit.OperationShouldNotImplementReadonlyAndMutatingOperation.notImplementReadonlyAndMutatingOperation;
@@ -51,7 +52,7 @@ public final class ArchUnitRules {
     /**
      * ArchUnit rule checking that Hamcrest matchers are not mixed with AssertJ.
      */
-    public static final ArchRule MATCHERS_USAGE;
+    public static final ArchRule HAMCREST_MATCHERS_USAGE;
 
     /**
      * ArchUnit rule checking that JUnit4 and JUnit5 annotations are not mixed within the same tes
@@ -89,6 +90,9 @@ public final class ArchUnitRules {
      */
     public static final ArchRule COMPATIBILITY_CATEGORY_NOT_NIGHTLY_OR_SLOW;
 
+    /** @see UseConsistentNullabilityAnnotationCondition */
+    public static final ArchRule USE_ONLY_CONSISTENT_NULLABILITY_ANNOTATIONS;
+
     static {
         DescribedPredicate<JavaClass> isTestClass = simpleNameEndingWith("Test")
                 .or(simpleNameEndingWith("IT")
@@ -106,7 +110,7 @@ public final class ArchUnitRules {
                 .should(useExplicitExecutorServiceInCFAsyncMethods())
                 .allowEmptyShould(true);
 
-        MATCHERS_USAGE = classes()
+        HAMCREST_MATCHERS_USAGE = classes()
                 .that(isTestClass)
                 .should(notUseHamcrestMatchers())
                 .allowEmptyShould(true);
@@ -151,6 +155,10 @@ public final class ArchUnitRules {
         COMPATIBILITY_CATEGORY_NOT_NIGHTLY_OR_SLOW =
                 classes()
                 .should(CategoryCompatibilityRule.compatibilityCategoryCompatibilityNotRunningNightlyOrSlow())
+                .allowEmptyShould(true);
+
+        USE_ONLY_CONSISTENT_NULLABILITY_ANNOTATIONS = classes()
+                .should(useConsistentNullabilityAnnotation())
                 .allowEmptyShould(true);
     }
 

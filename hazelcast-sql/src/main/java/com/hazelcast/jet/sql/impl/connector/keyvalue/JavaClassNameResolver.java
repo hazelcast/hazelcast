@@ -23,7 +23,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
@@ -61,6 +63,17 @@ public final class JavaClassNameResolver {
 
     public static String resolveClassName(String format) {
         return CLASS_NAMES_BY_FORMAT.get(format);
+    }
+
+    public static List<String> resolveByClassName(Class<?> clazz) {
+        var className = clazz.getName();
+        List<String> result = new ArrayList<>();
+        for (Map.Entry<String, String> entry : CLASS_NAMES_BY_FORMAT.entrySet()) {
+            if (className.equals(entry.getValue())) {
+                result.add(entry.getKey());
+            }
+        }
+        return result;
     }
 
     static Stream<String> formats() {

@@ -134,7 +134,7 @@
                         <ignoredUsedUndeclaredDependency>com.google.code.findbugs:*</ignoredUsedUndeclaredDependency>
                         <ignoredUsedUndeclaredDependency>com.tngtech.archunit:*</ignoredUsedUndeclaredDependency>
                         <ignoredUsedUndeclaredDependency>junit:*</ignoredUsedUndeclaredDependency>
-                        <ignoredUsedUndeclaredDependency>com.github.docker-java:*</ignoredUsedUndeclaredDependency>,
+                        <ignoredUsedUndeclaredDependency>com.github.docker-java:*</ignoredUsedUndeclaredDependency>
                     </ignoredUsedUndeclaredDependencies>
                 </configuration>
             </plugin>

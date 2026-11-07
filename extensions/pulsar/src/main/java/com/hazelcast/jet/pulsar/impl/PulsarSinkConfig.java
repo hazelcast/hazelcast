@@ -21,8 +21,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import org.apache.pulsar.client.api.ProducerBuilder;
-import org.jspecify.annotations.NonNull;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
@@ -48,6 +48,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
     private FunctionEx<? super E, String> extractKeyFn;
     private FunctionEx<? super E, Map<String, String>> extractPropertiesFn;
     private FunctionEx<? super E, Long> extractTimestampFn;
+    private FunctionEx<? super E, Map.Entry<String, M>> extractKeyAndValueFn;
     private Duration transactionTimeout;
     private ConsumerEx<ProducerBuilder<M>> producerCustomizer = ConsumerEx.noop();
     private boolean transactional = true;
@@ -127,6 +128,14 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         this.transactional = transactional;
     }
 
+    public FunctionEx<? super E, Map.Entry<String, M>> getExtractKeyAndValueFn() {
+        return extractKeyAndValueFn;
+    }
+
+    public void setExtractKeyAndValueFn(FunctionEx<? super E, Map.Entry<String, M>> extractKeyAndValueFn) {
+        this.extractKeyAndValueFn = extractKeyAndValueFn;
+    }
+
     private <I, O> FunctionEx<I, O> returnNullFn() {
         //noinspection unchecked
         return RETURN_NULL;
@@ -140,6 +149,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         out.writeObject(extractKeyFn);
         out.writeObject(extractPropertiesFn);
         out.writeObject(extractTimestampFn);
+        out.writeObject(extractKeyAndValueFn);
         out.writeBoolean(transactionTimeout != null);
         if (transactionTimeout != null) {
             out.writeLong(transactionTimeout.getSeconds());
@@ -157,6 +167,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         extractKeyFn = in.readObject();
         extractPropertiesFn = in.readObject();
         extractTimestampFn = in.readObject();
+        extractKeyAndValueFn = in.readObject();
         if (in.readBoolean()) {
             long sec = in.readLong();
             int nano = in.readInt();
@@ -186,11 +197,11 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
             .throwIfErrors();
     }
 
-    public void setProducerCustomizer(ConsumerEx<@NonNull ProducerBuilder<M>> producerCustomizer) {
+    public void setProducerCustomizer(ConsumerEx<ProducerBuilder<M>> producerCustomizer) {
         this.producerCustomizer = producerCustomizer;
     }
 
-    @NonNull
+    @Nonnull
     public ConsumerEx<ProducerBuilder<M>> getProducerCustomizer() {
         return producerCustomizer == null ? ConsumerEx.noop() : producerCustomizer;
     }

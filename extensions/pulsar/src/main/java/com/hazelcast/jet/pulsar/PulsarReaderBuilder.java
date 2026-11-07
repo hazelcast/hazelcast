@@ -24,14 +24,18 @@ import com.hazelcast.jet.pipeline.DataConnectionRef;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pulsar.impl.PulsarSourceConfig;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import org.apache.pulsar.client.api.BatchReceivePolicy;
 import org.apache.pulsar.client.api.Message;
+import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.ReaderBuilder;
 import org.apache.pulsar.client.api.Schema;
-import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nonnull;
+import java.io.Serial;
 import java.util.List;
 import java.util.Map;
 
@@ -59,6 +63,7 @@ public final class PulsarReaderBuilder<M, T> {
         checkNonNullAndSerializable(schemaSupplier, "schemaSupplier");
         conf.setSchemaSupplier(schemaSupplier);
         conf.setOptions(Map.of());
+        projectionFn = GetValueFn.instance();
     }
 
     /**
@@ -105,6 +110,13 @@ public final class PulsarReaderBuilder<M, T> {
         return this;
     }
 
+    /**
+     * Provides function, that will convert Pulsar's {@link Message} to user-defined type.
+     * <p>
+     * Please note, that by default Pulsar connector uses {@link ReaderBuilder#poolMessages(boolean) message pooling},
+     * so if you want to use some kind of identity function (other than {@link FunctionEx#identity()}) as projection function,
+     * you need to disable pooling first via {@link #disableMessagePooling()}..
+     */
     @SuppressWarnings("unchecked")
     @Nonnull
     public <NEW_T> PulsarReaderBuilder<M, NEW_T> projectionFn(@Nonnull FunctionEx<Message<M>, NEW_T> projectionFn) {
@@ -114,11 +126,31 @@ public final class PulsarReaderBuilder<M, T> {
     }
 
     /**
+     * Marks {@link #projectionFn(FunctionEx)} as {@link FunctionEx#identity()}, which also disables message pooling.
+     */
+    @Nonnull
+    public PulsarReaderBuilder<M, Message<M>> identityProjectionFn() {
+        disableMessagePooling();
+        return projectionFn(FunctionEx.identity());
+    }
+
+    /**
+     * By default, this connector uses {@link ReaderBuilder#poolMessages(boolean) message pooling} functionality.
+     * If the {@link Message} objects must be available after {@link #projectionFn(FunctionEx)} is applied, this functionality
+     * must be turned off.
+     */
+    @Nonnull
+    public PulsarReaderBuilder<M, T> disableMessagePooling() {
+        this.conf.setEnableMessagePooling(false);
+        return this;
+    }
+
+    /**
      * Allows additional customization and invocation of other {@link ReaderBuilder} method,
      * that doesn't have a representative here.
      */
     @Nonnull
-    public PulsarReaderBuilder<M, T> readerCustomizer(@Nonnull ConsumerEx<@NonNull ReaderBuilder<M>> readerCustomizer) {
+    public PulsarReaderBuilder<M, T> readerCustomizer(@Nonnull ConsumerEx<ReaderBuilder<M>> readerCustomizer) {
         checkNonNullAndSerializable(readerCustomizer, "readerCustomizer");
         conf.setReaderCustomizer(readerCustomizer);
         return this;
@@ -154,6 +186,15 @@ public final class PulsarReaderBuilder<M, T> {
     }
 
     /**
+     * @param startOffset message from which the reading will be started
+     */
+    @Nonnull
+    public PulsarReaderBuilder<M, T> initialOffset(@Nonnull MessageId startOffset) {
+        conf.setInitialOffset(startOffset);
+        return this;
+    }
+
+    /**
      * Creates and returns the Pulsar Reader {@link StreamSource} with using builder configurations set before.
      */
     @Nonnull
@@ -165,5 +206,31 @@ public final class PulsarReaderBuilder<M, T> {
         return Sources.streamFromProcessorWithWatermarks(sourceName, true,
                                                          eventTimePolicy ->
                                                              processorMetaSupplier(localSourceConf, eventTimePolicy));
+    }
+
+    private static class GetValueFn<M> implements FunctionEx<Message<M>, M>, DataSerializable {
+        @SuppressWarnings("rawtypes")
+        private static final GetValueFn INSTANCE = new GetValueFn();
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        @SuppressWarnings("unchecked")
+        static <T, M> FunctionEx<Message<M>, T> instance() {
+            return INSTANCE;
+        }
+
+        @Override
+        public M applyEx(Message<M> message) {
+            return message.getValue();
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) {
+        }
     }
 }

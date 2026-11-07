@@ -17,8 +17,8 @@ package com.hazelcast.jet.pulsar.impl;
 
 import com.hazelcast.dataconnection.DataConnectionService;
 import com.hazelcast.function.FunctionEx;
-import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ThrowingSupplier;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.RestartableException;
@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility;
 import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
 import com.hazelcast.jet.pulsar.CloseablePulsarClient;
@@ -46,14 +47,16 @@ import org.apache.pulsar.client.api.transaction.Transaction;
 import org.apache.pulsar.client.api.transaction.TransactionCoordinatorClient;
 import org.apache.pulsar.client.api.transaction.TransactionCoordinatorClientException;
 import org.apache.pulsar.client.api.transaction.TxnID;
-import org.apache.pulsar.client.impl.PulsarClientImpl;
+import org.apache.pulsar.shade.org.apache.pulsar.client.impl.PulsarClientImpl;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,6 +69,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.pulsar.PulsarMetricNames.IN_FLIGHT_MESSAGES;
 import static com.hazelcast.jet.pulsar.impl.Utils.wrapFailure;
 import static java.lang.System.lineSeparator;
 import static java.util.stream.Collectors.joining;
@@ -84,11 +88,13 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
     private static final int NUM_DEDUPLICATION_CHECK = 5;
     private static final int MAX_IN_FLY_MESSAGES = 1000;
     private ILogger logger;
-    private PulsarClient client;
+    private final PulsarClient client;
     private Producer<M> producer;
 
     private final FunctionEx<? super E, M> extractValueFn;
     private final FunctionEx<? super E, String> extractKeyFn;
+    private final FunctionEx<? super E, Map.Entry<String, M>> extractKeyAndValueFn;
+    private final boolean useCombinedFunction;
     private final FunctionEx<? super E, Map<String, String>> extractPropertiesFn;
     private final FunctionEx<? super E, Long> extractTimestampFn;
 
@@ -96,21 +102,24 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
     private UnboundedTransactionsProcessorUtility<PulsarTransactionId, PulsarTransaction> transactionUtility;
     private volatile Throwable error;
 
+    @Probe(name = IN_FLIGHT_MESSAGES)
     private final AtomicInteger inFlightMessages = new AtomicInteger();
 
-    public WritePulsarP(PulsarSinkConfig<E, M> pulsarConfig) {
+    public WritePulsarP(PulsarSinkConfig<E, M> pulsarConfig, PulsarClient client) {
         this.pulsarConfig = pulsarConfig;
         this.extractValueFn = pulsarConfig.getExtractValueFn();
         this.extractKeyFn = pulsarConfig.getExtractKeyFn();
         this.extractPropertiesFn = pulsarConfig.getExtractPropertiesFn();
         this.extractTimestampFn = pulsarConfig.getExtractTimestampFn();
+        this.extractKeyAndValueFn = pulsarConfig.getExtractKeyAndValueFn();
+        this.useCombinedFunction = extractKeyAndValueFn != null;
+        this.client = client;
     }
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        var processorIndex = context.globalProcessorIndex();
+        int globalProcessorIndex = context.globalProcessorIndex();
         logger = context.logger();
-        client = pulsarConfig.getTargetConnectionSupplier(context).getEx();
 
         ProcessingGuarantee guarantee = context.processingGuarantee() == EXACTLY_ONCE && !pulsarConfig.isTransactional()
                                         ? AT_LEAST_ONCE
@@ -131,7 +140,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             getOutbox(),
             context,
             guarantee,
-            () -> new PulsarTransactionId(context, processorIndex),
+            () -> new PulsarTransactionId(context, globalProcessorIndex),
             txId -> new PulsarTransaction(client, txId, logger),
             this::recoverTransaction,
             () -> {
@@ -219,8 +228,16 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
                     return;
                 }
                 inFlightMessages.incrementAndGet();
-                M value = extractValueFn.apply(element);
-                String key = extractKeyFn.apply(element);
+                M value;
+                String key;
+                if (useCombinedFunction) {
+                    var entry = extractKeyAndValueFn.apply(element);
+                    key = entry.getKey();
+                    value = entry.getValue();
+                } else {
+                    value = extractValueFn.apply(element);
+                    key = extractKeyFn.apply(element);
+                }
                 Map<String, String> properties = extractPropertiesFn.apply(element);
                 Long timestamp = extractTimestampFn.apply(element);
 
@@ -279,7 +296,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
     @Override
     public boolean snapshotCommitPrepare() {
-        if (!flush()) {
+        if (notYetConsistentState()) {
             return false;
         }
         return transactionUtility.snapshotCommitPrepare();
@@ -299,7 +316,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        if (!flush()) {
+        if (notYetConsistentState()) {
             return false;
         }
         if (transactionUtility.usesTransactionLifecycle()) {
@@ -308,13 +325,13 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         return true;
     }
 
-    private boolean flush() {
+    private boolean notYetConsistentState() {
         checkError();
         if (inFlightMessages.get() != 0) {
-            return false;
+            return true;
         }
         checkError();
-        return true;
+        return false;
     }
 
     @Override
@@ -327,7 +344,6 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         List<Exception> errors = new ArrayList<>();
         safeClose(transactionUtility, errors);
         safeClose(producer, errors);
-        safeClose(client, errors);
         if (!errors.isEmpty()) {
             throw new JetException(errors.stream().map(Throwable::getMessage).collect(joining(lineSeparator())));
         }
@@ -409,8 +425,8 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             tcClient.commit(transactionId.txId);
         } catch (TransactionCoordinatorClientException e) {
             if (e instanceof TransactionCoordinatorClientException.TransactionNotFoundException) {
-                logger.warning(("transaction %s is no longer reachable to perform commit, most likely a timeout was hit "
-                                    + "or transaction was committed earlier."
+                logger.warning(("transaction %s is no longer reachable to perform commit, it was committed/rolled back before "
+                                    + "or timeout was hit."
                                     + "Check how long the transaction lasted; in case of long duration the timeout may have been "
                                     + "hit and and data may be lost.")
                                    .formatted(transactionId));
@@ -503,7 +519,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
     }
 
     @Nonnull
-    public static <E, M> SupplierEx<Processor> processorSupplier(@Nonnull PulsarSinkConfig<M, E> config) {
+    public static <E, M> ProcessorSupplier processorSupplier(@Nonnull PulsarSinkConfig<M, E> config) {
         return new WritePulsarP.ProcessorSupplierEx<>(config);
     }
 
@@ -516,10 +532,11 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         );
     }
 
-    public static class ProcessorSupplierEx<E, M> implements SupplierEx<Processor>, DataSerializable {
+    public static class ProcessorSupplierEx<E, M> implements ProcessorSupplier, DataSerializable {
         @Serial
         private static final long serialVersionUID = 1L;
         private PulsarSinkConfig<E, M> config;
+        private transient PulsarClient client;
 
         // needed for serialization
         @SuppressWarnings("unused")
@@ -531,8 +548,15 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         }
 
         @Override
-        public Processor getEx() {
-            return new WritePulsarP<>(config);
+        public void init(@Nonnull ProcessorSupplier.Context context) throws Exception {
+            client = config.getTargetConnectionSupplier(context).getEx();
+        }
+
+        @Override
+        public void close(@Nullable Throwable error) throws Exception {
+            if (client != null) {
+                client.shutdown();
+            }
         }
 
         @Override
@@ -543,6 +567,15 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             config = in.readObject();
+        }
+
+        @Override
+        public @Nonnull Collection<? extends Processor> get(int count) {
+            List<Processor> processors = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                processors.add(new WritePulsarP<>(config, client));
+            }
+            return processors;
         }
     }
 }

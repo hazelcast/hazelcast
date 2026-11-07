@@ -38,12 +38,10 @@ import org.apache.pulsar.client.api.DeadLetterPolicy;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.Schema;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junitpioneer.jupiter.cartesian.CartesianTest;
 
-import java.io.Closeable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,6 +50,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletionException;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.test.JetAssert.assertEquals;
@@ -62,6 +62,7 @@ import static com.hazelcast.jet.pulsar.PulsarSources.pulsarConsumerBuilder;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -69,18 +70,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @SuppressWarnings("checkstyle:NestedTryDepth")
 public class PulsarSourceConsumerTest extends PulsarTestSupport {
     private static final int ITEM_COUNT = 20;
-
-    private final List<Closeable> closeables = new ArrayList<>();
-    @AfterEach
-    void closeCloseables() {
-        for (int i = closeables.size() - 1; i >= 0; i--) {
-            try {
-                closeables.get(i).close();
-            } catch (Exception e) {
-                logger.warning("Exception while closing resources", e);
-            }
-        }
-    }
 
     private static StreamSource<String> setupConsumerSource(String topicName,
                                                               FunctionEx<Message<byte[]>, String> projectionFn) {
@@ -100,40 +89,40 @@ public class PulsarSourceConsumerTest extends PulsarTestSupport {
                             .build();
     }
 
-    @ParameterizedTest(name = "partitioned: {0}")
-    @ValueSource(booleans = {true, false})
-    public void when_projectionFunctionProvided_thenAppliedToReadRecords(boolean partitioned) {
+    @EnumSource(ProcessingGuarantee.class)
+    @CartesianTest(name = "partitioned={0} guarantee={1}")
+    public void when_projectionFunctionProvided_thenAppliedToReadRecords(
+        @CartesianTest.Values(booleans = {true, false}) boolean partitioned,
+        @CartesianTest.Enum(ProcessingGuarantee.class) ProcessingGuarantee guarantee) {
+        assumeThat(guarantee).isNotEqualByComparingTo(NONE);
         String topicName = randomName();
         createTopic(topicName, partitioned);
         // Add a suffix to messages so that this projectionFn does a bit more than byte->String conversion.
         StreamSource<String> pulsarConsumerSrc = setupConsumerSource(topicName,
                 x -> new String(x.getData(), StandardCharsets.UTF_8) + "-suffix");
+        HazelcastInstance[] instances = createHazelcastInstances(smallInstanceConfig(), 2);
+        IMap<String, String> values = instances[0].getMap(randomMapName());
 
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(pulsarConsumerSrc)
                 .withoutTimestamps()
-                .writeTo(AssertionSinks.assertCollectedEventually(60,
-                        list -> {
-                            assertEquals("# of Emitted items should be equal to # of published items",
-                                    ITEM_COUNT, list.size());
-                            for (int i = 0; i < ITEM_COUNT; i++) {
-                                String message = "hello-pulsar-" + i + "-suffix";
-                                assertTrue("missing entry: " + message, list.contains(message));
-                            }
-                        })
-                );
-        Job job = createHazelcastInstance().getJet().newJob(pipeline);
+                .map(i -> Map.entry(i, i))
+                .writeTo(Sinks.map(values));
+        Job job = instances[0].getJet().newJob(pipeline, new JobConfig()
+                                                             .setProcessingGuarantee(guarantee)
+                                                             .setStoreMetricsAfterJobCompletion(true)
+                                                             .setSnapshotIntervalMillis(100));
         assertThat(job).eventuallyHasStatus(RUNNING);
 
         produceMessages("hello-pulsar", topicName, ITEM_COUNT);
+        assertTrueEventually(() -> assertEquals("# of Emitted items should be equal to # of published items",
+                                                ITEM_COUNT, values.size()));
 
-        try {
-            job.join();
-            fail("Job should have completed with an AssertionCompletedException, but completed normally");
-        } catch (CompletionException e) {
-            String errorMsg = e.getCause().getMessage();
-            assertTrue("Job was expected to complete with AssertionCompletedException, but completed with: "
-                    + e.getCause(), errorMsg.contains(AssertionCompletedException.class.getName()));
+        job.cancel();
+
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            String message = "hello-pulsar-" + i + "-suffix";
+            assertTrue("missing entry: " + message, values.containsKey(message));
         }
     }
 
@@ -226,12 +215,12 @@ public class PulsarSourceConsumerTest extends PulsarTestSupport {
 
     @Test
     public void integrationTest_noSnapshotting() {
-        integrationTest(ProcessingGuarantee.NONE);
+        integrationTest(NONE);
     }
 
     @Test
     public void integrationTest_withSnapshotting() {
-        integrationTest(ProcessingGuarantee.EXACTLY_ONCE);
+        integrationTest(EXACTLY_ONCE);
     }
 
     public void integrationTest(ProcessingGuarantee guarantee) {
@@ -265,7 +254,7 @@ public class PulsarSourceConsumerTest extends PulsarTestSupport {
             }
         }, 15);
 
-        if (guarantee != ProcessingGuarantee.NONE) {
+        if (guarantee != NONE) {
             // wait until a new snapshot appears
             JobRepository jr = new JobRepository(instances[0]);
             long currentMax = jr.getJobExecutionRecord(job.getId()).snapshotId();
