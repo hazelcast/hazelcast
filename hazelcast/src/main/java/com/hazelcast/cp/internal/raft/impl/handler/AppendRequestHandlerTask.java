@@ -93,6 +93,23 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             raftNode.leader(req.leader());
         }
 
+        // Entries up to the commit index are committed, so they match the log of any
+        // leader of the current term or later. We cannot always check the previous
+        // entry, since our snapshot may have compacted it, so we respond with the
+        // commit index instead. The request's entries are ignored, and the leader
+        // resends the entries after our commit index.
+        if (req.prevLogIndex() < state.commitIndex()) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Previous log index of %s is below commit index: %s", req, state.commitIndex());
+            }
+
+            raftNode.updateLastAppendEntriesTimestamp();
+            AppendSuccessResponse resp = new AppendSuccessResponse(localMember(), state.term(), state.commitIndex(),
+                    req.queryRound(), req.flowControlSequenceNumber());
+            raftNode.send(resp, req.leader());
+            return;
+        }
+
         RaftLog raftLog = state.log();
 
         // Verify the last log entry
