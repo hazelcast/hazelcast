@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.impl.operationparker.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.NonFragmentedServiceNamespace;
 import com.hazelcast.internal.services.DistributedObjectNamespace;
 import com.hazelcast.internal.services.ServiceNamespace;
@@ -24,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.CallsPerMember;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -43,6 +45,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
+import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
+import static java.util.Collections.singleton;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -181,6 +187,36 @@ public class WaitSetTest {
         assertValid(waitSet, op1, false);
         assertValid(waitSet, op2, true);
         assertValid(waitSet, op3, false);
+    }
+
+    @Test
+    public void populate_whenInvalidated_thenNotReported() throws Exception {
+        WaitSet waitSet = newWaitSet();
+
+        UUID leftUuid = UUID.randomUUID();
+        Address leftAddress = new Address("127.0.0.1", 5701);
+        UUID aliveUuid = UUID.randomUUID();
+        Address aliveAddress = new Address("127.0.0.1", 5702);
+
+        BlockedOperation leftOp = newBlockingOperationWithCaller(leftUuid, leftAddress, 1);
+        waitSet.park(leftOp);
+        BlockedOperation aliveOp = newBlockingOperationWithCaller(aliveUuid, aliveAddress, 2);
+        waitSet.park(aliveOp);
+
+        waitSet.invalidateAll(leftUuid);
+
+        CallsPerMember calls = new CallsPerMember(new Address("127.0.0.1", 5700));
+        waitSet.populate(calls);
+
+        assertEquals(singleton(aliveAddress), calls.addresses());
+        assertArrayEquals(new long[]{2}, calls.toOpControl(aliveAddress).runningOperations());
+    }
+
+    private static BlockedOperation newBlockingOperationWithCaller(UUID callerUuid, Address callerAddress, long callId) {
+        BlockedOperation op = newBlockingOperationWithCallerUuid(callerUuid);
+        setCallerAddress(op, callerAddress);
+        setCallId(op, callId);
+        return op;
     }
 
     private static void assertValid(WaitSet waitSet, BlockedOperation operation, boolean valid) {
