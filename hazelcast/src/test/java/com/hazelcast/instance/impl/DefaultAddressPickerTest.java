@@ -161,6 +161,18 @@ public class DefaultAddressPickerTest {
     }
 
     @Test
+    public void testBindAddress_withIPv6NonLoopbackAddressViaInterfacesInBrackets() throws Exception {
+        InetAddress address = findIPv6NonLoopbackInterface();
+        assumeNotNull(address);
+
+        config.setProperty(ClusterProperty.PREFER_IPv4_STACK.getName(), "false");
+        config.getNetworkConfig().getInterfaces().setEnabled(true)
+                .clear().addInterface('[' + address.getHostAddress() + ']');
+
+        testBindAddress(address);
+    }
+
+    @Test
     public void testBindAddress_withIpv4NonLoopbackAddressViaTCPMembers() throws Exception {
         InetAddress address = findIPv4NonLoopbackInterface();
         assumeNotNull(address);

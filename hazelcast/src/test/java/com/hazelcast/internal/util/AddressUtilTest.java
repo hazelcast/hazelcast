@@ -64,6 +64,8 @@ class AddressUtilTest {
                 Address                         | Pattern
                 fe80::62c5:0:fe05:480a%en0      | fe80::62c5:*:fe05:480a%en0
                 fe80::62c5:aefb:fe05:480a%en1   | fe80::62c5:0-ffff:fe05:480a
+                fe80::b359:d8f6:484d:bdf3%21    | [fe80::b359:d8f6:484d:bdf3%21]
+                2001:db8:85a3:0:0:8a2e:370:7334 | [2001:db8:85a3:0:0:8a2e:370:7334]
             """)
     void testMatchInterface(String address, String pattern) {
         assertTrue(AddressUtil.matchInterface(address, pattern));
@@ -140,6 +142,11 @@ class AddressUtilTest {
             2001:db8:85a3:0:0:8a2e:370:7334     | true
             2001::370:7334                      | true
             fe80::62c5:0:fe05:480a%en0          | true
+            [::1]                               | true
+            [2001:db8:85a3:0:0:8a2e:370:7334]   | true
+            [fe80::62c5:0:fe05:480a%en0]        | true
+            [fe80::b359:d8f6:484d:bdf3%21]      | true
+            [::ffff:192.0.2.128]                | true
             2001:db8:85a3:*:0:8a2e:370:7334     | true
             fe80::62c5:0-ffff:fe05:480a         | true
             fe80::62c5:*:fe05:480a              | true
