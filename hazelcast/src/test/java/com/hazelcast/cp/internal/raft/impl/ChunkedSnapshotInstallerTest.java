@@ -47,6 +47,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Answers.RETURNS_MOCKS;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -257,5 +258,66 @@ public class ChunkedSnapshotInstallerTest {
 
         verify(stateStore).deleteSnapshotChunks(transferIndex);
         assertEquals(0, installer.getReceivedChunks().size());
+    }
+
+    @Test
+    public void fast_forwards_commit_index_when_snapshot_matches_local_log() {
+        when(raftNode.isSnapshotMatchingLog(any())).thenReturn(true);
+
+        installer.processChunk(newRequest(newMetadataChunk(13L, 3, 0, 1)));
+
+        InOrder order = inOrder(raftState, raftNode);
+        order.verify(raftState).commitIndex(13L);
+        order.verify(raftNode).applyLogEntries();
+        ArgumentCaptor<AppendSuccessResponse> responseCaptor = ArgumentCaptor.forClass(AppendSuccessResponse.class);
+        order.verify(raftNode).send(responseCaptor.capture(), eq(leader));
+        assertEquals(13L, responseCaptor.getValue().lastLogIndex());
+
+        verify(raftIntegration, never()).send(any(InstallSnapshotResponse.class), any(RaftEndpoint.class));
+        verify(raftNode, never()).installSnapshot(any());
+    }
+
+    @Test
+    public void fast_forwards_commit_index_when_local_log_matches_snapshot_before_last_chunk() {
+        // the local log does not match the snapshot when the transfer starts
+        SnapshotChunk chunk0 = newSnapshotChunk(13L, 3, 0, 1);
+        SnapshotChunk chunk1 = newSnapshotChunk(13L, 3, 1, 1);
+        SnapshotChunk chunk2 = newSnapshotChunk(13L, 3, 2, 1);
+        installer.processChunk(newRequest(chunk0));
+        installer.processChunk(newRequest(chunk1));
+
+        // Assume that after chunk 1 an append request arrives and appends the entry at the snapshot's index
+        // with the snapshot's term, so the local log now matches the snapshot. The match is checked on every chunk,
+        // so chunk 2 fast-forwards the commit index instead of completing the transfer and installing the snapshot.
+        when(raftNode.isSnapshotMatchingLog(any())).thenReturn(true);
+        installer.processChunk(newRequest(chunk2));
+
+        verify(raftState).commitIndex(13L);
+        verify(raftIntegration, never()).resetForChunkedSnapshotRestore();
+        verify(raftNode, never()).installSnapshot(any());
+    }
+
+    @Test
+    public void transfers_snapshot_when_snapshot_does_not_match_local_log() {
+        when(raftNode.isSnapshotMatchingLog(any())).thenReturn(false);
+
+        installer.processChunk(newRequest(newMetadataChunk(13L, 3, 0, 1)));
+
+        // the commit index is not fast-forwarded
+        verify(raftState, never()).commitIndex(13L);
+        verify(raftNode, never()).applyLogEntries();
+        verify(raftIntegration).send(any(InstallSnapshotResponse.class), eq(leader));
+    }
+
+    @Test
+    public void does_not_fast_forward_stale_snapshot_matching_local_log() {
+        // the snapshot is behind the commit index, so fast-forwarding to it would move the commit index backwards
+        when(raftState.commitIndex()).thenReturn(15L);
+        when(raftNode.isSnapshotMatchingLog(any())).thenReturn(true);
+
+        installer.processChunk(newRequest(newMetadataChunk(12L, 3, 0, 1)));
+
+        verify(raftState, never()).commitIndex(anyLong());
+        verify(raftNode, never()).applyLogEntries();
     }
 }
