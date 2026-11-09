@@ -555,6 +555,27 @@
                 <version>${jline.version}</version>
                 <classifier>jdk8</classifier>
             </dependency>
+            <!--
+                Addresses convergence between:
+                - `org.apache.calcite:calcite-core`
+                - `com.google.cloud:google-cloud-storage` (transitively from `com.google.cloud.bigdataoss:gcsio`)
+                - `org.postgresql:postgresql` (transitively from `io.debezium:debezium-connector-postgres`)
+            -->
+            <dependency>
+                <groupId>org.checkerframework</groupId>
+                <artifactId>checker-qual</artifactId>
+                <version>3.55.1</version>
+            </dependency>
+            <!--
+                Addresses convergence between:
+                - `com.hazelcast:hazelcast`
+                - `org.apache.kafka:connect-runtime` (transitively from `io.debezium:debezium-embedded`)
+            -->
+            <dependency>
+                <groupId>io.github.classgraph</groupId>
+                <artifactId>classgraph</artifactId>
+                <version>4.8.198</version>
+            </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
