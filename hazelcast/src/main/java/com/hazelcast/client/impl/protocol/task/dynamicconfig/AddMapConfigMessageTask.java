@@ -141,6 +141,9 @@ public class AddMapConfigMessageTask
         if (parameters.isUserCodeNamespaceExists) {
             config.setUserCodeNamespace(parameters.userCodeNamespace);
         }
+        if (parameters.isOversizedEntryThresholdBytesExists) {
+            config.setOversizedEntryThresholdBytes(parameters.oversizedEntryThresholdBytes);
+        }
         return config;
     }
 

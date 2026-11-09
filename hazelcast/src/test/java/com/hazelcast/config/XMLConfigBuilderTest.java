@@ -1084,6 +1084,21 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testMapConfig_oversizedEntryThresholdBytes() {
+        String xml = HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<oversized-entry-threshold-bytes>2048</oversized-entry-threshold-bytes>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+
+        Config config = buildConfig(xml);
+
+        assertEquals(2048, config.getMapConfig("mymap").getOversizedEntryThresholdBytes());
+        assertEquals(MapConfig.DEFAULT_OVERSIZED_ENTRY_THRESHOLD_BYTES,
+                config.getMapConfig("other").getOversizedEntryThresholdBytes());
+    }
+
+    @Override
     @Test
     public void testMapConfig_metadataPolicy_defaultValue() {
         String xml = HAZELCAST_START_TAG

@@ -56,7 +56,7 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     }
 
     @Override
-    public void onPutRecord(@Nonnull Data key, Record record, Object oldValue, boolean backup) {
+    public void onPutRecord(@Nonnull Data key, Record record, Object oldValue, Object newValue, boolean backup) {
         onPutInternal(key, record);
     }
 
@@ -72,7 +72,7 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     }
 
     @Override
-    public void onLoadRecord(@Nonnull Data key, @Nonnull Record record, boolean backup) {
+    public void onLoadRecord(@Nonnull Data key, @Nonnull Record record, Object newValue, boolean backup) {
         onPutInternal(key, record);
     }
 

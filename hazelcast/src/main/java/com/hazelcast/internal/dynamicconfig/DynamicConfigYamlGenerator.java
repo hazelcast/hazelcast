@@ -222,6 +222,8 @@ public class DynamicConfigYamlGenerator {
                     subConfigAsObject.isStatisticsEnabled());
             addNonNullToMap(subConfigAsMap, "per-entry-stats-enabled",
                     subConfigAsObject.isPerEntryStatsEnabled());
+            addNonNullToMap(subConfigAsMap, "oversized-entry-threshold-bytes",
+                    subConfigAsObject.getOversizedEntryThresholdBytes());
             addNonNullToMap(subConfigAsMap, "cache-deserialized-values",
                     cacheDeserializedValues);
             addNonNullToMap(subConfigAsMap, "backup-count",

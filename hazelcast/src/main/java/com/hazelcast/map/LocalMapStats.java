@@ -308,6 +308,54 @@ public interface LocalMapStats extends LocalInstanceStats {
     }
 
     /**
+     * Returns the number of times an entry whose sum of serialized key and value size
+     * exceeded the threshold set by
+     * {@link com.hazelcast.config.MapConfig#setOversizedEntryThresholdBytes(long)}
+     * was written to the partitions currently owned by this member, including
+     * loads from a {@link MapLoader}.
+     * <p>
+     * This counts write operations, not entries currently in the map: writing
+     * the same oversized entry twice counts twice, and removing it does not
+     * decrease the count. The count is kept per partition, so it moves with the
+     * partition on migration and backup promotion.
+     *
+     * @return the number of oversized entry writes
+     * @since 6.0
+     */
+    default long getOversizedEntriesSeen() {
+        return 0L;
+    }
+
+    /**
+     * Returns the serialized key and value size, in bytes, of the most recent
+     * oversized entry written to the partitions currently owned by this member.
+     * <p>
+     * Use with {@link #getLastOversizedEntryTime()} to tell whether oversized
+     * entries are still being written. The value is kept per partition, so it
+     * moves with the partition on migration and backup promotion.
+     *
+     * @return the size of the last oversized entry in bytes, or {@code 0} if none was written
+     * @see #getOversizedEntriesSeen()
+     * @since 6.0
+     */
+    default long getLastOversizedEntrySize() {
+        return 0L;
+    }
+
+    /**
+     * Returns the time, in milliseconds since the epoch, at which the most
+     * recent oversized entry was written to the partitions currently owned by
+     * this member.
+     *
+     * @return the time of the last oversized entry, or {@code 0} if none was written
+     * @see #getLastOversizedEntrySize()
+     * @since 6.0
+     */
+    default long getLastOversizedEntryTime() {
+        return 0L;
+    }
+
+    /**
      * Returns the per-index statistics map keyed by the index name.
      */
     Map<String, LocalIndexStats> getIndexStats();

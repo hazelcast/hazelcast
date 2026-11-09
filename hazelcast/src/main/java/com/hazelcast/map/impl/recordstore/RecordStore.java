@@ -420,6 +420,19 @@ public interface RecordStore<R extends Record> {
     MapContainer getMapContainer();
 
     /**
+     * Checks the serialized size of an entry stored in this record store and
+     * records it if oversized, for values that were not in serialized form
+     * when stored. Does nothing when entry size tracking is disabled.
+     * <p>
+     * Must be called on the partition thread.
+     *
+     * @param key    the key of the stored entry
+     * @param value  the stored value, serialized
+     * @param backup {@code true} if this record store is a backup replica
+     */
+    void recordEntrySize(Data key, Data value, boolean backup);
+
+    /**
      * @see MapDataStore#softFlush()
      */
     long softFlush();

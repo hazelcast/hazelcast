@@ -243,6 +243,7 @@
             eviction policies work regardless of this setting.
         -->
         <per-entry-stats-enabled>false</per-entry-stats-enabled>
+        <oversized-entry-threshold-bytes>2048</oversized-entry-threshold-bytes>
 
         <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <!--

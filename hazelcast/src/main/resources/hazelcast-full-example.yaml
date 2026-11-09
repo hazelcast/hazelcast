@@ -1057,6 +1057,10 @@ hazelcast:
   #     Enable/disable per entry statistics. Its default value is false.
   #     When you enable it, you can retrieve entry level statistics such as hits, creation time,
   #     last access time, last update time,last stored time.
+  # * "oversized-entry-threshold-bytes":
+  #     Serialized entry size in bytes above which an entry written to the map is reported as oversized,
+  #     in the oversizedEntriesSeen map metric and a warning log. Set to 0 to disable entry size tracking.
+  #     Its default value is 1048576 (1 MB).
   # * "metadata-policy"
   # Metadata policy for this map. Hazelcast may process objects of supported types ahead of time to
   # create additional metadata about them. This metadata then is used to make querying and indexing faster.
@@ -1354,6 +1358,7 @@ hazelcast:
       metadata-policy: CREATE_ON_UPDATE
       statistics-enabled: true
       per-entry-stats-enabled: false
+      oversized-entry-threshold-bytes: 1048576
       cache-deserialized-values: ALWAYS
       backup-count: 1
       async-backup-count: 0

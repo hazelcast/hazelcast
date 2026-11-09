@@ -1075,6 +1075,10 @@
             Enable/disable per entry statistics. Its default value is false.
             When you enable it, you can retrieve entry level statistics such as hits, creation time,
             last access time, last update time,last stored time.
+        * <oversized-entry-threshold-bytes>:
+            Serialized entry size in bytes above which an entry written to the map is reported as oversized,
+            in the oversizedEntriesSeen map metric and a warning log. Set to 0 to disable entry size tracking.
+            Its default value is 1048576 (1 MB).
         * "<eviction>":
            By default map has no eviction configured. Its <eviction-policy> is NONE.
            To make it work you have to configure it.
@@ -1370,6 +1374,7 @@
         <metadata-policy>CREATE_ON_UPDATE</metadata-policy>
         <statistics-enabled>true</statistics-enabled>
         <per-entry-stats-enabled>false</per-entry-stats-enabled>
+        <oversized-entry-threshold-bytes>1048576</oversized-entry-threshold-bytes>
         <cache-deserialized-values>ALWAYS</cache-deserialized-values>
         <backup-count>1</backup-count>
         <async-backup-count>0</async-backup-count>

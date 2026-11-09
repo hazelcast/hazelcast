@@ -47,7 +47,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
     @Override
     public void onPutRecord(@Nonnull Data key, @Nonnull R record,
-                            Object oldValue, boolean backup) {
+                            Object oldValue, Object newValue, boolean backup) {
         if (!backup) {
             saveIndex(key, record, oldValue, Index.OperationSource.USER);
         }
@@ -83,7 +83,7 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
     }
 
     @Override
-    public void onLoadRecord(@Nonnull Data key, @Nonnull R record, boolean backup) {
+    public void onLoadRecord(@Nonnull Data key, @Nonnull R record, Object newValue, boolean backup) {
         if (!backup) {
             saveIndex(key, record, null, Index.OperationSource.USER);
         }
