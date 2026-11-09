@@ -44,34 +44,33 @@ import org.apache.kafka.connect.runtime.WorkerConfig;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.apache.kafka.connect.storage.Converter;
 import org.apache.kafka.connect.storage.MemoryOffsetBackingStore;
-import org.apache.kafka.connect.util.Callback;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 import java.sql.DriverManager;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpcengine.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.cdc.impl.Utils.markBatchFinished;
 import static com.hazelcast.jet.cdc.impl.Utils.markProcessed;
+import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.EventTimeMapper.NO_NATIVE_TIME;
 import static io.debezium.embedded.EmbeddedEngineConfig.OFFSET_STORAGE;
-import static io.debezium.embedded.KafkaConnectUtil.converterForOffsetStore;
 import static io.debezium.relational.HistorizedRelationalDatabaseConnectorConfig.SCHEMA_HISTORY;
+import static io.debezium.storage.kafka.offset.KafkaOffsetStoreConverter.jsonConverter;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -87,7 +86,11 @@ public class ReadCdcP<T> extends AbstractProcessor {
 
     private static final String JET_JOB_ID_REPLACEMENT_PROP_1 = "offset.storage.topic";
     private static final String JET_JOB_ID_REPLACEMENT_PROP_2 = "schema.history.internal.connector.id";
+    private static final String MAX_BATCH_SIZE_NAME = "max.batch.size";
+    private static final String DEFAULT_MAX_BATCH_SIZE = "2048";
 
+    DebeziumEngine<RecordChangeEvent<SourceRecord>> engine;
+    ArrayBlockingQueue<EventBatch> itemsBuffer;
     private final Properties properties;
     private final EventTimeMapper<? super T> eventTimeMapper;
     private final boolean trackSnapshots;
@@ -96,12 +99,13 @@ public class ReadCdcP<T> extends AbstractProcessor {
     private Traverser<Object> traverser = Traversers.empty();
     private Traverser<Map.Entry<BroadcastKey<String>, State>> snapshotTraverser;
     private boolean snapshotInProgress;
+    private boolean snapshottingEnabled;
     private ILogger logger;
     private int maxShutdownWaitSeconds;
 
-    private final ConcurrentLinkedDeque<EventBatch> itemsBuffer = new ConcurrentLinkedDeque<>();
+    private ArrayBlockingQueue<EventBatch> pendingBatches;
+    private final Converter offsetConverter = jsonConverter();
     private final AtomicBoolean engineStarted = new AtomicBoolean();
-    private DebeziumEngine<RecordChangeEvent<SourceRecord>> engine;
     private ExecutorService executor;
 
     private State state;
@@ -137,7 +141,15 @@ public class ReadCdcP<T> extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) {
+        if (!properties.containsKey(MAX_BATCH_SIZE_NAME)) {
+            properties.setProperty(MAX_BATCH_SIZE_NAME, DEFAULT_MAX_BATCH_SIZE);
+        }
+        int maxCapacity = readMaxCapacity(context);
+        this.pendingBatches = new ArrayBlockingQueue<>(maxCapacity);
+        this.itemsBuffer = new ArrayBlockingQueue<>(maxCapacity);
+
         this.logger = context.logger();
+        this.snapshottingEnabled = context.snapshottingEnabled();
         this.vertexName = context.vertexName();
 
         properties.setProperty(OFFSET_STORAGE.name(), JetOffsetStorage.class.getName());
@@ -161,7 +173,6 @@ public class ReadCdcP<T> extends AbstractProcessor {
             properties.setProperty("notification.SnapshotCompletionListener.jobId", String.valueOf(snapshotTrackingId));
             properties.setProperty("notification.SnapshotCompletionListener.sourceVertexName", vertexName);
         }
-
         recordMappingFunction.init(properties, context.classLoader());
 
         this.executor = Executors.newFixedThreadPool(
@@ -184,9 +195,16 @@ public class ReadCdcP<T> extends AbstractProcessor {
             .builder(ChangeEventFormat.of(Connect.class))
             .using(context.classLoader())
             .using(properties)
-            .notifying((records, committer) -> itemsBuffer.add(new EventBatch(records, committer)))
+            .notifying((records, committer) -> itemsBuffer.put(new EventBatch(records, committer)))
             .using((success, message, error) -> completionEvent = new CompletionEvent(success, message, error))
             .build();
+    }
+
+    private int readMaxCapacity(Context context) {
+        int maxBatchSize = checkPositive(MAX_BATCH_SIZE_NAME, Integer.parseInt(properties.getProperty(MAX_BATCH_SIZE_NAME)));
+        // Both queues hold batches. Allow at least one batch so a limit below the batch size still makes progress.
+        long maxBatches = Math.max(1, context.maxProcessorAccumulatedRecords() / maxBatchSize);
+        return (int) Math.min(DEFAULT_QUEUE_SIZE, maxBatches);
     }
 
     private void runEngine() {
@@ -206,12 +224,14 @@ public class ReadCdcP<T> extends AbstractProcessor {
         if (snapshotInProgress) {
             return false;
         }
+        if (snapshottingEnabled && pendingBatches.remainingCapacity() == 0) {
+            return false;
+        }
 
         var batch = itemsBuffer.poll();
         if (batch == null) {
             traverser = eventTimeMapper.flatMapIdle();
         } else {
-            var committer = batch.committer();
             traverser = traverseIterable(batch.records())
                     .flatMap(event -> {
                         var sourceRecord = event.record();
@@ -220,15 +240,50 @@ public class ReadCdcP<T> extends AbstractProcessor {
                         }
                         long nativeTime = extractTimestamp(sourceRecord);
                         T mappedRecord = recordMappingFunction.apply(sourceRecord);
-                        var mapped = eventTimeMapper.flatMapEvent(mappedRecord, 0, nativeTime);
-                        markProcessed(committer, event);
-                        return mapped;
+                        return eventTimeMapper.flatMapEvent(mappedRecord, 0, nativeTime);
                     })
-                    .onFirstNull(() -> markBatchFinished(committer));
+                    .onFirstNull(() -> finishBatch(batch));
         }
 
         emitFromTraverser(traverser);
         return false;
+    }
+
+    private void finishBatch(EventBatch batch) {
+        // Snapshot the offsets of emitted records independently of Debezium's periodic flushes.
+        Map<Map<String, ?>, Map<String, ?>> offsets = new HashMap<>();
+        for (var event : batch.records()) {
+            SourceRecord record = event.record();
+            if (record != null) {
+                offsets.put(record.sourcePartition(), record.sourceOffset());
+            }
+        }
+        String name = properties.getProperty(NAME_PROPERTY);
+        offsets.forEach((partition, offset) -> state.setOffset(
+                ByteBuffer.wrap(offsetConverter.fromConnectData(name, null, List.of(name, partition))),
+                ByteBuffer.wrap(offsetConverter.fromConnectData(name, null, offset))));
+
+        if (snapshottingEnabled) {
+            // Even engine.close() flushes processed offsets. Only acknowledge records after
+            // their Jet snapshot is durable, otherwise DB may discard WAL needed on restart.
+            try {
+                pendingBatches.put(batch);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new JetException(e);
+            }
+        } else {
+            acknowledgeBatch(batch);
+        }
+    }
+
+    private static void acknowledgeBatch(EventBatch batch) {
+        for (var event : batch.records()) {
+            if (event.record() != null) {
+                markProcessed(batch.committer(), event);
+            }
+        }
+        markBatchFinished(batch.committer());
     }
 
     private void checkCompleted() {
@@ -291,44 +346,17 @@ public class ReadCdcP<T> extends AbstractProcessor {
 
         @Override
         public void start() {
+            // Keep the offsets visible to Debezium separate from the processed offsets in State.
+            // In particular, PostgreSQL reads this store when acknowledging WAL to the server.
+            data.putAll(state.getPartitionsToOffset());
+            keyConverter = jsonConverter();
+            save();
             super.start();
-            keyConverter = converterForOffsetStore();
-            state.getPartitionsToOffset().forEach((partition, offset) -> {
-                byte[] partitionBytes = partition.array();
-                byte[] offsetBytes = offset.array();
-                processPartitionKey(partitionBytes, offsetBytes, keyConverter, connectorPartitions);
-            });
-        }
-
-        @Override
-        public Future<Map<ByteBuffer, ByteBuffer>> get(Collection<ByteBuffer> keys) {
-            return executor.submit(() -> {
-                Map<ByteBuffer, ByteBuffer> result = new HashMap<>();
-                for (ByteBuffer key : keys) {
-                    ByteBuffer offset = state.getOffset(key);
-                    if (offset != null) {
-                        result.put(key, offset);
-                    }
-                }
-                return result;
-            });
-        }
-
-        @Override
-        public Future<Void> set(Map<ByteBuffer, ByteBuffer> values, Callback<Void> callback) {
-            return executor.submit(() -> {
-                values.forEach((k, v) -> state.setOffset(k, v));
-
-                if (callback != null) {
-                    callback.onCompletion(null, null);
-                }
-                return null;
-            });
         }
 
         @Override
         protected void save() {
-            state.getPartitionsToOffset().forEach(
+            data.forEach(
                     (partition, offset) -> {
                         byte[] partitionBytes = partition.array();
                         byte[] offsetBytes = offset.array();
@@ -365,6 +393,13 @@ public class ReadCdcP<T> extends AbstractProcessor {
 
     @Override
     public boolean snapshotCommitFinish(boolean success) {
+        if (success && !pendingBatches.isEmpty()) {
+            acknowledgeBatch(pendingBatches.remove());
+            // Give the execution service a chance to yield between batches.
+            if (!pendingBatches.isEmpty()) {
+                return false;
+            }
+        }
         snapshotInProgress = false;
         return true;
     }
