@@ -134,4 +134,18 @@ public class BasicSqlReadingTest extends PulsarTestSupport {
             assertRowsEventuallyInAnyOrder(instances[0], "SELECT * FROM testPulsarMapping", expected);
         }
     }
+
+    @Test
+    void noNullPointerExceptionWhenKeyFormatOptionIsOmitted(TestInfo testInfo) {
+        String testName = sanitizedTestName(testInfo);
+
+        // __key is declared but keyFormat is never set
+        assertThatThrownBy(() ->
+                               new SqlMapping("test", "testPulsar").externalName(testName)
+                                                                   .fields("__key VARCHAR", "this VARCHAR")
+                                                                   .options(OPTION_VALUE_FORMAT, "varchar")
+                                                                   .createIfNotExists(instances[0])
+        ).isInstanceOf(HazelcastSqlException.class)
+            .hasMessageContaining("keyFormat option must be one of: `java`");
+    }
 }

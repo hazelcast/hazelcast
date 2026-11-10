@@ -110,6 +110,13 @@ public final class PulsarConsumerBuilder<M, T> {
     }
 
     @Nonnull
+    public PulsarConsumerBuilder<M, T> subscriptionInitialPosition(@Nonnull SubscriptionInitialPosition initialPosition) {
+        checkNotNull(initialPosition, "initialPosition");
+        conf.setSubscriptionInitialPosition(initialPosition);
+        return this;
+    }
+
+    @Nonnull
     public PulsarConsumerBuilder<M, T> connectionSupplier(@Nonnull SupplierEx<PulsarClient> connectionSupplier) {
         checkSerializable(connectionSupplier, "connectionSupplier");
         conf.setConnectionSupplier(connectionSupplier);
@@ -243,7 +250,7 @@ public final class PulsarConsumerBuilder<M, T> {
                 return builder
                       .subscriptionName(conf.getSubscriberName())
                       .topics(conf.getTopics())
-                      .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+                      .subscriptionInitialPosition(conf.getSubscriptionInitialPosition())
                       .loadConf(conf.getOptions())
                       .batchReceivePolicy(conf.getBatchReceivePolicy())
                       .subscriptionType(SubscriptionType.Shared)

@@ -97,16 +97,20 @@ public class PulsarSqlConnector implements SqlConnector {
         }
         var keyField = keyFieldOpt.get(0);
         QueryDataType type = keyField.type();
-        if (options.get(OPTION_KEY_FORMAT).toLowerCase(ROOT).equals("java")) {
+        String keyFormat = options.get(OPTION_KEY_FORMAT);
+        if (keyFormat != null) {
+            keyFormat = keyFormat.toLowerCase(ROOT);
+        }
+        List<String> allowedStringTypes = JavaClassNameResolver.resolveByClassName(String.class);
+        if (!allowedStringTypes.contains(keyFormat)) {
+            throw QueryException.error(OPTION_KEY_FORMAT + " option must be one of: `java` or " + allowedStringTypes);
+        }
+        if ("java".equals(keyFormat)) {
             String lowerCase = options.get(OPTION_KEY_CLASS).toLowerCase(ROOT);
             if (!lowerCase.equals("string") && !lowerCase.equals("java.lang.string")) {
                 throw QueryException.error("If key is of format `java`, it must have "
                                                + OPTION_KEY_CLASS + " set to java.lang.String");
             }
-        }
-        List<String> allowedStringTypes = JavaClassNameResolver.resolveByClassName(String.class);
-        if (!allowedStringTypes.contains(options.get(OPTION_KEY_FORMAT).toLowerCase(ROOT))) {
-            throw QueryException.error(OPTION_KEY_FORMAT + " option must be one of: `java` or " + allowedStringTypes);
         }
 
         if (type.getTypeFamily() != QueryDataTypeFamily.VARCHAR) {
