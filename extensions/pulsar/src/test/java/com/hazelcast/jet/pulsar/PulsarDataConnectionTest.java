@@ -26,7 +26,6 @@ import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.common.policies.data.ClusterData;
 import org.apache.pulsar.common.policies.data.TenantInfo;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -158,12 +157,16 @@ public class PulsarDataConnectionTest extends PulsarTestSupport {
         pulsarAdmin.namespaces().createNamespace("testTenant/testNamespaceOther");
         pulsarAdmin.topics().createPartitionedTopic("testTenant/testNamespace/topicUnderTN1", 2);
         pulsarAdmin.topics().createPartitionedTopic("testTenant/testNamespaceOther/topicUnderTN2", 2);
+        pulsarAdmin.topics().createNonPartitionedTopic("testTenant/testNamespaceOther/nonPartitionedTopicUnderNS");
+        pulsarAdmin.topics().createPartitionedTopic("non-persistent://testTenant/testNamespaceOther/nonPersistent", 2);
 
         dataConnection = new PulsarDataConnection(newConnection());
         assertThat(dataConnection.listResources()).contains(
-            new DataConnectionResource("Topic", "public", "default", "partitionedTopic1"),
-            new DataConnectionResource("Topic", "testTenant", "testNamespace", "topicUnderTN1"),
-            new DataConnectionResource("Topic", "testTenant", "testNamespaceOther", "topicUnderTN2")
+            new DataConnectionResource("Topic", "persistent", "public", "default", "partitionedTopic1"),
+            new DataConnectionResource("Topic", "persistent", "testTenant", "testNamespace", "topicUnderTN1"),
+            new DataConnectionResource("Topic", "persistent", "testTenant", "testNamespaceOther", "topicUnderTN2"),
+            new DataConnectionResource("Topic", "persistent", "testTenant", "testNamespaceOther", "nonPartitionedTopicUnderNS"),
+            new DataConnectionResource("Topic", "non-persistent", "testTenant", "testNamespaceOther", "nonPersistent")
         );
         dataConnection.destroy();
 
@@ -171,8 +174,8 @@ public class PulsarDataConnectionTest extends PulsarTestSupport {
         config.setProperty("tenant", "testTenant");
         dataConnection = new PulsarDataConnection(config);
         assertThat(dataConnection.listResources()).contains(
-            new DataConnectionResource("Topic", "testTenant", "testNamespace", "topicUnderTN1"),
-            new DataConnectionResource("Topic", "testTenant", "testNamespaceOther", "topicUnderTN2")
+            new DataConnectionResource("Topic", "persistent", "testTenant", "testNamespace", "topicUnderTN1"),
+            new DataConnectionResource("Topic", "persistent", "testTenant", "testNamespaceOther", "topicUnderTN2")
         );
         dataConnection.destroy();
 
@@ -181,7 +184,7 @@ public class PulsarDataConnectionTest extends PulsarTestSupport {
         config.setProperty("namespace", "testNamespace");
         dataConnection = new PulsarDataConnection(config);
         assertThat(dataConnection.listResources()).contains(
-                new DataConnectionResource("Topic", "testTenant", "testNamespace", "topicUnderTN1")
+                new DataConnectionResource("Topic", "persistent", "testTenant", "testNamespace", "topicUnderTN1")
 
         );
         dataConnection.destroy();
@@ -191,7 +194,7 @@ public class PulsarDataConnectionTest extends PulsarTestSupport {
         config.setProperty("namespace", "testTenant/testNamespace");
         dataConnection = new PulsarDataConnection(config);
         assertThat(dataConnection.listResources()).contains(
-                new DataConnectionResource("Topic", "testTenant", "testNamespace", "topicUnderTN1")
+                new DataConnectionResource("Topic", "persistent", "testTenant", "testNamespace", "topicUnderTN1")
         );
         dataConnection.destroy();
     }
@@ -247,7 +250,7 @@ public class PulsarDataConnectionTest extends PulsarTestSupport {
         assertThatCode(() -> PulsarSinks.builder(bytes())).doesNotThrowAnyException();
     }
 
-    private @NonNull DataConnectionConfig newConnection() {
+    private DataConnectionConfig newConnection() {
         return pulsarDataConnectionConf("pulsar", brokerUrl, serviceUrl);
     }
 

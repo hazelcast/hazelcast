@@ -28,15 +28,18 @@ import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.admin.Topics;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
-import org.apache.pulsar.common.naming.NamespaceName;
-import org.apache.pulsar.common.naming.TopicName;
+import org.apache.pulsar.shade.org.apache.pulsar.common.naming.NamespaceName;
+import org.apache.pulsar.shade.org.apache.pulsar.common.naming.TopicName;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -171,10 +174,14 @@ public class PulsarDataConnection extends DataConnectionBase {
             for (String tenant : tenantsNames) {
                 List<String> namespaceNames = possibleNamespaceNames(admin, tenant);
                 for (String namespace : namespaceNames) {
-                    List<String> allTopicNames = topics.getList(namespace);
+                    Set<String> allTopicNames = new LinkedHashSet<>(topics.getList(namespace));
+                    // non persistent topics do not appear in "getList"
+                    allTopicNames.addAll(topics.getPartitionedTopicList(namespace));
                     for (String topic : allTopicNames) {
-                        var nameParts = TopicName.get(topic).getSchemaName().split("/");
-                        resources.add(new DataConnectionResource("Topic", nameParts));
+                        TopicName name = TopicName.get(topic);
+                        var nameParts = new ArrayList<>(Arrays.asList(name.getSchemaName().split("/")));
+                        nameParts.add(0, name.getDomain().toString());
+                        resources.add(new DataConnectionResource("Topic", nameParts.toArray(new String[0])));
                     }
                 }
             }
@@ -223,11 +230,13 @@ public class PulsarDataConnection extends DataConnectionBase {
                 try {
                     unwrapped.closeAsync().get(CLOSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
                 } catch (ExecutionException | InterruptedException | TimeoutException e) {
-                    Thread.currentThread().interrupt();
+                    if (e instanceof InterruptedException) {
+                        Thread.currentThread().interrupt();
+                    }
                     try {
                         unwrapped.shutdown();
                     } catch (PulsarClientException ex) {
-                        ex.addSuppressed(e);
+                        e.addSuppressed(ex);
                         throw new HazelcastException("Error while trying to close PulsarClient by PulsarDataConnection", e);
                     }
                 }

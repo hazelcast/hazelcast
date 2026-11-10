@@ -35,10 +35,12 @@ public interface MutationObserver<R extends Record> {
      * @param key      The key of the record
      * @param record   The record with new value
      * @param oldValue old value
+     * @param newValue The new value, before conversion
+     *                 to the in-memory format
      * @param backup    {@code true} if this method is
      *                 called by a backup operation, otherwise {@code false}
      */
-    void onPutRecord(@Nonnull Data key, R record, Object oldValue, boolean backup);
+    void onPutRecord(@Nonnull Data key, R record, Object oldValue, Object newValue, boolean backup);
 
     /**
      * Called when a new record is added to the {@link RecordStore} due
@@ -86,12 +88,14 @@ public interface MutationObserver<R extends Record> {
     /**
      * Called when a record is loaded into the observed {@link RecordStore}
      *
-     * @param key    The key of the record
-     * @param record The record
-     * @param backup {@code true} if this method is
-     *               called by a backup operation, otherwise {@code false}
+     * @param key      The key of the record
+     * @param record   The record
+     * @param newValue The loaded value, before conversion
+     *                 to the in-memory format
+     * @param backup   {@code true} if this method is
+     *                 called by a backup operation, otherwise {@code false}
      */
-    void onLoadRecord(@Nonnull Data key, @Nonnull R record, boolean backup);
+    void onLoadRecord(@Nonnull Data key, @Nonnull R record, Object newValue, boolean backup);
 
     /**
      * Called when the observed {@link RecordStore} is being reset.

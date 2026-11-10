@@ -16,6 +16,7 @@
 package com.hazelcast.jet.pulsar.impl;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -36,11 +37,10 @@ import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.Reader;
 import org.apache.pulsar.client.api.ReaderBuilder;
 import org.apache.pulsar.client.api.TopicMessageId;
-import org.apache.pulsar.common.naming.TopicName;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import org.apache.pulsar.shade.org.apache.pulsar.common.naming.TopicName;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
@@ -62,6 +62,7 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
+import static com.hazelcast.jet.pulsar.PulsarMetricNames.ASSIGNED_PARTITION_COUNT;
 import static com.hazelcast.jet.pulsar.impl.Utils.wrapFailure;
 import static org.apache.pulsar.common.naming.TopicDomain.persistent;
 
@@ -96,14 +97,17 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
     private Traverser<Map.Entry<BroadcastKey<String>, SnapshotData>> snapshotTraverser;
     private final AtomicBoolean partitionNumberChanged = new AtomicBoolean(false);
     private final List<String> assignedPartitions = new ArrayList<>();
+    @Probe(name = ASSIGNED_PARTITION_COUNT)
+    private volatile int assignedPartitionCount;
     private Context context;
+
     private Future<Message<M>> nextMessageFuture;
     private final AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
     private PartitionAssigner partitionAssigner;
 
     public StreamPulsarViaReaderP(@Nonnull PulsarSourceConfig<M, T> config,
                                   @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-                                  @NonNull PulsarClient pulsarClient) {
+                                  @Nonnull PulsarClient pulsarClient) {
         this.pulsarConfig = config;
         this.projectionFn = config.getProjectionFn();
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
@@ -144,6 +148,7 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
                     }
                 }
             }
+            assignedPartitionCount = assignedPartitions.size();
             int count = eventTimeMapper.partitionCount();
             if (assignedPartitions.size() > count) {
                 eventTimeMapper.addPartitions(assignedPartitions.size() - count);
@@ -173,12 +178,14 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
                 ReaderBuilder<M> builder =
                     client.newReader(pulsarConfig.getSchemaSupplier().get());
                 pulsarConfig.getReaderCustomizer().accept(builder);
+                boolean enableMessagePooling = pulsarConfig.isEnableMessagePooling();
                 reader = builder.autoUpdatePartitions(false)
+                                .subscriptionName(pulsarConfig.getSubscriberName())
                                 .topics(List.copyOf(assignedPartitions))
-                                .poolMessages(false)
-                                .startMessageId(offsets.isEmpty() ? MessageId.earliest : MessageId.latest)
+                                .poolMessages(enableMessagePooling)
+                                .startMessageId(pulsarConfig.getInitialOffset())
                                 .create();
-                reader.seek(topic -> offsets.getOrDefault(topic, MessageId.earliest));
+                reader.seek(topic -> offsets.getOrDefault(topic, pulsarConfig.getInitialOffset()));
                 nextMessageFuture = reader.readNextAsync();
             } catch (IOException e) {
                 throw wrapFailure(e.getMessage(), e.getCause());
@@ -232,19 +239,23 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
     }
 
     private Traverser<Object> processMessage(Message<M> message) {
-        String topicName = message.getTopicName();
-        Integer partitionIndex = assignedPartitionIndexesForWatermarks.get(topicName);
-        if (partitionIndex == null) {
-            throw new JetException("Received a message from a removed Pulsar partition and"
-                                       + " connector does not support removal of partitions");
+        try {
+            String topicName = message.getTopicName();
+            Integer partitionIndex = assignedPartitionIndexesForWatermarks.get(topicName);
+            if (partitionIndex == null) {
+                throw new JetException("Received a message from a removed Pulsar partition and"
+                                           + " connector does not support removal of partitions");
+            }
+            MessageId messageId = message.getMessageId();
+            T projectedRecord = projectionFn.apply(message);
+            offsets.put(topicName, messageId);
+            long timestamp = message.getEventTime() != 0 ? message.getEventTime() : message.getPublishTime();
+            return projectedRecord == null
+                   ? eventTimeMapper.flatMapIdle()
+                   : eventTimeMapper.flatMapEvent(projectedRecord, partitionIndex, timestamp);
+        } finally {
+            message.release();
         }
-        MessageId messageId = message.getMessageId();
-        T projectedRecord = projectionFn.apply(message);
-        offsets.put(topicName, messageId);
-        long timestamp = message.getEventTime() != 0 ? message.getEventTime() : message.getPublishTime();
-        return projectedRecord == null
-               ? eventTimeMapper.flatMapIdle()
-               : eventTimeMapper.flatMapEvent(projectedRecord, partitionIndex, timestamp);
     }
 
     @Override
@@ -392,7 +403,7 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
         }
 
         @Override
-        public @NonNull Collection<? extends Processor> get(int count) {
+        public @Nonnull Collection<? extends Processor> get(int count) {
             processors = IntStream.range(0, count)
                                   .mapToObj(i -> new StreamPulsarViaReaderP<>(config, eventTimePolicy, pulsarClient))
                                   .toList();

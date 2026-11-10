@@ -173,7 +173,7 @@ public enum PutOpSteps implements IMapOpStep {
             Record record = recordStore.getRecord(state.getKey());
             if (record == null) {
                 record = recordStore.createRecord(state.getKey(), state.getNewValue(), state.getNow());
-                recordStore.putMemory(record, state.getKey(), state.getOldValue(),
+                recordStore.putMemory(record, state.getKey(), state.getOldValue(), state.getNewValue(),
                         state.getTtl(), state.getMaxIdle(), UNSET,
                         state.getNow(), EntryEventType.ADDED, state.getStaticParams().isBackup());
             } else {

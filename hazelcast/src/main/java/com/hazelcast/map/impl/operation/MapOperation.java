@@ -486,6 +486,10 @@ public abstract class MapOperation extends AbstractNamedOperation
         publishWanUpdateInternal(dataKey, value, false);
     }
 
+    final boolean isWanPublishingEnabled() {
+        return canPublishWanEvent;
+    }
+
     private void publishWanUpdateInternal(Data dataKey, Object value, boolean hasLoadProvenance) {
         if (!canPublishWanEvent) {
             return;

@@ -1092,6 +1092,21 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
+    public void testMapConfig_oversizedEntryThresholdBytes() {
+        String yaml = """
+                hazelcast:
+                  map:
+                    mymap:
+                      oversized-entry-threshold-bytes: 2048""";
+
+        Config config = buildConfig(yaml);
+
+        assertEquals(2048, config.getMapConfig("mymap").getOversizedEntryThresholdBytes());
+        assertEquals(MapConfig.DEFAULT_OVERSIZED_ENTRY_THRESHOLD_BYTES,
+                config.getMapConfig("other").getOversizedEntryThresholdBytes());
+    }
+
+    @Override
     @Test
     public void testMapConfig_metadataPolicy_defaultValue() {
         String yaml = """

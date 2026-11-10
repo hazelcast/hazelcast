@@ -19,13 +19,16 @@ package com.hazelcast.internal.memory;
 import com.hazelcast.internal.memory.impl.AbstractUnsafeDependentMemoryAccessorTest;
 import com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor;
 import com.hazelcast.internal.memory.impl.AlignmentUtil;
+import com.hazelcast.internal.memory.impl.DiagnosticStandardMemoryAccessor;
 import com.hazelcast.internal.memory.impl.StandardMemoryAccessor;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.RequireAssertEnabled;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -46,6 +49,15 @@ public class GlobalMemoryAccessorRegistryTest extends AbstractUnsafeDependentMem
     @Test
     public void test_getMemoryAccessor_standard() {
         checkStandardMemoryAccessorAvailable();
+    }
+
+    @Test
+    @RequireAssertEnabled
+    public void test_getMemoryAccessor_diagnostic() {
+        MemoryAccessor memoryAccessor = GlobalMemoryAccessorRegistry.getGlobalMemoryAccessor(GlobalMemoryAccessorType.STANDARD);
+        if (StandardMemoryAccessor.isAvailable()) {
+            assertThat(memoryAccessor).isInstanceOf(DiagnosticStandardMemoryAccessor.class);
+        }
     }
 
     @Test

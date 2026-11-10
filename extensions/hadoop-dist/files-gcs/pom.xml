@@ -47,7 +47,7 @@
 			- `io.opentelemetry:opentelemetry-context`
 			- `org.jspecify:jspecify`
 		-->
-        <bigdataoss.version>4.0.6</bigdataoss.version>
+        <bigdataoss.version>4.0.9</bigdataoss.version>
     </properties>
 
     <build>
@@ -81,11 +81,6 @@
     </build>
 
     <dependencies>
-        <!--
-            When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies `org.codehaus.woodstox` should be upgraded:
-            - `org.checkerframework`
-            - `org.codehaus.woodstox:woodstox-core`
-        -->
         <dependency>
             <groupId>com.google.cloud.bigdataoss</groupId>
             <artifactId>gcs-connector</artifactId>
@@ -99,6 +94,10 @@
                     <groupId>com.google.flogger</groupId>
                     <artifactId>flogger</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-api</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -109,6 +108,10 @@
                 <exclusion>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>animal-sniffer-annotations</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>io.opentelemetry</groupId>
+                    <artifactId>opentelemetry-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

@@ -38,10 +38,8 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionInitialPosition;
 import org.apache.pulsar.client.api.SubscriptionType;
-import org.jspecify.annotations.NonNull;
 
 import javax.annotation.Nonnull;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -50,6 +48,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotEmpty;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.pulsar.impl.PulsarSourceConfig.getDefaultConsumerConfig;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -111,6 +110,13 @@ public final class PulsarConsumerBuilder<M, T> {
     }
 
     @Nonnull
+    public PulsarConsumerBuilder<M, T> subscriptionInitialPosition(@Nonnull SubscriptionInitialPosition initialPosition) {
+        checkNotNull(initialPosition, "initialPosition");
+        conf.setSubscriptionInitialPosition(initialPosition);
+        return this;
+    }
+
+    @Nonnull
     public PulsarConsumerBuilder<M, T> connectionSupplier(@Nonnull SupplierEx<PulsarClient> connectionSupplier) {
         checkSerializable(connectionSupplier, "connectionSupplier");
         conf.setConnectionSupplier(connectionSupplier);
@@ -126,7 +132,7 @@ public final class PulsarConsumerBuilder<M, T> {
 
     @SuppressWarnings("unchecked")
     @Nonnull
-    public <NEW_T> PulsarConsumerBuilder<M, NEW_T> projectionFn(@Nonnull FunctionEx<@NonNull Message<M>, NEW_T> projectionFn) {
+    public <NEW_T> PulsarConsumerBuilder<M, NEW_T> projectionFn(@Nonnull FunctionEx<Message<M>, NEW_T> projectionFn) {
         this.projectionFn = (FunctionEx<Message<M>, T>) projectionFn;
         return (PulsarConsumerBuilder<M, NEW_T>) this;
     }
@@ -136,7 +142,7 @@ public final class PulsarConsumerBuilder<M, T> {
      * that doesn't have a representative here.
      */
     @Nonnull
-    public PulsarConsumerBuilder<M, T> consumerCustomizer(@Nonnull ConsumerEx<@NonNull ConsumerBuilder<M>> consumerCustomizer) {
+    public PulsarConsumerBuilder<M, T> consumerCustomizer(@Nonnull ConsumerEx<ConsumerBuilder<M>> consumerCustomizer) {
         checkNonNullAndSerializable(consumerCustomizer, "consumerCustomizer");
         conf.setConsumerCustomizer(consumerCustomizer);
         return this;
@@ -153,13 +159,6 @@ public final class PulsarConsumerBuilder<M, T> {
         return this;
     }
 
-    private static Map<String, Object> getDefaultConsumerConfig() {
-        Map<String, Object> consumerConfig = new HashMap<>();
-        consumerConfig.put("consumerName", "hazelcast-jet-consumer");
-        consumerConfig.put("subscriptionName", "hazelcast-jet-subscription");
-        return consumerConfig;
-    }
-
     /**
      * @param batchReceivePolicySupplier supplies the batch receive policy for the consumer
      */
@@ -172,7 +171,7 @@ public final class PulsarConsumerBuilder<M, T> {
         return this;
     }
 
-    private static SupplierEx<BatchReceivePolicy> getDefaultBatchReceivePolicySupplier() {
+    static SupplierEx<BatchReceivePolicy> getDefaultBatchReceivePolicySupplier() {
         final int maxNumMessages = 512;
         final int timeoutInMs = 1000;
         return () -> BatchReceivePolicy.builder()
@@ -251,7 +250,7 @@ public final class PulsarConsumerBuilder<M, T> {
                 return builder
                       .subscriptionName(conf.getSubscriberName())
                       .topics(conf.getTopics())
-                      .subscriptionInitialPosition(SubscriptionInitialPosition.Earliest)
+                      .subscriptionInitialPosition(conf.getSubscriptionInitialPosition())
                       .loadConf(conf.getOptions())
                       .batchReceivePolicy(conf.getBatchReceivePolicy())
                       .subscriptionType(SubscriptionType.Shared)

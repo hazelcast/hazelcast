@@ -332,43 +332,43 @@ public class MemberMapTest {
     }
 
     @Test
-    public void isBeforeThan_success() {
+    public void isBefore_success() {
         MemberImpl[] members = newMembers(5);
         MemberMap map = MemberMap.createNew(members);
 
-        assertTrue(map.isBeforeThan(members[1].getAddress(), members[3].getAddress()));
+        assertTrue(map.isBefore(members[1].getAddress(), members[3].getAddress()));
     }
 
     @Test
-    public void isBeforeThan_fail() {
+    public void isBefore_fail() {
         MemberImpl[] members = newMembers(5);
         MemberMap map = MemberMap.createNew(members);
 
-        assertFalse(map.isBeforeThan(members[4].getAddress(), members[1].getAddress()));
+        assertFalse(map.isBefore(members[4].getAddress(), members[1].getAddress()));
     }
 
     @Test
-    public void isBeforeThan_whenFirstAddressNotExist() {
+    public void isBefore_whenFirstAddressNotExist() {
         MemberImpl[] members = newMembers(5);
         MemberMap map = MemberMap.createNew(members);
 
-        map.isBeforeThan(newAddress(6000), members[0].getAddress());
+        map.isBefore(newAddress(6000), members[0].getAddress());
     }
 
     @Test
-    public void isBeforeThan_whenSecondAddressNotExist() {
+    public void isBefore_whenSecondAddressNotExist() {
         MemberImpl[] members = newMembers(5);
         MemberMap map = MemberMap.createNew(members);
 
-        map.isBeforeThan(members[0].getAddress(), newAddress(6000));
+        map.isBefore(members[0].getAddress(), newAddress(6000));
     }
 
     @Test
-    public void isBeforeThan_whenAddressesNotExist() {
+    public void isBefore_whenAddressesNotExist() {
         MemberImpl[] members = newMembers(5);
         MemberMap map = MemberMap.createNew(members);
 
-        map.isBeforeThan(newAddress(6000), newAddress(7000));
+        map.isBefore(newAddress(6000), newAddress(7000));
     }
 
     static MemberImpl[] newMembers(int count) {

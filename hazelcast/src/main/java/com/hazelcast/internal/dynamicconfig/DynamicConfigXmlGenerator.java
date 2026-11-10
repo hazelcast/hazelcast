@@ -104,6 +104,7 @@ public final class DynamicConfigXmlGenerator {
                     .node("in-memory-format", m.getInMemoryFormat())
                     .node("statistics-enabled", m.isStatisticsEnabled())
                     .node("per-entry-stats-enabled", m.isPerEntryStatsEnabled())
+                    .node("oversized-entry-threshold-bytes", m.getOversizedEntryThresholdBytes())
                     .node("cache-deserialized-values", cacheDeserializedVal)
                     .node("backup-count", m.getBackupCount())
                     .node("async-backup-count", m.getAsyncBackupCount())
@@ -843,7 +844,7 @@ public final class DynamicConfigXmlGenerator {
                 gen.node("use-public-ip", "true");
             }
             for (String key : c.getProperties().keySet()) {
-                gen.node(key, gen.propertyValue(key, c.getProperties().get(key)));
+                gen.node(key,  c.getProperties().get(key));
             }
             gen.close();
         }

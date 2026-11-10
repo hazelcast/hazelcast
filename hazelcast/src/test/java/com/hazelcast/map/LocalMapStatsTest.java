@@ -20,6 +20,8 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.query.Predicates;
@@ -37,6 +39,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -47,6 +50,14 @@ import static org.junit.Assume.assumeTrue;
 public class LocalMapStatsTest extends HazelcastTestSupport {
 
     static final int OPERATION_COUNT = 10;
+
+    private static final int OVERSIZED_ENTRY_THRESHOLD_BYTES = 1000;
+    private static final String OVERSIZED_ENTRY_MAP_NAME = "oversizedEntryMap";
+    private static final String OVERSIZED_ENTRY_OBJECT_MAP_NAME = "oversizedEntryObjectMap";
+    private static final String[] OVERSIZED_ENTRY_MAP_NAMES = {OVERSIZED_ENTRY_MAP_NAME, OVERSIZED_ENTRY_OBJECT_MAP_NAME};
+    private static final byte[] SMALL_VALUE = new byte[10];
+    private static final byte[] OVERSIZED_VALUE = new byte[2 * OVERSIZED_ENTRY_THRESHOLD_BYTES];
+    private static final byte[] LARGER_OVERSIZED_VALUE = new byte[3 * OVERSIZED_ENTRY_THRESHOLD_BYTES];
 
     HazelcastInstance instance;
     private String mapName = "mapName";
@@ -77,10 +88,19 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     protected Config createMemberConfig() {
         Config config = getConfig();
         config.getMetricsConfig().setEnabled(false);
+        addOversizedEntryMapConfigs(config);
         return config.addMapConfig(new MapConfig()
                 .setName(mapWithObjectFormat)
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
         );
+    }
+
+    protected static void addOversizedEntryMapConfigs(Config config) {
+        // derived from the default map config, so it uses NATIVE format in HD subclasses
+        config.getMapConfig(OVERSIZED_ENTRY_MAP_NAME).setOversizedEntryThresholdBytes(OVERSIZED_ENTRY_THRESHOLD_BYTES);
+        config.addMapConfig(new MapConfig(OVERSIZED_ENTRY_OBJECT_MAP_NAME)
+                .setInMemoryFormat(InMemoryFormat.OBJECT)
+                .setOversizedEntryThresholdBytes(OVERSIZED_ENTRY_THRESHOLD_BYTES));
     }
 
     @Test
@@ -610,5 +630,171 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
 
         LocalMapStats stats = getMapStats();
         assertEquals(2, stats.getLockedEntryCount());
+    }
+
+    @Test
+    public void testOversizedEntry_put() {
+        assertOversizedWrite(true, (map, key) -> map.put(key, OVERSIZED_VALUE));
+    }
+
+    @Test
+    public void testOversizedEntry_set() {
+        assertOversizedWrite(true, (map, key) -> map.set(key, OVERSIZED_VALUE));
+    }
+
+    @Test
+    public void testOversizedEntry_putIfAbsent() {
+        assertOversizedWrite(true, (map, key) -> map.putIfAbsent(key, OVERSIZED_VALUE));
+    }
+
+    @Test
+    public void testOversizedEntry_putIfAbsentOnExistingKeyIsNotCounted() {
+        assertOversizedWrite(true, (map, key) -> {
+            map.put(key, OVERSIZED_VALUE);
+            map.putIfAbsent(key, LARGER_OVERSIZED_VALUE);
+        });
+    }
+
+    @Test
+    public void testOversizedEntry_oversizedKey() {
+        String key = "k".repeat(2 * OVERSIZED_ENTRY_THRESHOLD_BYTES);
+        assertOversizedWrite(true, key, SMALL_VALUE, (map, k) -> map.put(k, SMALL_VALUE), 1);
+    }
+
+    @Test
+    public void testOversizedEntry_keyAndValueOnlyOversizedTogether() {
+        String key = "k".repeat(OVERSIZED_ENTRY_THRESHOLD_BYTES / 2 + 1);
+        byte[] value = new byte[OVERSIZED_ENTRY_THRESHOLD_BYTES / 2 + 1];
+        assertOversizedWrite(true, key, value, (map, k) -> map.put(k, value), 1);
+    }
+
+    @Test
+    public void testOversizedEntry_replace() {
+        assertOversizedWrite(true, (map, key) -> {
+            map.put(key, SMALL_VALUE);
+            map.replace(key, OVERSIZED_VALUE);
+        });
+    }
+
+    // OBJECT format compares byte[] values by reference, so replace(key, old, new) never matches there
+    @Test
+    public void testOversizedEntry_replaceIfSame() {
+        assertOversizedWrite(false, (map, key) -> {
+            map.put(key, SMALL_VALUE);
+            map.replace(key, SMALL_VALUE, OVERSIZED_VALUE);
+        });
+    }
+
+    @Test
+    public void testOversizedEntry_putTransient() {
+        assertOversizedWrite(true, (map, key) -> map.putTransient(key, OVERSIZED_VALUE, 1, TimeUnit.HOURS));
+    }
+
+    @Test
+    public void testOversizedEntry_tryPut() {
+        assertOversizedWrite(true, (map, key) -> map.tryPut(key, OVERSIZED_VALUE, 1, TimeUnit.MINUTES));
+    }
+
+    @Test
+    public void testOversizedEntry_putAsync() {
+        assertOversizedWrite(true, (map, key) -> map.putAsync(key, OVERSIZED_VALUE).toCompletableFuture().join());
+    }
+
+    @Test
+    public void testOversizedEntry_setAsync() {
+        assertOversizedWrite(true, (map, key) -> map.setAsync(key, OVERSIZED_VALUE).toCompletableFuture().join());
+    }
+
+    @Test
+    public void testOversizedEntry_putAll() {
+        assertOversizedWrite(true, (map, key) -> map.putAll(Map.of(key, OVERSIZED_VALUE)));
+    }
+
+    @Test
+    public void testOversizedEntry_setAll() {
+        assertOversizedWrite(true, (map, key) -> map.setAll(Map.of(key, OVERSIZED_VALUE)));
+    }
+
+    // OBJECT format entry processor results are only measured with WAN enabled, see EntrySizeMetricsTest
+    @Test
+    public void testOversizedEntry_executeOnKey() {
+        assertOversizedWrite(false, (map, key) -> {
+            map.put(key, SMALL_VALUE);
+            map.executeOnKey(key, entry -> entry.setValue(OVERSIZED_VALUE));
+        });
+    }
+
+    @Test
+    public void testOversizedEntry_executeOnEntries() {
+        assertOversizedWrite(false, (map, key) -> {
+            map.put(key, SMALL_VALUE);
+            map.executeOnEntries(entry -> entry.setValue(OVERSIZED_VALUE));
+        });
+    }
+
+    @Test
+    public void testOversizedEntry_smallEntriesAreNotTracked() {
+        for (String mapName : OVERSIZED_ENTRY_MAP_NAMES) {
+            getMap(mapName).put("key", SMALL_VALUE);
+
+            LocalMapStats stats = getMapStats(mapName);
+            assertEquals(0, stats.getOversizedEntriesSeen());
+            assertEquals(0, stats.getLastOversizedEntrySize());
+            assertEquals(0, stats.getLastOversizedEntryTime());
+        }
+    }
+
+    @Test
+    public void testOversizedEntry_setTtlDoesNotCountEntryAgain() {
+        assertOversizedWrite(true, (map, key) -> {
+            map.put(key, OVERSIZED_VALUE);
+            map.setTtl(key, 1, TimeUnit.HOURS);
+        });
+    }
+
+    @Test
+    public void testOversizedEntry_lastIsMostRecentNotLargest() {
+        assertOversizedWrite(true, (map, key) -> {
+            map.put(key, LARGER_OVERSIZED_VALUE);
+            map.put(key, OVERSIZED_VALUE);
+        }, 2);
+    }
+
+    /**
+     * Runs the write against the oversized entry maps and asserts that it
+     * stored {@link #OVERSIZED_VALUE} as the last oversized entry.
+     */
+    private void assertOversizedWrite(boolean includeObjectFormat, BiConsumer<IMap<String, byte[]>, String> write) {
+        assertOversizedWrite(includeObjectFormat, write, 1);
+    }
+
+    private void assertOversizedWrite(boolean includeObjectFormat, BiConsumer<IMap<String, byte[]>, String> write,
+                                      int expectedOversizedEntries) {
+        assertOversizedWrite(includeObjectFormat, "key", OVERSIZED_VALUE, write, expectedOversizedEntries);
+    }
+
+    /**
+     * Runs the write with the given key against the oversized entry maps and
+     * asserts that the given key and value were stored as the last oversized entry.
+     */
+    private void assertOversizedWrite(boolean includeObjectFormat, String key, byte[] value,
+                                      BiConsumer<IMap<String, byte[]>, String> write, int expectedOversizedEntries) {
+        for (String mapName : OVERSIZED_ENTRY_MAP_NAMES) {
+            if (!includeObjectFormat && mapName.equals(OVERSIZED_ENTRY_OBJECT_MAP_NAME)) {
+                continue;
+            }
+
+            write.accept(getMap(mapName), key);
+
+            LocalMapStats stats = getMapStats(mapName);
+            assertEquals(mapName, expectedOversizedEntries, stats.getOversizedEntriesSeen());
+            assertEquals(mapName, entrySize(key, value), stats.getLastOversizedEntrySize());
+            assertTrue(mapName, stats.getLastOversizedEntryTime() > 0);
+        }
+    }
+
+    private static long entrySize(String key, byte[] value) {
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+        return (long) serializationService.toData(key).totalSize() + serializationService.toData(value).totalSize();
     }
 }

@@ -44,12 +44,15 @@ import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRI
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEXED_QUERY_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_INDEXES_SKIPPED_QUERY_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_LAST_ACCESS_TIME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_LAST_OVERSIZED_ENTRY_SIZE;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_LAST_OVERSIZED_ENTRY_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_LAST_UPDATE_TIME;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_LOCKED_ENTRY_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_MERKLE_TREES_COST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_NO_MATCHING_INDEX_QUERY_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_NUMBER_OF_EVENTS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_NUMBER_OF_OTHER_OPERATIONS;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_OVERSIZED_ENTRIES_SEEN;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_OWNED_ENTRY_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_OWNED_ENTRY_MEMORY_COST;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_PUT_COUNT;
@@ -147,6 +150,12 @@ public class LocalMapStatsImpl implements LocalMapStats {
     private volatile long entrySetCount;
     @Probe(name = MAP_METRIC_QUERY_LIMITER_HIT_COUNT)
     private volatile long queryLimiterHitCount;
+    @Probe(name = MAP_METRIC_OVERSIZED_ENTRIES_SEEN)
+    private volatile long oversizedEntriesSeen;
+    @Probe(name = MAP_METRIC_LAST_OVERSIZED_ENTRY_SIZE, unit = BYTES)
+    private volatile long lastOversizedEntrySize;
+    @Probe(name = MAP_METRIC_LAST_OVERSIZED_ENTRY_TIME, unit = MS)
+    private volatile long lastOversizedEntryTime;
 
     private volatile long totalGetLatenciesNanos;
     private volatile long totalPutLatenciesNanos;
@@ -568,6 +577,30 @@ public class LocalMapStatsImpl implements LocalMapStats {
         return queryLimiterHitCount;
     }
 
+    @Override
+    public long getOversizedEntriesSeen() {
+        return oversizedEntriesSeen;
+    }
+
+    public void setOversizedEntriesSeen(long oversizedEntriesSeen) {
+        this.oversizedEntriesSeen = oversizedEntriesSeen;
+    }
+
+    @Override
+    public long getLastOversizedEntrySize() {
+        return lastOversizedEntrySize;
+    }
+
+    @Override
+    public long getLastOversizedEntryTime() {
+        return lastOversizedEntryTime;
+    }
+
+    public void setLastOversizedEntry(long lastOversizedEntrySize, long lastOversizedEntryTime) {
+        this.lastOversizedEntrySize = lastOversizedEntrySize;
+        this.lastOversizedEntryTime = lastOversizedEntryTime;
+    }
+
     public void updateIndexStats(Map<String, OnDemandIndexStats> freshIndexStats) {
         // A new index can be added, but already existing indexes can't be
         // removed, that matches the current implementation properties of the
@@ -630,6 +663,9 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + ", replicationStats=" + replicationStats
                 + ", indexesSkippedQueryCount=" + indexesSkippedQueryCount
                 + ", noMatchingIndexQueryCount=" + noMatchingIndexQueryCount
+                + ", oversizedEntriesSeen=" + oversizedEntriesSeen
+                + ", lastOversizedEntrySize=" + lastOversizedEntrySize
+                + ", lastOversizedEntryTime=" + lastOversizedEntryTime
                 + '}';
     }
 }

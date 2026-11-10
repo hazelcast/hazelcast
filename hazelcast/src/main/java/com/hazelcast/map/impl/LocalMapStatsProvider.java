@@ -246,6 +246,8 @@ public class LocalMapStatsProvider {
         onDemandStats.incrementOwnedEntryCount(recordStore.size());
         onDemandStats.setLastAccessTime(stats.getLastAccessTime());
         onDemandStats.setLastUpdateTime(stats.getLastUpdateTime());
+        onDemandStats.incrementOversizedEntriesSeen(stats.getOversizedEntriesSeen());
+        onDemandStats.setLastOversizedEntry(stats.getLastOversizedEntrySize(), stats.getLastOversizedEntryTime());
         onDemandStats.setBackupCount(recordStore.getMapContainer().getMapConfig().getTotalBackupCount());
         // we need to update the locked entry count here
         // without looking entry count in map keys that
@@ -488,6 +490,9 @@ public class LocalMapStatsProvider {
         private long dirtyEntryCount;
         private long lastAccessTime;
         private long lastUpdateTime;
+        private long oversizedEntriesSeen;
+        private long lastOversizedEntrySize;
+        private long lastOversizedEntryTime;
 
         public void setBackupCount(int backupCount) {
             this.backupCount = backupCount;
@@ -537,6 +542,19 @@ public class LocalMapStatsProvider {
             this.merkleTreesCost += merkleTreeCost;
         }
 
+        public void incrementOversizedEntriesSeen(long oversizedEntriesSeen) {
+            this.oversizedEntriesSeen += oversizedEntriesSeen;
+        }
+
+        public void setLastOversizedEntry(long entrySize, long time) {
+            // the most recent write wins; partitions written in the same millisecond report the larger entry
+            if (time > lastOversizedEntryTime
+                    || (time == lastOversizedEntryTime && entrySize > lastOversizedEntrySize)) {
+                this.lastOversizedEntrySize = entrySize;
+                this.lastOversizedEntryTime = time;
+            }
+        }
+
         public LocalMapStatsImpl updateAndGet(LocalMapStatsImpl stats) {
             stats.setBackupCount(backupCount);
             stats.setHits(hits);
@@ -552,6 +570,8 @@ public class LocalMapStatsProvider {
             stats.setDirtyEntryCount(dirtyEntryCount);
             stats.setLastAccessTime(lastAccessTime);
             stats.setLastUpdateTime(lastUpdateTime);
+            stats.setOversizedEntriesSeen(oversizedEntriesSeen);
+            stats.setLastOversizedEntry(lastOversizedEntrySize, lastOversizedEntryTime);
             return stats;
         }
 

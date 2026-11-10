@@ -18,6 +18,7 @@ package com.hazelcast.internal.memory;
 
 import com.hazelcast.internal.memory.impl.AlignmentAwareMemoryAccessor;
 import com.hazelcast.internal.memory.impl.AlignmentUtil;
+import com.hazelcast.internal.memory.impl.DiagnosticStandardMemoryAccessor;
 import com.hazelcast.internal.memory.impl.StandardMemoryAccessor;
 
 import java.util.EnumMap;
@@ -59,11 +60,21 @@ public final class GlobalMemoryAccessorRegistry {
     private static final Map<GlobalMemoryAccessorType, GlobalMemoryAccessor> STORAGE =
             new EnumMap<>(GlobalMemoryAccessorType.class);
 
+    private static final boolean ASSERTIONS_ENABLED = GlobalMemoryAccessorRegistry.class.desiredAssertionStatus();
+
     static {
         final boolean unalignedAccessAllowed = AlignmentUtil.isUnalignedAccessAllowed();
 
         if (StandardMemoryAccessor.isAvailable()) {
-            STORAGE.put(STANDARD, StandardMemoryAccessor.INSTANCE);
+            if (ASSERTIONS_ENABLED) {
+                // Ensure that no unaligned access is performed via AMEM.
+                // Most CPUs allow unaligned non-atomic access so we cannot rely on CPU traps in most test setups.
+                // Note: this does not give full coverage that the code never performs unexpected
+                // unaligned access using other means.
+                STORAGE.put(STANDARD, DiagnosticStandardMemoryAccessor.INSTANCE);
+            } else {
+                STORAGE.put(STANDARD, StandardMemoryAccessor.INSTANCE);
+            }
             if (unalignedAccessAllowed) {
                 STORAGE.put(PLATFORM_AWARE, StandardMemoryAccessor.INSTANCE);
             }

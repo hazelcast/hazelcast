@@ -95,7 +95,7 @@ class WritePulsarPTest {
         config.setExtractValueFn(value -> value);
         config.setOptions(Map.of());
         config.setTransactional(false);
-        processor = new WritePulsarP<>(config);
+        processor = new WritePulsarP<>(config, client);
         processor.init(new TestOutbox(new int[0], 1), new TestProcessorContext().setProcessingGuarantee(AT_LEAST_ONCE));
     }
 

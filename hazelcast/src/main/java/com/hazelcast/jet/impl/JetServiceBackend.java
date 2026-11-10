@@ -176,7 +176,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         MapConfig internalMapConfig = new MapConfig(INTERNAL_JET_OBJECTS_PREFIX + '*')
                 .setBackupCount(jetConfig.getBackupCount())
                 // we query creationTime of resources maps
-                .setStatisticsEnabled(true);
+                .setStatisticsEnabled(true)
+                // users cannot act on oversized entry warnings for internal maps
+                .setOversizedEntryThresholdBytes(0);
 
         internalMapConfig.getMergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName());
 
@@ -204,7 +206,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                 .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
                 .setReadBackupData(true)
                 .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))
-                .setPerEntryStatsEnabled(true);
+                .setPerEntryStatsEnabled(true)
+                .setOversizedEntryThresholdBytes(0);
     }
 
     /**

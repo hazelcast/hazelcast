@@ -751,6 +751,16 @@
                                         </xs:documentation>
                                     </xs:annotation>
                                 </xs:attribute>
+                                <xs:attribute name="oversized-entry-threshold-bytes" type="parameterized-unsigned-long"
+                                              default="1048576">
+                                    <xs:annotation>
+                                        <xs:documentation>
+                                            Serialized entry size in bytes above which an entry written to the
+                                            map is reported as oversized, in the oversizedEntriesSeen map metric
+                                            and a warning log. Set to 0 to disable entry size tracking.
+                                        </xs:documentation>
+                                    </xs:annotation>
+                                </xs:attribute>
                                 <xs:attribute name="cache-deserialized-values" type="parameterized-cache-deserialized">
                                     <xs:annotation>
                                         <xs:documentation>

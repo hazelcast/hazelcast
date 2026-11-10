@@ -161,6 +161,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapConfig_perEntryStatsEnabled();
 
     @Test
+    public abstract void testMapConfig_oversizedEntryThresholdBytes();
+
+    @Test
     public abstract void testMapConfig_metadataPolicy_defaultValue();
 
     @Test
