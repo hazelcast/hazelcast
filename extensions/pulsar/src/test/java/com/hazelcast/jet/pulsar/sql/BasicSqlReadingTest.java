@@ -28,6 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInfo;
 
+import java.util.List;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsEventuallyInAnyOrder;
@@ -108,6 +109,97 @@ public class BasicSqlReadingTest extends PulsarTestSupport {
                                     .toList();
             assertRowsEventuallyInAnyOrder(instances[0], "SELECT * FROM testPulsarMapping", expected);
         }
+    }
+
+    @Test
+    void readsFromPartitionedTopic(TestInfo testInfo) throws Exception {
+        String testName = sanitizedTestName(testInfo);
+        createTopic(testName, true);
+        try (Producer<String> producer = getClient()
+                    .newProducer(Schema.STRING)
+                    .topic(testName)
+                    .create()) {
+            new SqlMapping("testPulsarMapping", "testPulsar").externalName(testName)
+                .fields("__key VARCHAR", "this VARCHAR")
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar")
+                .createOrReplace(instances[0]);
+            for (int i = 1; i <= 30; i++) {
+                producer.newMessage().key("key-" + i).value("value-" + i).send();
+            }
+
+            var expected = IntStream.rangeClosed(1, 30)
+                                    .mapToObj(i -> new SqlTestSupport.Row("key-" + i, "value-" + i))
+                                    .toList();
+            // 30 messages routed by key across NUM_PARTITIONS (12) partitions, all must still be read
+            assertRowsEventuallyInAnyOrder(instances[0], "SELECT * FROM testPulsarMapping", expected);
+        }
+    }
+
+    @Test
+    void selectsFilteredAndProjectedColumnsOverPulsarMapping(TestInfo testInfo) throws Exception {
+        String testName = sanitizedTestName(testInfo);
+        try (Producer<String> producer = getClient()
+                    .newProducer(Schema.STRING)
+                    .topic(testName)
+                    .create()) {
+            new SqlMapping("testPulsarMapping", "testPulsar").externalName(testName)
+                .fields("__key VARCHAR", "this VARCHAR")
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar")
+                .createOrReplace(instances[0]);
+
+            for (int i = 1; i <= 9; i++) {
+                producer.newMessage().key("key-" + i).value("value-" + i).send();
+            }
+
+            var expected = IntStream.rangeClosed(6, 9)
+                                    .mapToObj(i -> new SqlTestSupport.Row("key-" + i))
+                                    .toList();
+            assertRowsEventuallyInAnyOrder(instances[0],
+                    "SELECT __key FROM testPulsarMapping WHERE this > 'value-5'", expected);
+        }
+    }
+
+    @Test
+    void resolvesFieldsImplicitlyWithoutExplicitFieldList(TestInfo testInfo) throws Exception {
+        String testName = sanitizedTestName(testInfo);
+        try (Producer<String> producer = getClient()
+                    .newProducer(Schema.STRING)
+                    .topic(testName)
+                    .create()) {
+            // deliberately no .fields(...) call - forces resolveAndValidateFields() to infer
+            // columns implicitly from the varchar (scalar) format, instead of an explicit list.
+            new SqlMapping("testPulsarMapping", "testPulsar").externalName(testName)
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar")
+                .createOrReplace(instances[0]);
+            producer.newMessage().key("key-1").value("value-1").send();
+
+            assertRowsEventuallyInAnyOrder(instances[0], "SELECT * FROM testPulsarMapping",
+                    List.of(new SqlTestSupport.Row("key-1", "value-1")));
+        }
+    }
+
+    @Test
+    void passesPulsarPrefixedOptionThroughToReader(TestInfo testInfo) {
+        String testName = sanitizedTestName(testInfo);
+        new SqlMapping("testPulsarMapping", "testPulsar").externalName(testName)
+            .fields("__key VARCHAR", "this VARCHAR")
+            .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar",
+                     "pulsar.receiverQueueSize", "not-a-number")
+            .createOrReplace(instances[0]);
+
+        assertThatThrownBy(() -> {
+            try (var result = instances[0].getSql().execute("SELECT * FROM testPulsarMapping")) {
+                for (var row : result) {
+                    // iterate to force the reader to actually start - the exception surfaces
+                    // during StreamPulsarViaReaderP's reader creation, not at CREATE/SELECT parse
+                }
+            }
+        }).as("the malformed pulsar.receiverQueueSize value must reach and fail Pulsar's own "
+                + "loadConf() binding on the ReaderBuilder")
+          .isInstanceOf(HazelcastSqlException.class)
+          .hasMessageContaining("Failed to load config into existing configuration data")
+          .rootCause()
+          .hasMessageContaining("Cannot deserialize value of type `int` from String \"not-a-number\"");
     }
 
     record Pojo (String a, int b) {

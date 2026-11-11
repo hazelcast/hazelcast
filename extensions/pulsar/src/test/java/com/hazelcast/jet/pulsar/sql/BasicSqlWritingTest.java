@@ -21,6 +21,7 @@ import com.hazelcast.jet.pulsar.PulsarDataConnection;
 import com.hazelcast.jet.pulsar.PulsarTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport.SqlMapping;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.SerialTest;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -52,6 +53,7 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Locale.ROOT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 @SuppressWarnings("unchecked")
@@ -264,4 +266,106 @@ public class BasicSqlWritingTest extends PulsarTestSupport {
         }
         assertRowsEventuallyInAnyOrder(instances[0], "SELECT __key, title, content FROM twoWayPulsar", expected);
     }
+
+    @Test
+    public void passesPulsarPrefixedOptionThroughToProducer(TestInfo testInfo) {
+        String testName = sanitizedTestName(testInfo);
+        new SqlMapping("twoWayPulsar", "testPulsar").externalName(testName)
+                .fields("__key VARCHAR", "this VARCHAR")
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar",
+                         "pulsar.sendTimeoutMs", "not-a-number")
+                .createOrReplace(instances[0]);
+
+        assertThatThrownBy(() -> sql.executeUpdate("INSERT INTO twoWayPulsar (__key, this) VALUES ('1', 'value-1')"))
+                .as("the malformed pulsar.sendTimeoutMs value must reach and fail Pulsar's own "
+                        + "loadConf() binding, proving the pulsar.* option passthrough is wired up")
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining("Failed to load config into existing configuration data")
+                .rootCause()
+                .hasMessageContaining("Cannot deserialize value of type `long` from String \"not-a-number\"");
+    }
+
+    @Test
+    public void dropAndRecreateMappingPicksUpNewOptions(TestInfo testInfo) {
+        String testName = sanitizedTestName(testInfo);
+        new SqlMapping("twoWayPulsar", "testPulsar").externalName(testName)
+                .fields("__key VARCHAR", "this VARCHAR")
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar")
+                .createOrReplace(instances[0]);
+        sql.executeUpdate("INSERT INTO twoWayPulsar (__key, this) VALUES ('1', 'plain-value')");
+        assertRowsEventuallyInAnyOrder(instances[0], "SELECT __key, this FROM twoWayPulsar",
+                List.of(new SqlTestSupport.Row("1", "plain-value")));
+
+        sql.executeUpdate("DROP MAPPING twoWayPulsar");
+
+        String testName2 = testName + "_v2";
+        new SqlMapping("twoWayPulsar", "testPulsar").externalName(testName2)
+                .fields("__key VARCHAR", "name VARCHAR", "number INT")
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "json-flat")
+                .createOrReplace(instances[0]);
+        sql.executeUpdate("INSERT INTO twoWayPulsar (__key, name, number) VALUES ('2', 'name', 42)");
+        assertRowsEventuallyInAnyOrder(instances[0], "SELECT __key, name, number FROM twoWayPulsar",
+                List.of(new SqlTestSupport.Row("2", "name", 42)));
+    }
+
+    @Test
+    public void throwsWhenValueFormatIsUnsupported(TestInfo testInfo) {
+        String testName = sanitizedTestName(testInfo);
+        // "xml" is not, and is never planned to become, a supported format
+        assertThatThrownBy(() ->
+                new SqlMapping("twoWayPulsar", "testPulsar").externalName(testName)
+                        .fields("__key VARCHAR", "this VARCHAR")
+                        .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "xml")
+                        .createOrReplace(instances[0]))
+                .hasStackTraceContaining("Unsupported serialization format: xml");
+    }
+
+    @Test
+    public void insertsAndSelectsNullJsonValue(TestInfo testInfo) {
+        String testName = sanitizedTestName(testInfo);
+        new SqlMapping("twoWayPulsar", "testPulsar").externalName(testName)
+                .fields("__key VARCHAR", "this JSON")
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "json")
+                .createOrReplace(instances[0]);
+
+        sql.executeUpdate("INSERT INTO twoWayPulsar (__key, this) VALUES ('1', NULL)");
+
+        assertRowsEventuallyInAnyOrder(instances[0], "SELECT __key, this FROM twoWayPulsar",
+                List.of(new SqlTestSupport.Row("1", null)));
+    }
+
+    @Test
+    public void throwsFriendlyErrorOnUpdate(TestInfo testInfo) {
+        String testName = sanitizedTestName(testInfo);
+        new SqlMapping("twoWayPulsar", "testPulsar").externalName(testName)
+                .fields("__key VARCHAR", "this VARCHAR")
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar")
+                .createOrReplace(instances[0]);
+
+        assertThatThrownBy(() -> sql.executeUpdate("UPDATE twoWayPulsar SET this = 'x' WHERE __key = '1'"))
+                .hasStackTraceContaining("PRIMARY KEY not supported by connector: Pulsar");
+    }
+
+    @Test
+    public void throwsFriendlyErrorOnDelete(TestInfo testInfo) {
+        String testName = sanitizedTestName(testInfo);
+        new SqlMapping("twoWayPulsar", "testPulsar").externalName(testName)
+                .fields("__key VARCHAR", "this VARCHAR")
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar")
+                .createOrReplace(instances[0]);
+
+        assertThatThrownBy(() -> sql.executeUpdate("DELETE FROM twoWayPulsar WHERE __key = '1'"))
+                .hasStackTraceContaining("PRIMARY KEY not supported by connector: Pulsar");
+    }
+
+    @Test
+    public void throwsCleanErrorWhenMappingCreatedWithoutDataConnection(TestInfo testInfo) {
+        String testName = sanitizedTestName(testInfo);
+        sql.execute("CREATE MAPPING " + testName
+                + " (__key VARCHAR, this VARCHAR) TYPE Pulsar OPTIONS ('keyFormat'='varchar', 'valueFormat'='varchar')");
+
+        assertThatThrownBy(() -> sql.executeUpdate("INSERT INTO " + testName + " (__key, this) VALUES ('1', 'v')"))
+                .hasStackTraceContaining("Either clientSupplier or DataConnectionRef must be set");
+    }
+
 }

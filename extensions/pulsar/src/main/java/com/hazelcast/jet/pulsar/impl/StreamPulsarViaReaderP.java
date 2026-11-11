@@ -176,7 +176,8 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
         if (!assignedPartitions.isEmpty()) {
             try {
                 ReaderBuilder<M> builder =
-                    client.newReader(pulsarConfig.getSchemaSupplier().get());
+                    client.newReader(pulsarConfig.getSchemaSupplier().get())
+                          .loadConf(pulsarConfig.getOptions());
                 pulsarConfig.getReaderCustomizer().accept(builder);
                 boolean enableMessagePooling = pulsarConfig.isEnableMessagePooling();
                 reader = builder.autoUpdatePartitions(false)
