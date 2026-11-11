@@ -16,9 +16,9 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
-import com.hazelcast.cp.internal.datastructures.snapshot.DataChunkGroup;
 import com.hazelcast.cp.internal.datastructures.snapshot.KeyValueDataChunk;
 import com.hazelcast.cp.internal.datastructures.snapshot.ValueDataChunk;
+import com.hazelcast.cp.internal.raft.DataChunkGroup;
 import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
 import com.hazelcast.cp.internal.raft.impl.command.UpdateRaftGroupMembersCmd;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendFailureResponse;

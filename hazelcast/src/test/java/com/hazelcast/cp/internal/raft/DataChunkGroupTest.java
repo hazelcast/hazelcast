@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.datastructures.snapshot;
+package com.hazelcast.cp.internal.raft;
 
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;

@@ -41,7 +41,6 @@ import org.junit.runner.RunWith;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.extractChunksFrom;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getSnapshotEntry;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
@@ -111,7 +110,7 @@ public class SemaphoreAdvancedTest extends AbstractSemaphoreAdvancedTest {
                     // eventually sets list of chunk operations
                     continue;
                 }
-                List<SnapshotChunk> chunks = extractChunksFrom(((SnapshotEntry) snapshotEntry));
+                List<SnapshotChunk> chunks = ((SnapshotEntry) snapshotEntry).snapshotChunks();
                 for (SnapshotChunk chunk : chunks) {
                     List<Object> chunkOps = (List<Object>) chunk.operation();
                     for (Object chunkOp : chunkOps) {

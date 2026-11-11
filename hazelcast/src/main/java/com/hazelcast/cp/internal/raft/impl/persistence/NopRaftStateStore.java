@@ -18,6 +18,7 @@ package com.hazelcast.cp.internal.raft.impl.persistence;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
+import com.hazelcast.cp.internal.raft.impl.log.SnapshotChunk;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -56,7 +57,7 @@ public final class NopRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public void persistSnapshotChunk(Object snapshotChunk) throws IOException {
+    public void persistSnapshotChunk(@Nonnull SnapshotChunk snapshotChunk) throws IOException {
 
     }
 

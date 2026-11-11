@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.cp.internal.datastructures.snapshot;
+package com.hazelcast.cp.internal.raft;
 
 import com.hazelcast.cp.internal.raft.impl.RaftDataSerializerConstants;
 import com.hazelcast.nio.ObjectDataInput;
@@ -28,17 +28,8 @@ import java.util.Objects;
 
 /**
  * A container designed to group multiple data chunks from a service.
- * <p>
- * Each group holds chunks whose combined size does not exceed a
- * predefined maximum size of {@link ChunkUtil#MAX_CHUNK_SIZE_IN_MB}.
  *
- * @param <T> the type of data chunks stored in this
- *            group, typically {@link ValueDataChunk} or {@link
- *            KeyValueDataChunk}
- * @see ChunkUtil#MAX_CHUNK_SIZE_IN_MB
- * @see KeyValueDataChunk
- * @see ValueDataChunk
- * @see ChunkUtil#groupServiceChunksBySize(List, long)
+ * @param <T> the type of data chunks stored in this group
  */
 public class DataChunkGroup<T> implements IdentifiedDataSerializable {
 

@@ -71,9 +71,7 @@ public class InMemoryRaftStateStore implements RaftStateStore {
     }
 
     @Override
-    public synchronized void persistSnapshotChunk(Object snapshotChunk) {
-        SnapshotChunk chunk = (SnapshotChunk) snapshotChunk;
-
+    public synchronized void persistSnapshotChunk(@Nonnull SnapshotChunk chunk) {
         if (snapshotPersistenceState == null || snapshotPersistenceState.snapshotIndex != chunk.index()) {
             snapshotPersistenceState = new SnapshotPersistenceState(chunk.term(), chunk.index(),
                     chunk.chunkCount(), chunk.groupMembersLogIndex(), chunk.groupMembers());

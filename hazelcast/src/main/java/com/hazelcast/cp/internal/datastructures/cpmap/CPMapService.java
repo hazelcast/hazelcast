@@ -26,11 +26,11 @@ import com.hazelcast.cp.internal.datastructures.cpmap.operation.CPMapOperationPr
 import com.hazelcast.cp.internal.datastructures.cpmap.proxy.CPMapProxy;
 import com.hazelcast.cp.internal.datastructures.cpmap.store.CPMapStore;
 import com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil;
-import com.hazelcast.cp.internal.datastructures.snapshot.DataChunkGroup;
 import com.hazelcast.cp.internal.datastructures.snapshot.KeyValueDataChunk;
 import com.hazelcast.cp.internal.datastructures.spi.RaftManagedService;
 import com.hazelcast.cp.internal.datastructures.spi.RaftRemoteService;
 import com.hazelcast.cp.internal.raft.ChunkedSnapshotAwareService;
+import com.hazelcast.cp.internal.raft.DataChunkGroup;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsCollectionContext;

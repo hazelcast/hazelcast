@@ -26,7 +26,9 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashSet;
+import java.util.List;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableCollection;
 
 /**
@@ -57,6 +59,26 @@ public class SnapshotEntry extends LogEntry implements IdentifiedDataSerializabl
 
     public Collection<RaftEndpoint> groupMembers() {
         return groupMembers;
+    }
+
+    /**
+     * Returns the list of snapshot chunks associated with this snapshot entry,
+     * or an empty list if the operation is null (e.g., in an initial snapshot).
+     *
+     * @return the list of snapshot chunks
+     * @throws IllegalStateException if operation is present but is not a {@link List}
+     */
+    @SuppressWarnings("unchecked")
+    public List<SnapshotChunk> snapshotChunks() {
+        Object op = operation();
+        if (op == null) {
+            return emptyList();
+        }
+        if (op instanceof List<?>) {
+            return (List<SnapshotChunk>) op;
+        }
+        throw new IllegalStateException("Unexpected snapshot operation type: "
+                + op.getClass().getName() + ", expected List<SnapshotChunk>");
     }
 
     @Override

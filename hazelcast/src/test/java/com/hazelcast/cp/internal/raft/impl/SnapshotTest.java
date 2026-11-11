@@ -155,8 +155,8 @@ public class SnapshotTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             assertEquals(entryCount, getCommitIndex(slowFollower));
-            assertThat(slowFollower.getChunkedSnapshotInstaller().getSnapshotTransferCount()).isEqualTo(1L);
-            assertThat(slowFollower.getChunkedSnapshotInstaller().getLastSnapshotTransferDurationMs())
+            assertThat(slowFollower.getSnapshotTransferCount()).isEqualTo(1L);
+            assertThat(slowFollower.getLastSnapshotTransferDurationMs())
                     .isGreaterThanOrEqualTo(0L);
         });
     }

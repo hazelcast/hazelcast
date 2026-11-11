@@ -48,6 +48,7 @@ import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.version.MemberVersion;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,7 +61,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.extractChunksFrom;
+import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.createChunksFromSnapshot;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.newAddress;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotEquals;
@@ -352,27 +353,36 @@ public class LocalRaftIntegration
         }
     }
 
-    @Nonnull
-    @Override
-    public Object takeServiceSnapshots(long commitIndex) {
+    private Object takeServiceSnapshots(long commitIndex) {
         var snapshotPerServiceInfo = new HashMap<>();
 
-        Object snapshot = service instanceof ChunkedSnapshotAwareService<?, ?> chunkedService
-                ? chunkedService.takeSnapshotChunks(groupId, commitIndex)
-                : service.takeSnapshot(groupId, commitIndex);
+        if (service != null) {
+            Object snapshot = service instanceof ChunkedSnapshotAwareService<?, ?> chunkedService
+                    ? chunkedService.takeSnapshotChunks(groupId, commitIndex)
+                    : service.takeSnapshot(groupId, commitIndex);
 
-        if (snapshot == null) {
-            return null;
+            if (snapshot != null) {
+                snapshotPerServiceInfo.put(serviceInfo, snapshot);
+            }
         }
-
-        snapshotPerServiceInfo.put(serviceInfo, snapshot);
 
         return snapshotPerServiceInfo;
     }
 
+    @Nonnull
     @Override
-    public void restoreSnapshot(Object snapshotEntry, long commitIndex) {
-        List<SnapshotChunk> chunks = extractChunksFrom(((SnapshotEntry) snapshotEntry));
+    public List<SnapshotChunk> takeGroupSnapshotChunks(int snapshotTerm, long commitIndex,
+                                                       Collection<RaftEndpoint> groupMembers,
+                                                       long groupMembersLogIndex) {
+        Object snapshot = takeServiceSnapshots(commitIndex);
+        ILogger logger = loggingService.getLogger(getClass());
+        return createChunksFromSnapshot(this, snapshotTerm, commitIndex, groupMembers,
+                groupMembersLogIndex, snapshot, logger);
+    }
+
+    @Override
+    public void restoreSnapshot(SnapshotEntry snapshotEntry) {
+        List<SnapshotChunk> chunks = snapshotEntry.snapshotChunks();
 
         for (SnapshotChunk snapshotChunk : chunks) {
             List<Object> ops = (List<Object>) snapshotChunk.operation();

@@ -83,8 +83,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.createChunksFromSnapshot;
-import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.extractChunksFrom;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.ACTIVE;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
@@ -243,8 +241,11 @@ public class RaftNodeImpl implements RaftNode {
         return new RaftNodeImpl(groupId, restoredState, raftStateStore, config, integration);
     }
 
-    public ChunkedSnapshotInstaller getChunkedSnapshotInstaller() {
-        return chunkedSnapshotInstaller;
+    /**
+     * Processes an incoming snapshot chunk request from a leader.
+     */
+    public void processSnapshotChunk(InstallSnapshotRequest request) {
+        chunkedSnapshotInstaller.processChunk(request);
     }
 
     /**
@@ -260,6 +261,21 @@ public class RaftNodeImpl implements RaftNode {
      */
     public long getSnapshotBuildCount() {
         return snapshotBuildCount;
+    }
+
+    /**
+     * Wall-clock duration (ms) of the most recently completed snapshot transfer from a leader.
+     * Holds its last value between transfers.
+     */
+    public long getLastSnapshotTransferDurationMs() {
+        return chunkedSnapshotInstaller.getLastSnapshotTransferDurationMs();
+    }
+
+    /**
+     * Cumulative number of snapshot transfers successfully installed from a leader.
+     */
+    public long getSnapshotTransferCount() {
+        return chunkedSnapshotInstaller.getSnapshotTransferCount();
     }
 
     public RaftIntegration getRaftIntegration() {
@@ -787,7 +803,7 @@ public class RaftNodeImpl implements RaftNode {
         final LeaderState leaderState = state.leaderState();
         final SnapshotEntry snapshotEntry = state.log().snapshot();
 
-        if (extractChunksFrom(snapshotEntry).isEmpty()) {
+        if (snapshotEntry.snapshotChunks().isEmpty()) {
             throw new IllegalStateException("No chunks extracted from snapshot");
         }
 
@@ -817,7 +833,7 @@ public class RaftNodeImpl implements RaftNode {
         } else {
             // Happy Path: The follower is requesting
             // a chunk of the current snapshot.
-            List<SnapshotChunk> snapshotChunks = extractChunksFrom(snapshotEntry);
+            List<SnapshotChunk> snapshotChunks = snapshotEntry.snapshotChunks();
             if (requestedChunkNumber < 0 || requestedChunkNumber >= snapshotChunks.size()) {
                 logger.warning(format("Received invalid chunk number %d (total chunks: %d) from %s for snapshot index %d",
                         requestedChunkNumber, snapshotChunks.size(), follower, currentSnapshotIndex));
@@ -850,7 +866,7 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     private static SnapshotChunk createMetadataChunk(SnapshotEntry snapshotEntry) {
-        List<SnapshotChunk> chunks = extractChunksFrom(snapshotEntry);
+        List<SnapshotChunk> chunks = snapshotEntry.snapshotChunks();
         return ((SnapshotChunk) new SnapshotChunk()
                 .setChunkCount(chunks.size())
                 .setChunkNumber(METADATA_CHUNK_NUMBER)
@@ -1176,27 +1192,18 @@ public class RaftNodeImpl implements RaftNode {
 
         long buildStartNanos = System.nanoTime();
         try {
-            Object snapshot;
-            try {
-                snapshot = raftIntegration.takeServiceSnapshots(commitIndex);
-            } catch (Throwable t) {
-                logger.severe("Could not take snapshot at commit index: " + commitIndex, t);
-                return;
-            }
-
             RaftLog log = state.log();
             int snapshotTerm = log.getLogEntry(commitIndex).term();
             RaftGroupMembers members = state.committedGroupMembers();
 
-            List<SnapshotChunk> chunksFromSnapshot = createChunksFromSnapshot(
-                    raftIntegration,
-                    snapshotTerm,
-                    commitIndex,
-                    members.members(),
-                    members.index(),
-                    snapshot,
-                    logger
-            );
+            List<SnapshotChunk> chunksFromSnapshot;
+            try {
+                chunksFromSnapshot = raftIntegration.takeGroupSnapshotChunks(
+                        snapshotTerm, commitIndex, members.members(), members.index());
+            } catch (Throwable t) {
+                logger.severe("Could not take snapshot at commit index: " + commitIndex, t);
+                return;
+            }
 
             logger.fine("SnapshotChunk creation result: created %d chunks", chunksFromSnapshot.size());
 
@@ -1205,8 +1212,6 @@ public class RaftNodeImpl implements RaftNode {
             } catch (IOException e) {
                 throw new HazelcastException(e);
             }
-
-            snapshot = chunksFromSnapshot;
 
             long highestLogIndexToTruncate = commitIndex - maxNumberOfLogsToKeepAfterSnapshot;
             LeaderState leaderState = state.leaderState();
@@ -1240,7 +1245,7 @@ public class RaftNodeImpl implements RaftNode {
             // it is safe to modify the memory state now.
 
             SnapshotEntry snapshotEntry = new SnapshotEntry(snapshotTerm, commitIndex,
-                    snapshot, members.index(), members.members());
+                    chunksFromSnapshot, members.index(), members.members());
 
             int truncatedEntryCount = log.setSnapshot(snapshotEntry, highestLogIndexToTruncate, true);
 
@@ -1294,7 +1299,7 @@ public class RaftNodeImpl implements RaftNode {
             logger.info(truncated + " entries are truncated to install " + snapshot);
         }
 
-        raftIntegration.restoreSnapshot(snapshot, snapshot.index());
+        raftIntegration.restoreSnapshot(snapshot);
 
         // If I am installing a snapshot, it means I am still present in the last member list,
         // but it is possible that the last entry I appended before the snapshot could be a membership change.
@@ -1317,7 +1322,7 @@ public class RaftNodeImpl implements RaftNode {
 
         if (isNonInitial(snapshotEntry)) {
             printMemberState();
-            raftIntegration.restoreSnapshot(snapshotEntry, snapshotEntry.index());
+            raftIntegration.restoreSnapshot(snapshotEntry);
             if (logger.isFineEnabled()) {
                 logger.info(snapshotEntry + " is restored.");
             } else {

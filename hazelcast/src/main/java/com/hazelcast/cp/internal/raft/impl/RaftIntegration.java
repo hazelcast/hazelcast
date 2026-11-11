@@ -28,10 +28,14 @@ import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.TriggerLeaderElection;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.VoteResponse;
+import com.hazelcast.cp.internal.raft.impl.log.SnapshotChunk;
+import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import javax.annotation.Nonnull;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -168,34 +172,26 @@ public interface RaftIntegration {
     Object runOperation(Object operation, long commitIndex);
 
     /**
-     * Creates a collection of snapshots for each {@link
-     * com.hazelcast.cp.internal.raft.SnapshotAwareService}
-     * at the specified commit index.
-     * <br>
-     * <br>
-     * For each service, it generates either a chunked
-     * snapshot (if the service implements {@link
-     * com.hazelcast.cp.internal.raft.ChunkedSnapshotAwareService})
-     * or a regular snapshot, storing non-null results in
-     * an object associating services with their snapshots.
+     * Takes snapshots from all snapshot-aware services and packages them into a list of
+     * {@link SnapshotChunk} instances for the specified Raft group commit index and term.
      *
-     * @param commitIndex the current commit
-     *                    index used to generate the snapshots
-     * @return an object containing the mapping of
-     * services to their corresponding snapshots, or
-     * an empty object if no snapshots are generated
+     * @param snapshotTerm           term of the log entry at commitIndex
+     * @param commitIndex            commit index associated with the snapshot
+     * @param groupMembers           current group members
+     * @param groupMembersLogIndex   log index of group members
+     * @return list of snapshot chunks representing the state of the services
      */
     @Nonnull
-    Object takeServiceSnapshots(long commitIndex);
+    List<SnapshotChunk> takeGroupSnapshotChunks(int snapshotTerm, long commitIndex,
+                                                Collection<RaftEndpoint> groupMembers,
+                                                long groupMembersLogIndex);
 
     /**
-     * Restores the snapshot with the given operation for the given commit
-     * index
+     * Restores services state from the given snapshot entry.
      *
-     * @param operation   snapshot operation provided by {@link #takeServiceSnapshots(long)}
-     * @param commitIndex commit index of the snapshot
+     * @param snapshotEntry the snapshot entry to restore
      */
-    void restoreSnapshot(Object operation, long commitIndex);
+    void restoreSnapshot(@Nonnull SnapshotEntry snapshotEntry);
 
     /**
      * see {@link
