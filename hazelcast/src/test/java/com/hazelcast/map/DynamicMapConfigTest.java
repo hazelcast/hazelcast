@@ -63,7 +63,13 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
     private final ILogger logger = Logger.getLogger(getClass());
 
     @ClassRule
-    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-dynamic-map-config-update.xml");
+    public static ChangeLoggingRule changeLoggingRule
+            = new ChangeLoggingRule("log4j2-trace-dynamic-map-config-update.xml");
+
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfigWithoutJetAndMetrics();
+    }
 
     @Test
     public void testMapConfigUpdate_reflectedToRecordStore() throws InterruptedException {
@@ -144,7 +150,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         mapConfig.setBackupCount(3);
         mapConfig.setAsyncBackupCount(2);
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
-        evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
+        evictionConfig.setEvictionPolicy(EvictionPolicy.RANDOM);
         evictionConfig.setSize(1).setMaxSizePolicy(MaxSizePolicy.PER_NODE);
         return mapConfig;
     }
