@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.AVRO_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JSON_FLAT_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_PREFERRED_LOCAL_PARALLELISM;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 
@@ -218,7 +219,8 @@ class PulsarTable extends JetTable {
     }
 
     int preferredLocalParallelism() {
-        return Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
+        return Integer.parseInt(options.getOrDefault(OPTION_PREFERRED_LOCAL_PARALLELISM,
+                                                     String.valueOf(Vertex.LOCAL_PARALLELISM_USE_DEFAULT)));
     }
 
     String getTopicName() {

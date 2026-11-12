@@ -34,6 +34,7 @@ import java.util.stream.IntStream;
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsEventuallyInAnyOrder;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_PREFERRED_LOCAL_PARALLELISM;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -98,7 +99,7 @@ public class BasicSqlReadingTest extends PulsarTestSupport {
                     .create()) {
             new SqlMapping("testPulsarMapping", "testPulsar").externalName(testName)
                 .fields("__key VARCHAR", "this VARCHAR")
-                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar")
+                .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar", OPTION_PREFERRED_LOCAL_PARALLELISM, "4")
                 .createOrReplace(instances[0]);
             for (int i = 1; i <= 10; i++) {
                 producer.newMessage().key("key-" + i).value("value-" + i).send();
