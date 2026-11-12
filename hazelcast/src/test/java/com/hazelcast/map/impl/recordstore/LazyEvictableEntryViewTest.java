@@ -22,6 +22,7 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.JVMUtil;
 import com.hazelcast.map.EntryCostEstimatorTest;
 import com.hazelcast.map.impl.EntryCostEstimator;
 import com.hazelcast.map.impl.MapContainer;
@@ -37,6 +38,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -87,6 +89,10 @@ public class LazyEvictableEntryViewTest {
 
     @Test
     public void test_getCost() {
+        assumeThat(JVMUtil.isCompressedClassPointers())
+                .as("Expected values assume compressed class pointers")
+                .isTrue();
+
         assertEquals(EntryCostEstimatorTest.ENTRY_COST_IN_BYTES_WHEN_STATS_ON,
                 costEstimator.calculateEntryCost(view.getDataKey(), view.getRecord()));
     }

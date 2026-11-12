@@ -36,6 +36,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
@@ -65,14 +66,20 @@ public class EntryCostEstimatorTest extends HazelcastTestSupport {
             return perEntryStatsEnabled ? 140 : 116;
         }
 
+        // there are 5 object headers included: Record, 2x HeapData and 2x byte[] (key and value)
+        int compactHeaderCorrection = JVMUtil.isCompactObjectHeader() ? 20 : 0;
         if (JVMUtil.isCompressedOops()) {
-            return perEntryStatsEnabled ? 152 : 128;
+            return perEntryStatsEnabled ? 152 - compactHeaderCorrection : 128 - compactHeaderCorrection;
         }
 
-        return perEntryStatsEnabled ? 196 : 172;
+        return perEntryStatsEnabled ? 196 - compactHeaderCorrection : 172 - compactHeaderCorrection;
     }
 
     private long getExpectedCost() {
+        assumeThat(JVMUtil.isCompressedClassPointers())
+                .as("Expected values assume compressed class pointers")
+                .isTrue();
+
         return perEntryStatsEnabled
                 ? ENTRY_COST_IN_BYTES_WHEN_STATS_ON : ENTRY_COST_IN_BYTES_WHEN_STATS_OFF;
     }

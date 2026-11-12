@@ -20,16 +20,15 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-
-import java.lang.management.ManagementFactory;
-
-import static org.junit.Assert.assertEquals;
-import static org.assertj.core.api.Assumptions.assumeThat;
-
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.lang.management.ManagementFactory;
+
+import static org.assertj.core.api.Assumptions.assumeThat;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Invokes all {@link JVMUtil} method to ensure no exception is thrown.
@@ -49,6 +48,16 @@ public class JVMUtilTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIsCompressedClassPointers() {
+        JVMUtil.isCompressedClassPointers();
+    }
+
+    @Test
+    public void testIsCompactObjectHeader() {
+        JVMUtil.isCompactObjectHeader();
+    }
+
+    @Test
     public void testUsedMemory() {
         Assert.assertTrue(JVMUtil.usedMemory(Runtime.getRuntime()) > 0);
     }
@@ -59,8 +68,18 @@ public class JVMUtilTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testIsHotSpotCompressedClassPointersOrNull() {
+        JVMUtil.isHotSpotCompressedClassPointersOrNull();
+    }
+
+    @Test
     public void testIsObjectLayoutCompressedOopsOrNull() {
         JVMUtil.isObjectLayoutCompressedOopsOrNull();
+    }
+
+    @Test
+    public void testIsHotSpotCompactObjectHeaderOrNull() {
+        JVMUtil.isHotSpotCompactObjectHeaderOrNull();
     }
 
     @Test
@@ -94,11 +113,9 @@ public class JVMUtilTest extends HazelcastTestSupport {
     }
 
     // Prints the size of object reference as calculated by JVMUtil.
-    // When running under Hotspot 64-bit:
-    // - JDK 6u23+ should report 4 (CompressedOops enabled by default)
-    // - JDK 7 with -Xmx <= 32G or without any -Xmx specified should report 4 (CompressedOops enabled), otherwise 8
-    // - explicitly starting with -XX:+UseCompressedOops should report 4, otherwise 8
+    // Results depend on JVM version and options
     public static void main(String[] args) {
         System.out.println("Size of reference: " + JVMUtil.REFERENCE_COST_IN_BYTES);
+        System.out.println("Object header size: " + JVMUtil.OBJECT_HEADER_SIZE);
     }
 }
