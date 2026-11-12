@@ -34,6 +34,9 @@ import java.util.Map;
  * <p>
  * Same goes for IMap.remove(key).
  * <p>
+ * With write-through, store and delete calls follow the same threading rules
+ * and restrictions as {@link MapLoader}.
+ * <p>
  * Implementations <b>must assume</b>:
  * <ul>
  *   <li>Operations may be retried, reordered, or replayed after failures or migrations.</li>

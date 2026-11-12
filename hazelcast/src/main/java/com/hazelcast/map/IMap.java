@@ -243,10 +243,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * <p><b>Interactions with the map store</b>
      * <p>
-     * For each element not found in memory
-     * {@link MapLoader#load(Object)} is invoked to load the value from
-     * the map store backing the map, which may come at a significant
-     * performance cost. Exceptions thrown by load fail the operation
+     * If any listener is registered on the map, including internal ones
+     * such as those of a Near Cache, the old value of each element not
+     * found in memory is loaded from the map store, which may come at a
+     * significant performance cost. {@link #setAll(Map)} never loads old
+     * values. Exceptions thrown by the loader fail the operation
      * and are propagated to the caller. The elements which were added
      * before the exception was thrown will remain in the map, the rest
      * will not be added.
@@ -895,10 +896,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * <p><b>Interactions with the map store</b>
      * <p>
-     * For each element not found in memory
-     * {@link MapLoader#load(Object)} is invoked to load the value from
-     * the map store backing the map, which may come at a significant
-     * performance cost. Exceptions thrown by load fail the operation
+     * If any listener is registered on the map, including internal ones
+     * such as those of a Near Cache, the old value of each element not
+     * found in memory is loaded from the map store, which may come at a
+     * significant performance cost. {@link #setAllAsync(Map)} never loads
+     * old values. Exceptions thrown by the loader fail the operation
      * and are propagated to the caller. The elements which were added
      * before the exception was thrown will remain in the map, the rest
      * will not be added.

@@ -217,6 +217,10 @@ public class MapStoreConfig implements IdentifiedDataSerializable, Versioned {
      * MapStore} interaction will be done on partition threads.
      * This may introduce latency for other operations
      * which don't require {@link MapStore} interaction.
+     * <p>
+     * A MapLoader or write-through MapStore that makes a blocking call to a
+     * map with an offloaded MapStore can deadlock permanently; see
+     * {@link com.hazelcast.map.MapLoader}.
      *
      * @param offload set {@code true} to enable
      *                offloading, otherwise set {@code false}
