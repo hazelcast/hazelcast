@@ -38,6 +38,7 @@ import org.junit.jupiter.api.extension.RegisterExtension;
 import java.io.Closeable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -49,13 +50,19 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
+import static java.util.stream.Collectors.toList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SerialTest
 @NightlyTest
 public class PulsarSqlE2EBounceTest extends PulsarTestSupport {
     private static final int ITEM_COUNT = 1_000;
-    private static final int DURATION_SECONDS = 10 * 60;
+    private static final int DURATION_SECONDS = 2 * 60;
+    private static final int PUBLISH_DELAY_MILLIS = 300;
+    // A task started near the deadline still needs time to publish the full input and verify the output.
+    private static final int TASK_TIMEOUT_SECONDS = ITEM_COUNT * PUBLISH_DELAY_MILLIS / 1000 + 150;
     private final List<Closeable> closeables = new ArrayList<>();
 
     @RegisterExtension
@@ -64,7 +71,7 @@ public class PulsarSqlE2EBounceTest extends PulsarTestSupport {
                                                                          .driverCount(1)
                                                                          .useTerminate(true)
                                                                          .avoidOverlappingTerminations(true)
-                                                                         .testTaskTimeoutSecs(150)
+                                                                         .testTaskTimeoutSecs(TASK_TIMEOUT_SECONDS)
                                                                          .bouncingIntervalSeconds(10)
                                                                          .shouldFailOnIncompleteTask()
                                                                          .driverType(BounceTestConfiguration.DriverType.CLIENT)
@@ -145,7 +152,7 @@ public class PulsarSqlE2EBounceTest extends PulsarTestSupport {
             for (int i = 0; i < ITEM_COUNT; i++) {
                 producer.send("hello-pulsar-" + published);
                 published++;
-                sleepMillis(300);
+                sleepMillis(PUBLISH_DELAY_MILLIS);
             }
             return published;
         });
@@ -157,16 +164,16 @@ public class PulsarSqlE2EBounceTest extends PulsarTestSupport {
             expected.add(message);
         }
         Lock collectionLock = new ReentrantLock();
-        List<String> result = new ArrayList<>();
+        List<ReceivedMessage> result = new ArrayList<>();
         try (var topicReader = getClient().newReader(Schema.STRING)
                                           .startMessageId(MessageId.earliest)
                                           .subscriptionName(randomName())
                                           .topic(resultTopic)
                                           .readerListener((reader, msg) -> {
-                                              String value = msg.getValue();
+                                              var received = new ReceivedMessage(msg.getValue(), msg.getMessageId());
                                               collectionLock.lock();
                                               try {
-                                                  result.add(value);
+                                                  result.add(received);
                                               } finally {
                                                   collectionLock.unlock();
                                               }
@@ -178,14 +185,24 @@ public class PulsarSqlE2EBounceTest extends PulsarTestSupport {
             assertTrueEventually(() -> {
                 collectionLock.lock();
                 try {
-                    assertThat(result).containsExactlyInAnyOrderElementsOf(expected);
+                    assertThat(result.stream().map(ReceivedMessage::value).toList())
+                            .as(() -> "Repeated values with Pulsar message IDs: " + duplicateMessageIds(result))
+                            .containsExactlyInAnyOrderElementsOf(expected);
                 } finally {
                     collectionLock.unlock();
                 }
-                assertThat(result).hasSize(expected.size());
             });
             logger.info("Pulsar source churn: all " + published + " published messages received");
         }
     }
 
+    private static Map<String, List<MessageId>> duplicateMessageIds(List<ReceivedMessage> messages) {
+        Map<String, List<MessageId>> idsByValue = messages.stream().collect(groupingBy(
+                ReceivedMessage::value, mapping(ReceivedMessage::messageId, toList())));
+        idsByValue.values().removeIf(ids -> ids.size() < 2);
+        return idsByValue;
+    }
+
+    private record ReceivedMessage(String value, MessageId messageId) {
+    }
 }

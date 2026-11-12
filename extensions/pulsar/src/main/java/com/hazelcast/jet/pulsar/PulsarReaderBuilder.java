@@ -27,7 +27,6 @@ import com.hazelcast.jet.pulsar.impl.PulsarSourceConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import org.apache.pulsar.client.api.BatchReceivePolicy;
 import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.PulsarClient;
@@ -171,17 +170,6 @@ public final class PulsarReaderBuilder<M, T> {
      */
     public PulsarReaderBuilder<M, T> preferredLocalParallelism(int preferredLocalParallelism) {
         this.conf.setLocalParallelism(Vertex.checkLocalParallelism(preferredLocalParallelism));
-        return this;
-    }
-    /**
-     * @param batchReceivePolicy batch receive policy for the Reader
-     */
-    @Nonnull
-    public PulsarReaderBuilder<M, T> batchReceivePolicy(
-            @Nonnull BatchReceivePolicy batchReceivePolicy
-    ) {
-        checkSerializable(batchReceivePolicy, "batchReceivePolicy");
-        conf.setBatchReceivePolicy(batchReceivePolicy);
         return this;
     }
 

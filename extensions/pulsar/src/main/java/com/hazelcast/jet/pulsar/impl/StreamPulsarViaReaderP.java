@@ -67,7 +67,7 @@ import static com.hazelcast.jet.pulsar.impl.Utils.wrapFailure;
 import static org.apache.pulsar.common.naming.TopicDomain.persistent;
 
 /**
- * Reads each physical topic through a single {@link Reader}.
+ * Reads each physical topic through its own {@link Reader}.
  * Before the reading it queries partition and subscribes only to a subset
  * of them.
  * <p>The subscription backing the reader must be dedicated to this source and must not be deleted,
@@ -83,6 +83,10 @@ import static org.apache.pulsar.common.naming.TopicDomain.persistent;
 public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
     private static final long PARTITION_GET_TIMEOUT = 120;
     private static final int SCAN_DELAY_SECONDS = 5;
+    /**
+     * Soft limit on how many messages should be at most in one batch.
+     */
+    private static final int DEFAULT_MAX_MESSAGES_PER_BATCH = 4096;
 
     private final FunctionEx<Message<M>, T> projectionFn;
     private final PulsarSourceConfig<M, T> pulsarConfig;
@@ -92,7 +96,7 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
 
     private ILogger logger;
     private final PulsarClient client;
-    private Reader<M> reader;
+    private final Map<String, PartitionReader> readers = new HashMap<>();
     private Traverser<Object> traverser = Traversers.empty();
     private Traverser<Map.Entry<BroadcastKey<String>, SnapshotData>> snapshotTraverser;
     private final AtomicBoolean partitionNumberChanged = new AtomicBoolean(false);
@@ -101,7 +105,6 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
     private volatile int assignedPartitionCount;
     private Context context;
 
-    private Future<Message<M>> nextMessageFuture;
     private final AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
     private PartitionAssigner partitionAssigner;
 
@@ -127,7 +130,6 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
     }
 
     private void assignPartitions() {
-        int oldPartitionCount = assignedPartitions.size();
         boolean snapshottingEnabled = context.snapshottingEnabled();
         try {
             for (String topic : pulsarConfig.getTopics()) {
@@ -156,38 +158,35 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
 
             assert eventTimeMapper.partitionCount() == assignedPartitions.size();
 
-            // force recreation of reader
-            if (reader != null && oldPartitionCount != assignedPartitions.size()) {
-                reader.close();
-                reader = null;
-            }
             logger.info("Assigned partitions: " + assignedPartitions);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw wrapFailure(e.getMessage(), e.getCause());
-        } catch (ExecutionException | TimeoutException | IOException e) {
+        } catch (ExecutionException | TimeoutException e) {
             throw wrapFailure("Unable to subscribe to Pulsar partitions", e);
         }
     }
 
-    // tbd to parameterize
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private void createReaderAndStartReading() {
-        if (!assignedPartitions.isEmpty()) {
+    private void createReadersAndStartReading() {
+        for (String partition : assignedPartitions) {
+            if (readers.containsKey(partition)) {
+                continue;
+            }
             try {
                 ReaderBuilder<M> builder =
                     client.newReader(pulsarConfig.getSchemaSupplier().get())
                           .loadConf(pulsarConfig.getOptions());
                 pulsarConfig.getReaderCustomizer().accept(builder);
                 boolean enableMessagePooling = pulsarConfig.isEnableMessagePooling();
-                reader = builder.autoUpdatePartitions(false)
+                // Set the restored position before the reader can prefetch. Creating a multi-topic reader
+                // and seeking afterwards can deliver prefetched history or reorder messages around the seek.
+                Reader<M> reader = builder.autoUpdatePartitions(false)
                                 .subscriptionName(pulsarConfig.getSubscriberName())
-                                .topics(List.copyOf(assignedPartitions))
+                                .topic(partition)
                                 .poolMessages(enableMessagePooling)
-                                .startMessageId(pulsarConfig.getInitialOffset())
+                                .startMessageId(offsets.getOrDefault(partition, pulsarConfig.getInitialOffset()))
                                 .create();
-                reader.seek(topic -> offsets.getOrDefault(topic, pulsarConfig.getInitialOffset()));
-                nextMessageFuture = reader.readNextAsync();
+                readers.put(partition, new PartitionReader(reader));
             } catch (IOException e) {
                 throw wrapFailure(e.getMessage(), e.getCause());
             }
@@ -212,20 +211,26 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
             emitFromTraverser(eventTimeMapper.flatMapIdle());
             return false;
         }
-        if (reader == null) {
-            createReaderAndStartReading();
-        }
-
-        if (!nextMessageFuture.isDone()) {
-            emitFromTraverser(eventTimeMapper.flatMapIdle());
-            return false;
+        if (readers.size() != assignedPartitions.size()) {
+            createReadersAndStartReading();
         }
         try {
-            List<Message<M>> messages = new ArrayList<>();
-
-            while (nextMessageFuture.isDone()) {
-                messages.add(nextMessageFuture.get());
-                nextMessageFuture = reader.readNextAsync();
+            int allowedMessagesRemaining = DEFAULT_MAX_MESSAGES_PER_BATCH;
+            List<Message<M>> messages = null;
+            Collection<PartitionReader> partitionReaders = readers.values();
+            for (PartitionReader partitionReader : partitionReaders) {
+                while (allowedMessagesRemaining > 0 && partitionReader.isDone()) {
+                    if (messages == null) {
+                        messages = new ArrayList<>(partitionReaders.size());
+                    }
+                    messages.add(partitionReader.nextMessage());
+                    partitionReader.scheduleNextReading();
+                    allowedMessagesRemaining--;
+                }
+            }
+            if (messages == null) {
+                emitFromTraverser(eventTimeMapper.flatMapIdle());
+                return false;
             }
             traverser = traverseIterable(messages).flatMap(this::processMessage)
                                                   .onFirstNull(() -> traverser = null);
@@ -313,12 +318,46 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
 
     @Override
     public void close() {
-        if (reader != null) {
+        JetException failure = null;
+        for (PartitionReader partitionReader : readers.values()) {
             try {
-                reader.close();
+                partitionReader.close();
             } catch (Exception e) {
-                throw new JetException("Error while closing the Pulsar Reader processor.", e);
+                if (failure == null) {
+                    failure = new JetException("Error while closing the Pulsar Reader processor.", e);
+                } else {
+                    failure.addSuppressed(e);
+                }
             }
+        }
+        readers.clear();
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    private final class PartitionReader {
+        private final Reader<M> reader;
+        private Future<Message<M>> nextMessageFuture;
+
+        private PartitionReader(Reader<M> reader) {
+            this.reader = reader;
+            this.nextMessageFuture = reader.readNextAsync();
+        }
+        void close() throws IOException {
+            reader.close();
+        }
+
+        Message<M> nextMessage() throws ExecutionException, InterruptedException {
+            return nextMessageFuture.get();
+        }
+
+        void scheduleNextReading() {
+            nextMessageFuture = reader.readNextAsync();
+        }
+
+        boolean isDone() {
+            return nextMessageFuture.isDone();
         }
     }
 
