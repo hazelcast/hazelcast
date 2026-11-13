@@ -40,12 +40,29 @@ public class ComplexTestDataStructure {
     private ComplexTestDataStructure() {
     }
 
+    enum Health {
+        DEAD {
+                @Override
+                public boolean isAlive() {
+                    return false;
+                }
+            },
+
+        SICK,
+        SPLENDID;
+
+        public boolean isAlive() {
+            return true;
+        }
+    }
+
     public static class Person implements Serializable, PortableAware {
         String name;
         List<Limb> limbs_list = new ArrayList<>();
         Limb[] limbs_array;
         Limb firstLimb;
         Limb secondLimb;
+        Health health;
 
         transient PersonPortable portable;
 
@@ -55,6 +72,10 @@ public class ComplexTestDataStructure {
 
         public Limb getFirstLimb() {
             return firstLimb;
+        }
+
+        public Health getHealth() {
+            return health;
         }
 
         @Override
@@ -86,6 +107,7 @@ public class ComplexTestDataStructure {
         Portable[] limbs_portable;
         LimbPortable firstLimb;
         LimbPortable secondLimb;
+        Health health;
 
         @Override
         public boolean equals(Object o) {
@@ -117,6 +139,7 @@ public class ComplexTestDataStructure {
             writer.writePortableArray("limbs_portable", limbs_portable);
             writer.writePortable("firstLimb", firstLimb);
             writer.writePortable("secondLimb", secondLimb);
+            writer.writeInt("health", health == null ? -1 : health.ordinal());
         }
 
         @Override
@@ -125,6 +148,10 @@ public class ComplexTestDataStructure {
             limbs_portable = reader.readPortableArray("limbs_portable");
             firstLimb = reader.readPortable("firstLimb");
             secondLimb = reader.readPortable("secondLimb");
+            int healthOrdinal = reader.readInt("health");
+            if (healthOrdinal >= 0) {
+                health = Health.values()[healthOrdinal];
+            }
         }
     }
 
@@ -356,8 +383,13 @@ public class ComplexTestDataStructure {
     }
 
     public static Person person(String name, Limb... limbs) {
+        return person(name, null, limbs);
+    }
+
+    public static Person person(String name, Health health, Limb... limbs) {
         Person person = new Person();
         person.name = name;
+        person.health = health;
         if (limbs.length > 0) {
             person.limbs_list.addAll(Arrays.asList(limbs));
         } else {
