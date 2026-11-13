@@ -19,6 +19,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
+import com.hazelcast.jet.pulsar.PulsarDataConnection;
 import com.hazelcast.jet.pulsar.PulsarSchema;
 import com.hazelcast.jet.pulsar.impl.PulsarConfig;
 import com.hazelcast.jet.pulsar.impl.PulsarSinkConfig;
@@ -34,6 +35,7 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.shade.org.apache.pulsar.common.naming.TopicName;
 
 import java.util.HashMap;
@@ -50,6 +52,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 
 class PulsarTable extends JetTable {
     static final String PULSAR_OPTION_PREFIX = "pulsar.";
+    static final String OPTION_BROKER_URL = PulsarDataConnection.Properties.BROKER_URL;
+    static final String OPTION_ENABLE_TRANSACTIONS = PulsarDataConnection.Properties.ENABLE_TRANSACTIONS;
+    static final String OPTION_HTTP_SERVICE_URL = PulsarDataConnection.Properties.HTTP_SERVICE_URL;
     private final String topicName;
     private final String dataConnectionName;
     private final Map<String, String> options;
@@ -98,8 +103,34 @@ class PulsarTable extends JetTable {
         }
         conf.setSchemaSupplier(resolveSchema());
         conf.setOptions(pulsarOptions());
+
         if (dataConnectionName() != null) {
             conf.setDataConnectionRef(DataConnectionRef.dataConnectionRef(dataConnectionName()));
+        } else {
+            final String brokerUrl = options.get(OPTION_BROKER_URL);
+            final boolean enableTransactions = Boolean.parseBoolean(options.getOrDefault(OPTION_ENABLE_TRANSACTIONS, "false"));
+            if (brokerUrl != null) {
+                conf.setConnectionSupplier(
+                    () -> PulsarClient.builder().serviceUrl(brokerUrl).enableTransaction(enableTransactions).build());
+            } else {
+                final String brokerUrlPulsarDot = options.get(PULSAR_OPTION_PREFIX + OPTION_BROKER_URL);
+                final boolean enableTransactionsPulsarDot =
+                    Boolean.parseBoolean(options.getOrDefault(PULSAR_OPTION_PREFIX + OPTION_ENABLE_TRANSACTIONS, "false"));
+                if (brokerUrlPulsarDot != null) {
+                    conf.setConnectionSupplier(() -> PulsarClient.builder().serviceUrl(brokerUrlPulsarDot).enableTransaction(
+                        enableTransactionsPulsarDot).build());
+                }
+            }
+
+            String httpServiceUrl = options.get(OPTION_HTTP_SERVICE_URL);
+            if (httpServiceUrl != null) {
+                conf.setHttpServiceUrl(httpServiceUrl);
+            } else {
+                String pulsarDotHttpServiceUrl = options.get(PULSAR_OPTION_PREFIX + OPTION_HTTP_SERVICE_URL);
+                if (pulsarDotHttpServiceUrl != null) {
+                    conf.setHttpServiceUrl(pulsarDotHttpServiceUrl);
+                }
+            }
         }
         return conf;
     }

@@ -208,17 +208,29 @@ public class BasicSqlWritingTest extends PulsarTestSupport {
         }
     }
 
-    @Test
-    public void sendsMessages(TestInfo testInfo) throws IOException {
-        String testName = sanitizedTestName(testInfo);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    public void sendsMessages(boolean useDirectConnection) throws IOException {
+        String testName = SqlTestSupport.randomName();
         String fullName = "persistent://public/default/" + testName;
         createTopic(fullName, true);
         Map<String, MyMessage> results = Collections.synchronizedMap(new HashMap<>());
         try (var reader = newReader(testName, Schema.JSON(MyMessage.class), results)) {
-            new SqlMapping("twoWayPulsar", "testPulsar").externalName("\"" + fullName + "\"")
-                                                        .fields("__key VARCHAR", "title VARCHAR", "content VARCHAR")
-                                                        .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "json-flat")
-                                                        .createOrReplace(instances[0]);
+            if (useDirectConnection) {
+                new SqlMapping("twoWayPulsar", PulsarSqlConnector.class).externalName("\"" + fullName + "\"")
+                                                                        .fields("__key VARCHAR", "title VARCHAR", "content VARCHAR")
+                                                                        .options(OPTION_KEY_FORMAT, "varchar",
+                                                                                 OPTION_VALUE_FORMAT, "json-flat",
+                                                                                 PulsarTable.OPTION_BROKER_URL, pulsarContainer.getPulsarBrokerUrl(),
+                                                                                 PulsarTable.OPTION_ENABLE_TRANSACTIONS, "true"
+                                                                        )
+                                                                        .createOrReplace(instances[0]);
+            } else {
+                new SqlMapping("twoWayPulsar", "testPulsar").externalName("\"" + fullName + "\"")
+                                                            .fields("__key VARCHAR", "title VARCHAR", "content VARCHAR")
+                                                            .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "json-flat")
+                                                            .createOrReplace(instances[0]);
+            }
 
             List<MyMessage> messages = new ArrayList<>();
             messages.add(new MyMessage("Awake and Alive", "I'm awake, I'm alive, now I know what I believe inside!"));
