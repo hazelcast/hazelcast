@@ -78,10 +78,7 @@ public class SomeTask implements Callable<Long>, ApplicationContextAware, DataSe
         if (context != null ? !context.equals(someTask.context) : someTask.context != null) {
             return false;
         }
-        if (someBean != null ? !someBean.equals(someTask.someBean) : someTask.someBean != null) {
-            return false;
-        }
-        return true;
+        return someBean != null ? someBean.equals(someTask.someBean) : someTask.someBean == null;
     }
 
     @Override

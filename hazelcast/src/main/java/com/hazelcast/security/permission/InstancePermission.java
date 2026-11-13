@@ -95,9 +95,6 @@ public abstract class InstancePermission extends ClusterPermission {
         if (!getName().equals(other.getName())) {
             return false;
         }
-        if (mask != other.mask) {
-            return false;
-        }
-        return true;
+        return mask == other.mask;
     }
 }

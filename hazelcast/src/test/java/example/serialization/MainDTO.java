@@ -161,10 +161,7 @@ public class MainDTO {
         if (!Objects.equals(nullableF, mainDTO.nullableF)) {
             return false;
         }
-        if (!Objects.equals(nullableD, mainDTO.nullableD)) {
-            return false;
-        }
-        return true;
+        return Objects.equals(nullableD, mainDTO.nullableD);
     }
 
     @Override

@@ -376,12 +376,8 @@ public class MapChunk extends Operation
             return false;
         }
 
-        if (getReplicaIndex() != 0) {
-            // backup partitions have no indexRegistry to populate
-            return false;
-        }
-
-        return true;
+        // backup partitions have no indexRegistry to populate
+        return getReplicaIndex() == 0;
     }
 
     protected RecordStore getRecordStore(String mapName) {

@@ -52,10 +52,7 @@ public class CollectionEventFilter implements EventFilter, IdentifiedDataSeriali
             return false;
         }
         CollectionEventFilter that = (CollectionEventFilter) o;
-        if (includeValue != that.includeValue) {
-            return false;
-        }
-        return true;
+        return includeValue == that.includeValue;
     }
 
     @Override

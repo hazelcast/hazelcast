@@ -86,11 +86,7 @@ public class CachePartitionEventData extends CacheEventDataImpl implements Cache
         if (partitionId != that.partitionId) {
             return false;
         }
-        if (member != null ? !member.equals(that.member) : that.member != null) {
-            return false;
-        }
-
-        return true;
+        return member != null ? member.equals(that.member) : that.member == null;
     }
 
     @Override

@@ -184,10 +184,7 @@ public final class ItemCounter<T> {
         }
 
         ItemCounter that = (ItemCounter) o;
-        if (!map.equals(that.map)) {
-            return false;
-        }
-        return true;
+        return map.equals(that.map);
     }
 
     @Override

@@ -49,11 +49,7 @@ public class MyElement
 
         MyElement element = (MyElement) o;
 
-        if (value != null ? !value.equals(element.value) : element.value != null) {
-            return false;
-        }
-
-        return true;
+        return value != null ? value.equals(element.value) : element.value == null;
     }
 
     @Override

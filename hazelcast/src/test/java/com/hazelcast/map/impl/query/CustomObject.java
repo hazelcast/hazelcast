@@ -61,10 +61,7 @@ public class CustomObject implements Serializable {
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (uuid != null ? !uuid.equals(that.uuid) : that.uuid != null) {
-            return false;
-        }
-        return true;
+        return uuid != null ? uuid.equals(that.uuid) : that.uuid == null;
     }
 
     @Override

@@ -78,11 +78,7 @@ public class QueueEventFilter implements EventFilter, IdentifiedDataSerializable
 
         QueueEventFilter that = (QueueEventFilter) o;
 
-        if (includeValue != that.includeValue) {
-            return false;
-        }
-
-        return true;
+        return includeValue == that.includeValue;
     }
 
     @Override

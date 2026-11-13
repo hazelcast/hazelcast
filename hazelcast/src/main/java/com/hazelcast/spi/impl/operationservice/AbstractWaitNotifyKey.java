@@ -53,11 +53,7 @@ public abstract class AbstractWaitNotifyKey implements WaitNotifyKey {
         if (objectName != null ? !objectName.equals(that.objectName) : that.objectName != null) {
             return false;
         }
-        if (service != null ? !service.equals(that.service) : that.service != null) {
-            return false;
-        }
-
-        return true;
+        return service != null ? service.equals(that.service) : that.service == null;
     }
 
     @Override

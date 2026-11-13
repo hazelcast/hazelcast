@@ -349,10 +349,7 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
                 return false;
             }
             final Employee other = (Employee) obj;
-            if (this.id != other.id) {
-                return false;
-            }
-            return true;
+            return this.id == other.id;
         }
 
     }
@@ -388,10 +385,7 @@ public class IndexStatsQueryingInCollectionsAndArraysTest extends HazelcastTestS
                 return false;
             }
             final Department other = (Department) obj;
-            if (!Arrays.deepEquals(this.employees, other.employees)) {
-                return false;
-            }
-            return true;
+            return Arrays.deepEquals(this.employees, other.employees);
         }
     }
 }

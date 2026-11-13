@@ -83,10 +83,7 @@ public class QueryEventFilter extends EntryEventFilter {
         if (!super.equals(o)) {
             return false;
         }
-        if (!predicate.equals(that.predicate)) {
-            return false;
-        }
-        return true;
+        return predicate.equals(that.predicate);
     }
 
     @Override
