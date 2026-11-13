@@ -84,6 +84,7 @@ class PulsarSinkConfigTest {
         sinkConf.setSchemaSupplier(() -> Schema.STRING);
 
         sinkConf.setTransactional(true);
+        sinkConf.setMaxInFlightMessages(37);
         sinkConf.setExtractValueFn(Object::toString);
         sinkConf.setExtractKeyFn(s -> s);
         sinkConf.setExtractPropertiesFn(s -> Map.of("prop1", "value"));

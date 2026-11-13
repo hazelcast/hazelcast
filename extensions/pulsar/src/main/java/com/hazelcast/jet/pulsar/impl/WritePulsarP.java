@@ -84,7 +84,6 @@ import static java.util.stream.Collectors.joining;
  */
 public class WritePulsarP<E, M> extends AbstractProcessor {
     private static final int NUM_DEDUPLICATION_CHECK = 5;
-    private static final int MAX_IN_FLY_MESSAGES = 1000;
     private ILogger logger;
     private final PulsarClient client;
     private Producer<M> producer;
@@ -97,6 +96,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
     private final FunctionEx<? super E, Long> extractTimestampFn;
 
     private final PulsarSinkConfig<E, M> pulsarConfig;
+    private final int maxInFlightMessages;
     private UnboundedTransactionsProcessorUtility<PulsarTransactionId, PulsarTransaction> transactionUtility;
     private volatile Throwable error;
 
@@ -105,6 +105,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
     public WritePulsarP(PulsarSinkConfig<E, M> pulsarConfig, PulsarClient client) {
         this.pulsarConfig = pulsarConfig;
+        this.maxInFlightMessages = pulsarConfig.getMaxInFlightMessages();
         this.extractValueFn = pulsarConfig.getExtractValueFn();
         this.extractKeyFn = pulsarConfig.getExtractKeyFn();
         this.extractPropertiesFn = pulsarConfig.getExtractPropertiesFn();
@@ -222,10 +223,9 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             while ((element = (E) inbox.peek()) != null) {
                 checkError();
                 int currentInFly = inFlightMessages.get();
-                if (currentInFly >= MAX_IN_FLY_MESSAGES) {
+                if (currentInFly >= maxInFlightMessages) {
                     return;
                 }
-                inFlightMessages.incrementAndGet();
                 M value;
                 String key;
                 if (useCombinedFunction) {
@@ -279,12 +279,14 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             builder = builder.key(key);
         }
 
-        builder.sendAsync().whenComplete((result, e) -> {
-            if (e != null) {
-                error = e;
-            }
-            inFlightMessages.decrementAndGet();
-        });
+        builder.sendAsync()
+               .whenComplete((result, e) -> {
+                   if (e != null) {
+                       error = e;
+                   }
+                   inFlightMessages.decrementAndGet();
+               });
+        inFlightMessages.incrementAndGet();
     }
 
     @Override

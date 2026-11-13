@@ -15,9 +15,15 @@
  */
 package com.hazelcast.jet.pulsar.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.core.test.TestInbox;
 import com.hazelcast.jet.core.test.TestOutbox;
 import com.hazelcast.jet.core.test.TestProcessorContext;
+import com.hazelcast.jet.impl.pipeline.SinkImpl;
+import com.hazelcast.jet.pulsar.PulsarSinkBuilder;
 import com.hazelcast.test.ParallelTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.pulsar.client.api.MessageId;
@@ -35,6 +41,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
+import java.io.Serial;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -43,16 +50,19 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.AT_LEAST_ONCE;
 import static com.hazelcast.jet.impl.util.JetExceptionUtil.isRestartableException;
+import static com.hazelcast.test.HazelcastTestSupport.getFieldValue;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.catchThrowable;
 import static org.mockito.Mockito.RETURNS_SELF;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -63,9 +73,10 @@ import static org.mockito.Mockito.when;
 @Timeout(30)
 class WritePulsarPTest {
 
-    private static final int MAX_IN_FLIGHT_MESSAGES = 1000;
-
+    private static final int IN_FLIGHT_LIMIT = EdgeConfig.DEFAULT_QUEUE_SIZE;
     private final List<CompletableFuture<MessageId>> sendFutures = new CopyOnWriteArrayList<>();
+    private PulsarClient client;
+    private PulsarSinkConfig<String, String> config;
     private TypedMessageBuilder<String> messageBuilder;
     private WritePulsarP<String, String> processor;
     private ExecutorService executor;
@@ -74,8 +85,7 @@ class WritePulsarPTest {
     @SuppressWarnings("unchecked")
     void setUp() throws Exception {
         executor = Executors.newSingleThreadExecutor();
-        //noinspection resource
-        PulsarClient client = mock(PulsarClient.class);
+        client = mock(PulsarClient.class);
         ProducerBuilder<String> producerBuilder = mock(ProducerBuilder.class, RETURNS_SELF);
         Producer<String> producer = mock(Producer.class);
         messageBuilder = mock(TypedMessageBuilder.class, RETURNS_SELF);
@@ -88,13 +98,17 @@ class WritePulsarPTest {
             return future;
         });
 
-        var config = new PulsarSinkConfig<String, String>();
+        config = new PulsarSinkConfig<>();
         config.setTopic("backpressure-test");
         config.setConnectionSupplier(() -> client);
         config.setSchemaSupplier(() -> Schema.STRING);
         config.setExtractValueFn(value -> value);
         config.setOptions(Map.of());
         config.setTransactional(false);
+        initProcessor();
+    }
+
+    private void initProcessor() throws Exception {
         processor = new WritePulsarP<>(config, client);
         processor.init(new TestOutbox(new int[0], 1), new TestProcessorContext().setProcessingGuarantee(AT_LEAST_ONCE));
     }
@@ -113,34 +127,69 @@ class WritePulsarPTest {
 
     @Test
     void whenInFlightLimitReached_thenLeavesRemainingItemsInInbox() throws Exception {
-        List<String> input = input(MAX_IN_FLIGHT_MESSAGES + 2);
+        List<String> input = input(IN_FLIGHT_LIMIT + 1);
         var inbox = new TestInbox(input);
 
         process(inbox).get(5, SECONDS);
 
-        assertThat(sendFutures.size()).isEqualTo(MAX_IN_FLIGHT_MESSAGES);
-        assertThat(inbox).containsExactlyElementsOf(input.subList(MAX_IN_FLIGHT_MESSAGES, input.size()));
-        assertSentExactly(input.subList(0, MAX_IN_FLIGHT_MESSAGES));
+        assertThat(sendFutures).hasSize(IN_FLIGHT_LIMIT);
+        assertThat(inbox).containsExactly(input.get(IN_FLIGHT_LIMIT));
+        assertSentExactly(input.subList(0, IN_FLIGHT_LIMIT));
 
         process(inbox).get(5, SECONDS);
 
-        assertThat(sendFutures.size()).isEqualTo(MAX_IN_FLIGHT_MESSAGES);
-        assertThat(inbox).containsExactlyElementsOf(input.subList(MAX_IN_FLIGHT_MESSAGES, input.size()));
-        assertSentExactly(input.subList(0, MAX_IN_FLIGHT_MESSAGES));
+        assertThat(sendFutures).hasSize(IN_FLIGHT_LIMIT);
+        assertThat(inbox).containsExactly(input.get(IN_FLIGHT_LIMIT));
+        assertSentExactly(input.subList(0, IN_FLIGHT_LIMIT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 3})
+    @SuppressWarnings("unchecked")
+    void whenCustomInFlightLimitSetOnBuilder_thenUsesFixedProcessorLimit(int maxInFlightMessages) throws Exception {
+        var builder = new PulsarSinkBuilder<>(() -> Schema.STRING, FunctionEx.identity())
+                .topic("custom-backpressure-test")
+                .connectionSupplier(new TestClientSupplier(client))
+                .useTransactions(false)
+                .maxInFlightMessages(maxInFlightMessages);
+        var sink = (SinkImpl<String>) builder.build();
+        builder.maxInFlightMessages(maxInFlightMessages + 1);
+        var context = new TestProcessorContext().setProcessingGuarantee(AT_LEAST_ONCE);
+        var metaSupplier = sink.metaSupplier();
+        metaSupplier.init(context);
+        var address = new Address("127.0.0.1", 5701);
+        var supplier = metaSupplier.get(List.of(address)).apply(address);
+        supplier.init(context);
+        processor.close();
+        processor = (WritePulsarP<String, String>) supplier.get(1).iterator().next();
+        processor.init(new TestOutbox(new int[0], 1), context);
+        List<String> input = input(maxInFlightMessages + 1);
+        var inbox = new TestInbox(input);
+
+        process(inbox).get(5, SECONDS);
+
+        assertThat(sendFutures).hasSize(maxInFlightMessages);
+        assertThat(inbox).containsExactly(input.get(maxInFlightMessages));
+        assertSentExactly(input.subList(0, maxInFlightMessages));
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, -1, Integer.MIN_VALUE})
+    void whenInFlightLimitIsNotPositive_thenBuilderRejectsIt(int maxInFlightMessages) {
+        var builder = new PulsarSinkBuilder<>(() -> Schema.STRING, FunctionEx.identity());
+
+        assertThatThrownBy(() -> builder.maxInFlightMessages(maxInFlightMessages))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("maxInFlightMessages");
     }
 
     @Test
     void whenAcknowledgementsArrive_thenResumesWithoutLosingOrDuplicatingItems() throws Exception {
-        List<String> input = input(MAX_IN_FLIGHT_MESSAGES + 2);
+        List<String> input = input(IN_FLIGHT_LIMIT + 2);
         var inbox = new TestInbox(input);
         process(inbox).get(5, SECONDS);
-        int sentBeforeAcknowledgements = sendFutures.size();
-        assertThat(sentBeforeAcknowledgements).isBetween(1, input.size() - 1);
-
-        process(inbox).get(5, SECONDS);
-
-        assertThat(sendFutures.size()).isEqualTo(sentBeforeAcknowledgements);
-        assertThat(inbox).containsExactlyElementsOf(input.subList(sentBeforeAcknowledgements, input.size()));
+        assertThat(sendFutures).hasSize(IN_FLIGHT_LIMIT);
+        assertThat(inbox).containsExactlyElementsOf(input.subList(IN_FLIGHT_LIMIT, input.size()));
 
         sendFutures.forEach(future -> future.complete(MessageId.latest));
         doReturn(CompletableFuture.completedFuture(MessageId.latest)).when(messageBuilder).sendAsync();
@@ -154,35 +203,34 @@ class WritePulsarPTest {
     @Test
     void whenSendsAlreadyAcknowledged_thenProcessesMoreThanInFlightLimit() throws Exception {
         doReturn(CompletableFuture.completedFuture(MessageId.latest)).when(messageBuilder).sendAsync();
-        List<String> input = input(MAX_IN_FLIGHT_MESSAGES + 2);
+        List<String> input = input(IN_FLIGHT_LIMIT + 2);
         var inbox = new TestInbox(input);
 
-        // Allow a processor which yields at the limit to drain the inbox on a subsequent call.
-        for (int i = 0; i < input.size() && !inbox.isEmpty(); i++) {
-            process(inbox).get(5, SECONDS);
-        }
+        process(inbox).get(5, SECONDS);
 
         assertThat(inbox).isEmpty();
         assertSentExactly(input);
+        AtomicInteger inFlightMessages = getFieldValue(processor, "inFlightMessages");
+        assertThat(inFlightMessages.get()).isZero();
     }
 
     @Test
     void whenOneAcknowledgementArrives_thenSendsOnlyOneMoreItem() throws Exception {
-        List<String> input = input(MAX_IN_FLIGHT_MESSAGES + 2);
+        List<String> input = input(IN_FLIGHT_LIMIT + 2);
         var inbox = new TestInbox(input);
         process(inbox).get(5, SECONDS);
 
-        sendFutures.get(MAX_IN_FLIGHT_MESSAGES - 1).complete(MessageId.latest);
+        sendFutures.get(1).complete(MessageId.latest);
         process(inbox).get(5, SECONDS);
 
-        assertThat(sendFutures).hasSize(MAX_IN_FLIGHT_MESSAGES + 1);
-        assertThat(inbox).containsExactly(input.get(MAX_IN_FLIGHT_MESSAGES + 1));
-        assertSentExactly(input.subList(0, MAX_IN_FLIGHT_MESSAGES + 1));
+        assertThat(sendFutures).hasSize(IN_FLIGHT_LIMIT + 1);
+        assertThat(inbox).containsExactly(input.get(IN_FLIGHT_LIMIT + 1));
+        assertSentExactly(input.subList(0, IN_FLIGHT_LIMIT + 1));
 
         process(inbox).get(5, SECONDS);
 
-        assertThat(sendFutures).hasSize(MAX_IN_FLIGHT_MESSAGES + 1);
-        assertThat(inbox).containsExactly(input.get(MAX_IN_FLIGHT_MESSAGES + 1));
+        assertThat(sendFutures).hasSize(IN_FLIGHT_LIMIT + 1);
+        assertThat(inbox).containsExactly(input.get(IN_FLIGHT_LIMIT + 1));
     }
 
     @Test
@@ -195,7 +243,7 @@ class WritePulsarPTest {
                 acknowledger.submit(() -> future.complete(MessageId.latest));
                 return future;
             });
-            List<String> input = input(3 * MAX_IN_FLIGHT_MESSAGES + 2);
+            List<String> input = input(2 * IN_FLIGHT_LIMIT);
             var inbox = new TestInbox(input);
 
             while (!inbox.isEmpty()) {
@@ -210,6 +258,22 @@ class WritePulsarPTest {
             acknowledger.shutdownNow();
             assertThat(acknowledger.awaitTermination(5, SECONDS)).as("acknowledger thread must terminate").isTrue();
         }
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void whenSendCompletes_thenReleasesItsSlot(boolean successful) throws Exception {
+        process(new TestInbox(input(1))).get(5, SECONDS);
+        AtomicInteger inFlightMessages = getFieldValue(processor, "inFlightMessages");
+        assertThat(inFlightMessages.get()).isEqualTo(1);
+
+        if (successful) {
+            sendFutures.get(0).complete(MessageId.latest);
+        } else {
+            sendFutures.get(0).completeExceptionally(new PulsarClientException.TimeoutException("send timed out"));
+        }
+
+        assertThat(inFlightMessages.get()).isZero();
     }
 
     @Test
@@ -279,7 +343,7 @@ class WritePulsarPTest {
 
     @Test
     void whenSendFailsWhileBackpressured_thenFailsBeforeSendingMoreItems() throws Exception {
-        List<String> input = input(MAX_IN_FLIGHT_MESSAGES + 2);
+        List<String> input = input(IN_FLIGHT_LIMIT + 1);
         var inbox = new TestInbox(input);
         process(inbox).get(5, SECONDS);
         var failure = new PulsarClientException.TimeoutException("send timed out");
@@ -288,8 +352,62 @@ class WritePulsarPTest {
         assertThatThrownBy(() -> process(inbox).get(5, SECONDS))
                 .isInstanceOf(ExecutionException.class)
                 .hasRootCauseInstanceOf(PulsarClientException.TimeoutException.class);
-        assertThat(inbox).containsExactlyElementsOf(input.subList(MAX_IN_FLIGHT_MESSAGES, input.size()));
-        assertSentExactly(input.subList(0, MAX_IN_FLIGHT_MESSAGES));
+        assertThat(inbox).containsExactly(input.get(IN_FLIGHT_LIMIT));
+        assertSentExactly(input.subList(0, IN_FLIGHT_LIMIT));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"value", "key", "keyAndValue", "properties", "timestamp"})
+    void whenMappingThrowsNearInFlightLimit_thenDoesNotCountUnsentItemAndRetainsFailure(String extractor) throws Exception {
+        var failure = new IllegalArgumentException("mapping failed");
+        FunctionEx<String, String> mappingFn = item -> {
+            if (item.equals("fail")) {
+                throw failure;
+            }
+            return item;
+        };
+        switch (extractor) {
+            case "value" -> config.setExtractValueFn(mappingFn);
+            case "key" -> config.setExtractKeyFn(mappingFn);
+            case "keyAndValue" -> config.setExtractKeyAndValueFn(item -> Map.entry("key", mappingFn.apply(item)));
+            case "properties" -> config.setExtractPropertiesFn(item -> Map.of("property", mappingFn.apply(item)));
+            case "timestamp" -> config.setExtractTimestampFn(item -> Long.valueOf(mappingFn.apply(item)));
+            default -> throw new AssertionError("Unknown extractor: " + extractor);
+        }
+        processor.close();
+        initProcessor();
+        AtomicInteger inFlightMessages = getFieldValue(processor, "inFlightMessages");
+        List<String> sent = input(IN_FLIGHT_LIMIT - 1);
+        process(new TestInbox(sent)).get(5, SECONDS);
+        assertThat(inFlightMessages.get()).isEqualTo(IN_FLIGHT_LIMIT - 1);
+        var inbox = new TestInbox(List.of("fail", "remaining"));
+
+        assertThatThrownBy(() -> process(inbox).get(5, SECONDS))
+                .isInstanceOf(ExecutionException.class)
+                .hasRootCause(failure);
+
+        assertThat(inFlightMessages.get()).isEqualTo(IN_FLIGHT_LIMIT - 1);
+        assertThat(inbox).containsExactly("fail", "remaining");
+        assertSentExactly(sent);
+        sendFutures.forEach(future -> future.complete(MessageId.latest));
+        assertThat(inFlightMessages.get()).isZero();
+        assertThatThrownBy(() -> process(inbox).get(5, SECONDS)).hasRootCause(failure);
+        assertThat(inbox).containsExactly("fail", "remaining");
+        assertSentExactly(sent);
+    }
+
+    @Test
+    void whenSendThrowsSynchronously_thenDoesNotCountUnsentItemAndRetainsFailure() {
+        var failure = new IllegalArgumentException("send failed");
+        doThrow(failure).when(messageBuilder).sendAsync();
+        var inbox = new TestInbox(List.of("fail", "remaining"));
+
+        assertThatThrownBy(() -> process(inbox).get(5, SECONDS))
+                .isInstanceOf(ExecutionException.class)
+                .hasRootCause(failure);
+        AtomicInteger inFlightMessages = getFieldValue(processor, "inFlightMessages");
+        assertThat(inFlightMessages.get()).isZero();
+        assertThat(inbox).containsExactly("fail", "remaining");
     }
 
     @ParameterizedTest
@@ -333,5 +451,21 @@ class WritePulsarPTest {
 
     private static List<String> input(int size) {
         return IntStream.range(0, size).mapToObj(Integer::toString).toList();
+    }
+
+    private static class TestClientSupplier implements SupplierEx<PulsarClient> {
+        @Serial
+        private static final long serialVersionUID = 1L;
+
+        private final transient PulsarClient client;
+
+        TestClientSupplier(PulsarClient client) {
+            this.client = client;
+        }
+
+        @Override
+        public PulsarClient getEx() {
+            return client;
+        }
     }
 }
