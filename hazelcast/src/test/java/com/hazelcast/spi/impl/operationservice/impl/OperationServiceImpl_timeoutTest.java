@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.SelfResponseOperation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -46,6 +47,8 @@ import java.util.concurrent.locks.LockSupport;
 import static com.hazelcast.spi.properties.ClusterProperty.OPERATION_CALL_TIMEOUT_MILLIS;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
+import static com.hazelcast.test.Accessors.getOperationService;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -198,6 +201,31 @@ public class OperationServiceImpl_timeoutTest extends HazelcastTestSupport {
         // wait more than operation timeout
         sleepAtLeastMillis(callTimeoutMillis * 3);
         assertTrue(future.get());
+    }
+
+    @Test
+    public void isCallTimedOut_whenCallTimeoutElapsed() {
+        HazelcastInstance hz = createHazelcastInstance();
+        Operation op = operationInvokedMillisAgo(hz, 10_000);
+        OperationAccessor.setCallTimeout(op, 1_000);
+
+        assertTrue(getOperationService(hz).isCallTimedOut(op));
+    }
+
+    @Test
+    public void isCallTimedOut_whenCallTimeoutIsInfinite() {
+        HazelcastInstance hz = createHazelcastInstance();
+        Operation op = operationInvokedMillisAgo(hz, 10_000);
+        OperationAccessor.setCallTimeout(op, Long.MAX_VALUE);
+
+        assertFalse(getOperationService(hz).isCallTimedOut(op));
+    }
+
+    private static Operation operationInvokedMillisAgo(HazelcastInstance hz, long millis) {
+        Operation op = new DummyOperation();
+        long now = getNode(hz).getClusterService().getClusterClock().getClusterTime();
+        OperationAccessor.setInvocationTime(op, now - millis);
+        return op;
     }
 
     public static class SleepingOperation extends Operation {
