@@ -74,6 +74,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -1290,8 +1291,25 @@ public class RaftNodeImpl implements RaftNode {
             return true;
         }
 
-        state.commitIndex(snapshot.index());
+        // A snapshot matching the local log must be fast-forwarded by the caller before the services are reset.
+        assert !isSnapshotMatchingLog(snapshot) : "Snapshot matching the local log must be fast-forwarded [index="
+                + snapshot.index() + ", term=" + snapshot.term() + "]";
+
+        // InstallSnapshot discards the uncommitted entries of the local log. Those up to the snapshot's
+        // index are covered by the snapshot, and those after it are not in the leader's log. The group command
+        // pre-applied from any of them is reverted. One of them may already be committed on the leader. The snapshot's
+        // group members, restored below, include its effect.
         RaftLog raftLog = state.log();
+        if (raftLog.lastLogOrSnapshotIndex() > commitIndex) {
+            List<LogEntry> uncommitted = raftLog.deleteEntriesFrom(commitIndex + 1);
+            logger.warning("Discarded " + uncommitted.size() + " uncommitted entries to install " + snapshot);
+            // Only the entries after the snapshot's index are known not to be committed. The futures of the entries
+            // up to it are completed below as indeterminate, since some of them may be committed on the leader.
+            invalidateFuturesFrom(snapshot.index() + 1);
+            revertPreAppliedRaftGroupCmd(uncommitted);
+        }
+
+        state.commitIndex(snapshot.index());
         int truncated = raftLog.setSnapshot(snapshot);
         raftLog.flush();
 
@@ -1301,10 +1319,9 @@ public class RaftNodeImpl implements RaftNode {
 
         raftIntegration.restoreSnapshot(snapshot);
 
-        // If I am installing a snapshot, it means I am still present in the last member list,
-        // but it is possible that the last entry I appended before the snapshot could be a membership change.
-        // Because of this, I need to update my status.
-        // Nevertheless, I may not be present in the restored member list, which is ok.
+        // The group command pre-applied from an uncommitted entry was reverted above, together with the status
+        // it set, so the status is already ACTIVE here. It is set again only as a safeguard. The local member may
+        // not be present in the restored member list, which is ok.
 
         setStatus(ACTIVE);
         state.restoreGroupMembers(snapshot.groupMembersLogIndex(), snapshot.groupMembers());
@@ -1315,6 +1332,40 @@ public class RaftNodeImpl implements RaftNode {
         logger.info(snapshot + " is installed.");
 
         return true;
+    }
+
+    /**
+     * Returns true if the local log has an entry at the snapshot's index with the snapshot's term.
+     * The snapshot then describes a prefix of the local log, which is already committed on the leader.
+     */
+    boolean isSnapshotMatchingLog(LogEntry snapshot) {
+        LogEntry entry = state.log().getLogEntry(snapshot.index());
+        return entry != null && entry.term() == snapshot.term();
+    }
+
+    /**
+     * Reverts the effects of the pre-applied uncommitted Raft group command among the given entries,
+     * which are removed from the Raft log.
+     */
+    public void revertPreAppliedRaftGroupCmd(List<LogEntry> entries) {
+        // I am reverting appended-but-uncommitted entries and there can be at most 1 uncommitted Raft command...
+        List<LogEntry> commandEntries = new ArrayList<>();
+        for (LogEntry entry : entries) {
+            if (entry.operation() instanceof RaftGroupCmd) {
+                commandEntries.add(entry);
+            }
+        }
+
+        assert commandEntries.size() <= 1 : "Reverted command entries: " + commandEntries;
+
+        for (LogEntry entry : entries) {
+            if (entry.operation() instanceof DestroyRaftGroupCmd) {
+                setStatus(ACTIVE);
+            } else if (entry.operation() instanceof UpdateRaftGroupMembersCmd) {
+                setStatus(ACTIVE);
+                resetGroupMembers();
+            }
+        }
     }
 
     private void initRestoredState() {
