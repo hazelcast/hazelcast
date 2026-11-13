@@ -33,12 +33,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.Set;
+
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallerAddress;
 import static com.hazelcast.test.Accessors.getNode;
 import static java.util.Collections.singleton;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -83,6 +87,37 @@ public class OperationParkerImpl_populateTest extends HazelcastTestSupport {
 
         assertEquals(singleton(thatAddress), callsPerMember.addresses());
         assertArrayEquals(new long[]{100}, callsPerMember.toOpControl(thatAddress).runningOperations());
+    }
+
+    @Test
+    public void populate_whenCallerMemberLeft_thenParkedOperationNotReported() {
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
+        HazelcastInstance owner = factory.newHazelcastInstance();
+        // a third member keeps the cluster alive once the listening member leaves
+        factory.newHazelcastInstance();
+        HazelcastInstance listening = factory.newHazelcastInstance();
+
+        OperationParkerImpl operationParker = (OperationParkerImpl) getNode(owner).nodeEngine.getOperationParker();
+        Address ownerAddress = getNode(owner).nodeEngine.getThisAddress();
+        Address listeningAddress = getNode(listening).nodeEngine.getThisAddress();
+
+        // a ReliableTopic listener parks a ReadManyOperation without timeout on the ringbuffer owner,
+        // so pick a topic whose ringbuffer partition is owned by 'owner'
+        String topicName = "topic@" + generateKeyOwnedBy(owner);
+        listening.getReliableTopic(topicName).addMessageListener(message -> { });
+        assertTrueEventually(() -> assertTrue(populate(operationParker, ownerAddress).contains(listeningAddress)));
+
+        listening.shutdown();
+
+        // the parked operation is only invalidated, it stays in the queue until the next publish
+        assertTrueEventually(() -> assertFalse(populate(operationParker, ownerAddress).contains(listeningAddress)));
+        assertTrue(operationParker.getTotalParkedOperationCount() > 0);
+    }
+
+    private static Set<Address> populate(OperationParkerImpl operationParker, Address thisAddress) {
+        CallsPerMember callsPerMember = new CallsPerMember(thisAddress);
+        operationParker.populate(callsPerMember);
+        return callsPerMember.addresses();
     }
 
     private static class WaitNotifyKeyImpl implements WaitNotifyKey {
