@@ -574,6 +574,70 @@ public class SnapshotTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void when_prevLogEntryIsTruncatedByFollowersSnapshot_then_followerCatchesUpWithoutLivelock()
+            throws ExecutionException, InterruptedException {
+        // The new leader snapshots at 100 and keeps the entries from 95, since the
+        // follower's match index is 95. The follower snapshots at 105 and keeps only
+        // the last 10 entries, 96-105.
+        int commitIndexAdvanceCount = 100;
+        long lastOldTermIndex = 95;
+        long followerSnapshotIndex = 105;
+        group = newGroup(3, new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCount));
+        group.start();
+
+        RaftNodeImpl oldLeader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(oldLeader.getLocalMember());
+        RaftNodeImpl newLeader = followers[0];
+        RaftNodeImpl follower = followers[1];
+
+        // entries 1-95 are in the old leader's term
+        for (int i = 0; i < lastOldTermIndex; i++) {
+            oldLeader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        oldLeader.transferLeadership(newLeader.getLocalMember()).get();
+
+        // the new leader learns that the follower has everything up to 95, so its next index for the follower is 96
+        assertTrueEventually(() -> {
+            assertEquals(newLeader.getLocalMember(), getLeaderMember(newLeader));
+            assertEquals(lastOldTermIndex, getMatchIndex(newLeader, follower.getLocalMember()));
+        });
+
+        // the follower's acks are lost from now on, so the new leader's match index for it stays at 95
+        group.dropMessagesToMember(follower.getLocalMember(), newLeader.getLocalMember(), AppendSuccessResponse.class);
+        // the follower misses entries 96-105 while the new leader commits them
+        group.dropMessagesToMember(newLeader.getLocalMember(), follower.getLocalMember(), AppendRequest.class);
+
+        // entries 96-105 are in the new term, and the new leader snapshots at 100 keeping entry 95
+        for (long i = lastOldTermIndex; i < followerSnapshotIndex; i++) {
+            newLeader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        assertEquals(commitIndexAdvanceCount, getSnapshotEntry(newLeader).index());
+
+        // the follower receives entries 96-105 with commit index 105 in one append,
+        // so it takes its own snapshot at 105 in the new term and truncates entry 95
+        group.allowMessagesToMember(newLeader.getLocalMember(), follower.getLocalMember(), AppendRequest.class);
+
+        // wait until the follower has processed the append, so its ack for 105 is lost
+        // and the leader keeps sending appends with the previous entry at 95
+        assertTrueEventually(() -> assertEquals(followerSnapshotIndex, getSnapshotEntry(follower).index()));
+
+        group.allowMessagesToMember(follower.getLocalMember(), newLeader.getLocalMember(), AppendSuccessResponse.class);
+
+        // the previous entry at 95 is committed on the follower and inside its own snapshot,
+        // so the follower must not reject the leader's appends, and it catches up with the new entry
+        newLeader.replicate(new ApplyRaftRunnable("val" + followerSnapshotIndex)).get();
+
+        // the follower accepts the leader's appends again, so the leader receives its
+        // ack for the new entry, and the follower learns that the entry is committed
+        assertTrueEventually(() -> {
+            assertEquals(followerSnapshotIndex + 1, getCommitIndex(follower));
+            assertEquals(followerSnapshotIndex + 1, getMatchIndex(newLeader, follower.getLocalMember()));
+        }, 30);
+    }
+
+    @Test
     public void testMembershipChangeBlocksSnapshotBug() throws ExecutionException, InterruptedException {
         // The comments below show how the code behaves before the mentioned bug is fixed.
 
