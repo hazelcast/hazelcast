@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.eviction.EvictionConfiguration;
 import com.hazelcast.internal.eviction.EvictionStrategyType;
@@ -254,6 +255,11 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
         out.writeString(evictionPolicy.toString());
         out.writeString(comparatorClassName);
         out.writeObject(comparator);
+
+        // RU_COMPAT_5_7
+        if (out.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+            out.writeBoolean(sizeConfigured);
+        }
     }
 
     @Override
@@ -263,6 +269,11 @@ public class EvictionConfig implements EvictionConfiguration, IdentifiedDataSeri
         evictionPolicy = EvictionPolicy.valueOf(in.readString());
         comparatorClassName = in.readString();
         comparator = ConfigDeserializationUtil.readObject(in, getClass(), "comparator");
+
+        // RU_COMPAT_5_7
+        if (in.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+            sizeConfigured = in.readBoolean();
+        }
     }
 
     @Override
