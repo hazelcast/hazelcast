@@ -504,16 +504,6 @@
                 <artifactId>woodstox-core</artifactId>
                 <version>7.3.0</version>
             </dependency>
-            <!--
-                Addresses convergence between:
-                - `com.fasterxml.woodstox:woodstox-core`
-                - com.google.cloud:google-cloud-storage (transitively via `com.google.cloud.bigdataoss:gcs-connector`)
-            -->
-            <dependency>
-                <groupId>org.codehaus.woodstox</groupId>
-                <artifactId>stax2-api</artifactId>
-                <version>4.2.2</version>
-            </dependency>
             <dependency>
                 <groupId>org.apache.avro</groupId>
                 <artifactId>avro</artifactId>
@@ -554,17 +544,6 @@
                 <artifactId>jline</artifactId>
                 <version>${jline.version}</version>
                 <classifier>jdk8</classifier>
-            </dependency>
-            <!--
-                Addresses convergence between:
-                - `org.apache.calcite:calcite-core`
-                - `com.google.cloud:google-cloud-storage` (transitively from `com.google.cloud.bigdataoss:gcsio`)
-                - `org.postgresql:postgresql` (transitively from `io.debezium:debezium-connector-postgres`)
-            -->
-            <dependency>
-                <groupId>org.checkerframework</groupId>
-                <artifactId>checker-qual</artifactId>
-                <version>3.55.1</version>
             </dependency>
             <!--
                 Addresses convergence between:
