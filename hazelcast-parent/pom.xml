@@ -796,6 +796,11 @@
                 <artifactId>bcprov-jdk18on</artifactId>
                 <version>1.85.2</version>
             </dependency>
+            <dependency>
+                <groupId>net.openhft</groupId>
+                <artifactId>affinity</artifactId>
+                <version>2026.2</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
