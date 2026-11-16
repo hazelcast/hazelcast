@@ -25,12 +25,16 @@ public class MapPermission extends InstancePermission {
     private static final int LOCK = 64;
     private static final int INDEX = 128;
     private static final int INTERCEPT = 256;
-    private static final int ALL = CREATE | DESTROY | PUT | REMOVE | READ | LISTEN | LOCK | INDEX | INTERCEPT;
+    private static final int AGGREGATE = 1 << 9;
+    private static final int PROJECTION = 1 << 10;
+    private static final int ALL = CREATE | DESTROY | PUT | REMOVE | READ | LISTEN
+            | LOCK | INDEX | INTERCEPT | AGGREGATE | PROJECTION;
 
     public MapPermission(String name, String... actions) {
         super(name, actions);
     }
 
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     protected int initMask(String[] actions) {
         int mask = NONE;
@@ -57,6 +61,10 @@ public class MapPermission extends InstancePermission {
                 mask |= INDEX;
             } else if (ActionConstants.ACTION_INTERCEPT.equals(action)) {
                 mask |= INTERCEPT;
+            } else if (ActionConstants.ACTION_AGGREGATE.equals(action)) {
+                mask |= AGGREGATE;
+            } else if (ActionConstants.ACTION_PROJECTION.equals(action)) {
+                mask |= PROJECTION;
             }
         }
         return mask;
