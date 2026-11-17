@@ -1536,8 +1536,6 @@
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
                 <attribution.skip>false</attribution.skip>
-                <!-- For _accurate_ SBOM generation, OS+EE must be built in a single reactor - this is not yet the case for release, so until then, don't execute -->
-                <cyclonedx.skip>true</cyclonedx.skip>
             </properties>
             <build>
                 <plugins>
