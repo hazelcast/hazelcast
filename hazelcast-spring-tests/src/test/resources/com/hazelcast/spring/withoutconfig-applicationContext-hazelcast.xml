@@ -24,8 +24,14 @@
 
     <hz:hazelcast id="instance">
         <hz:config>
+            <hz:cluster-name>withoutconfig-applicationContext</hz:cluster-name>
             <!-- Choose a random port -->
-            <hz:network port="0"/>
+            <hz:network port="0">
+                <hz:join>
+                    <hz:multicast enabled="false"/>
+                    <hz:auto-detection enabled="false"/>
+                </hz:join>
+            </hz:network>
         </hz:config>
 
     </hz:hazelcast>
