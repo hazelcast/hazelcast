@@ -14,11 +14,11 @@ runs:
       id: get-maintenance-versions
       run: echo "versions=['5.6', '5.7']" >> ${GITHUB_OUTPUT}
 
-    - shell: ${{ env.shell }}
+    - shell: bash
       id: get-extended-support-plus-versions
       run: echo "versions=['5.3', '5.4', '5.5']" >> ${GITHUB_OUTPUT}
 
-    - shell: ${{ env.shell }}
+    - shell: bash
       id: get-maintenance-versions-including-extended-support-plus
       run: |
         echo "versions=$(jq --compact-output --null-input \
