@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.tpcengine.util.OS;
@@ -29,8 +30,6 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.connector.file.FileSqlConnector;
-import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -885,17 +884,17 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
     }
 
     public static class SqlMapping extends SqlStructure<SqlMapping> {
-        private static final Map<Class<? extends SqlConnector>, String> TYPES = Map.of(
-                FileSqlConnector.class, FileSqlConnector.TYPE_NAME,
-                IMapSqlConnector.class, IMapSqlConnector.TYPE_NAME,
-                KafkaSqlConnector.class, KafkaSqlConnector.TYPE_NAME
-        );
         public String externalName;
-        public final String type;
+        public String type;
 
         public SqlMapping(String name, Class<? extends SqlConnector> connector) {
             super(name);
-            type = "TYPE " + TYPES.get(connector);
+            try {
+                SqlConnector instance = ClassLoaderUtil.newInstance(this.getClass().getClassLoader(), connector);
+                type = "TYPE " + instance.typeName();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
         }
 
         public SqlMapping(String name, String dataConnection) {
@@ -910,13 +909,16 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         @Override
         protected void create(HazelcastInstance instance, boolean replace, boolean ifNotExists) {
-            instance.getSql().execute("CREATE " + (replace ? "OR REPLACE " : "") + "MAPPING "
-                    + (ifNotExists ? "IF NOT EXISTS " : "") + name + " "
-                    + (externalName != null ? "EXTERNAL NAME " + externalName + " " : "")
-                    + (fields.isEmpty() ? "" : "(" + String.join(", ", fields) + ") ")
-                    + type + " OPTIONS (" + options.entrySet().stream()
-                            .map(e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(", "))
-                    + ")");
+            String sql =
+                "CREATE " + (replace ? "OR REPLACE " : "") + "MAPPING " + (ifNotExists ? "IF NOT EXISTS " : "") + name + " " + (
+                    externalName != null ? "EXTERNAL NAME " + externalName + " " : "") + (fields.isEmpty() ? "" : "("
+                                                                                                                      + String.join(
+                    ", ", fields) + ") ") + type + " OPTIONS (" + options.entrySet().stream().map(
+                    e -> "'" + e.getKey() + "'='" + e.getValue() + "'").collect(joining(", ")) + ")";
+            if (SUPPORT_LOGGER.isFineEnabled()) {
+                SUPPORT_LOGGER.fine("Executing: " + sql);
+            }
+            instance.getSql().executeUpdate(sql);
         }
 
         public Type toTypeTree() {

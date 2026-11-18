@@ -25,6 +25,7 @@ import com.hazelcast.map.impl.recordstore.OffloadedOperations;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationexecutor.OperationExecutor;
+import com.hazelcast.spi.impl.operationexecutor.slowoperationdetector.TaskDescriptor;
 import com.hazelcast.spi.impl.operationservice.Offload;
 
 import javax.annotation.Nullable;
@@ -56,7 +57,7 @@ import static java.lang.Thread.currentThread;
  * same chain.
  */
 public class StepRunner extends Offload
-        implements PartitionSpecificRunnable {
+        implements PartitionSpecificRunnable, TaskDescriptor {
 
     /**
      * Specific to partition threads.
@@ -379,5 +380,22 @@ public class StepRunner extends Offload
     @Override
     public int getPartitionId() {
         return partitionId;
+    }
+
+    @Override
+    public String getTaskDescription() {
+        StepSupplier supplier = stepSupplier;
+        MapOperation operation = supplier == null ? null : supplier.getOperation();
+        if (operation == null) {
+            return "partitionId=" + partitionId;
+        }
+        return "operation=" + operation.getClass().getName()
+                + ", map=" + operation.getName()
+                + ", partitionId=" + partitionId;
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "{" + getTaskDescription() + "}";
     }
 }

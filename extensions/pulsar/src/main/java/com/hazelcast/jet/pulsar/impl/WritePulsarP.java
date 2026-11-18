@@ -47,13 +47,11 @@ import org.apache.pulsar.client.api.transaction.Transaction;
 import org.apache.pulsar.client.api.transaction.TransactionCoordinatorClient;
 import org.apache.pulsar.client.api.transaction.TransactionCoordinatorClientException;
 import org.apache.pulsar.client.api.transaction.TxnID;
-import org.apache.pulsar.shade.org.apache.pulsar.client.impl.PulsarClientImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serial;
-import java.io.Serializable;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -86,7 +84,6 @@ import static java.util.stream.Collectors.joining;
  */
 public class WritePulsarP<E, M> extends AbstractProcessor {
     private static final int NUM_DEDUPLICATION_CHECK = 5;
-    private static final int MAX_IN_FLY_MESSAGES = 1000;
     private ILogger logger;
     private final PulsarClient client;
     private Producer<M> producer;
@@ -99,6 +96,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
     private final FunctionEx<? super E, Long> extractTimestampFn;
 
     private final PulsarSinkConfig<E, M> pulsarConfig;
+    private final int maxInFlightMessages;
     private UnboundedTransactionsProcessorUtility<PulsarTransactionId, PulsarTransaction> transactionUtility;
     private volatile Throwable error;
 
@@ -107,6 +105,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
     public WritePulsarP(PulsarSinkConfig<E, M> pulsarConfig, PulsarClient client) {
         this.pulsarConfig = pulsarConfig;
+        this.maxInFlightMessages = pulsarConfig.getMaxInFlightMessages();
         this.extractValueFn = pulsarConfig.getExtractValueFn();
         this.extractKeyFn = pulsarConfig.getExtractKeyFn();
         this.extractPropertiesFn = pulsarConfig.getExtractPropertiesFn();
@@ -224,10 +223,9 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             while ((element = (E) inbox.peek()) != null) {
                 checkError();
                 int currentInFly = inFlightMessages.get();
-                if (currentInFly >= MAX_IN_FLY_MESSAGES) {
+                if (currentInFly >= maxInFlightMessages) {
                     return;
                 }
-                inFlightMessages.incrementAndGet();
                 M value;
                 String key;
                 if (useCombinedFunction) {
@@ -281,12 +279,14 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             builder = builder.key(key);
         }
 
-        builder.sendAsync().whenComplete((result, e) -> {
-            if (e != null) {
-                error = e;
-            }
-            inFlightMessages.decrementAndGet();
-        });
+        builder.sendAsync()
+               .whenComplete((result, e) -> {
+                   if (e != null) {
+                       error = e;
+                   }
+                   inFlightMessages.decrementAndGet();
+               });
+        inFlightMessages.incrementAndGet();
     }
 
     @Override
@@ -349,15 +349,16 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         }
     }
 
-    private static class PulsarTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, Serializable {
+    private static class PulsarTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, DataSerializable {
 
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        private final int processorIndex;
-        private final String pulsarId;
-        private final int hashCode;
+        private int processorIndex;
+        private String pulsarId;
         private TxnID txId;
+
+        // used by DataSerializable
+        @SuppressWarnings("unused")
+        PulsarTransactionId() {
+        }
 
         PulsarTransactionId(Context context, int processorIndex) {
             this.processorIndex = processorIndex;
@@ -366,7 +367,6 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
             this.pulsarId = "jet.job-" + idToString(jobId) + '.' + sanitize(jobName) + '.' + sanitize(context.vertexName()) + '.'
                                 + processorIndex;
-            hashCode = Objects.hash(jobName, pulsarId, processorIndex);
         }
 
         @Override
@@ -378,9 +378,8 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         public String toString() {
             return "PulsarTransactionId{" +
                        "processorIndex=" + processorIndex +
-                       ", txId=" + txId +
+                       (txId == null ? "" : ", txId=" + txId) +
                        ", pulsarId='" + pulsarId + '\'' +
-                       ", hashCode=" + hashCode +
                        '}';
         }
 
@@ -394,14 +393,13 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             }
             PulsarTransactionId that = (PulsarTransactionId) o;
             return processorIndex == that.processorIndex
-                       && hashCode == that.hashCode
                        && Objects.equals(pulsarId, that.pulsarId)
                        && Objects.equals(txId, that.txId);
         }
 
         @Override
         public int hashCode() {
-            return hashCode;
+            return Objects.hash(pulsarId, processorIndex, txId);
         }
 
         private static String sanitize(String s) {
@@ -409,6 +407,21 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
                 return "";
             }
             return s.replaceAll("[^\\p{Alnum}.\\-_$#/{}\\[\\]]", "_");
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(processorIndex);
+            out.writeString(pulsarId);
+            out.writeLong(txId.getMostSigBits());
+            out.writeLong(txId.getLeastSigBits());
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            processorIndex = in.readInt();
+            pulsarId = in.readString();
+            txId = new TxnID(in.readLong(), in.readLong());
         }
     }
 
@@ -419,8 +432,8 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         if (transactionId == null || transactionId.txId == null) {
             return;
         }
-        PulsarClientImpl impl = (PulsarClientImpl) CloseablePulsarClient.unwrap(client);
-        TransactionCoordinatorClient tcClient = impl.getTcClient();
+        PulsarClient unwrapped = CloseablePulsarClient.unwrap(client);
+        TransactionCoordinatorClient tcClient = unwrapped.getTransactionCoordinatorClient();
         try {
             tcClient.commit(transactionId.txId);
         } catch (TransactionCoordinatorClientException e) {
@@ -459,7 +472,6 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
         @Override
         public void begin() {
             if (!txnInitialized) {
-                logger.fine("beginning transaction %s", transactionId);
                 startTransactionQuietly();
                 txnInitialized = true;
             }
@@ -491,6 +503,7 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
                                     .withTransactionTimeout(transactionTimeout.toMillis(), TimeUnit.MILLISECONDS)
                                     .build().get();
                 transactionId.txId = transaction.getTxnID();
+                logger.fine("transaction %s is started", id());
             } catch (Exception e) {
                 throw wrapFailure(e);
             }

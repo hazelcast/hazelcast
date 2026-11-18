@@ -18,10 +18,10 @@ package com.hazelcast.cp.internal.datastructures.snapshot;
 
 import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefService;
 import com.hazelcast.cp.internal.raft.ChunkedSnapshotAwareService;
+import com.hazelcast.cp.internal.raft.DataChunkGroup;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftIntegration;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotChunk;
-import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.servicemanager.ServiceInfo;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -249,17 +249,6 @@ public final class ChunkUtil {
         }
 
         return chunk;
-    }
-
-    /**
-     * Helper method to extract list of chunks from a {@link SnapshotEntry}.
-     *
-     * @param snapshotEntry the snapshot entry
-     * @return chunk list of a snapshot
-     * @see #optimizeChunks(List, List)
-     */
-    public static List<SnapshotChunk> extractChunksFrom(@Nonnull SnapshotEntry snapshotEntry) {
-        return ((List<SnapshotChunk>) snapshotEntry.operation());
     }
 
     /**

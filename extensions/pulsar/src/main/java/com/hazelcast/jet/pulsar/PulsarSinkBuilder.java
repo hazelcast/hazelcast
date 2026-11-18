@@ -138,6 +138,23 @@ public final class PulsarSinkBuilder<E, M> {
     }
 
     /**
+     * Sets the maximum number of messages awaiting acknowledgement from Pulsar
+     * per processor. The processor pauses consuming input when this limit is
+     * reached and resumes as messages are acknowledged.
+     * <p>
+     * The default value is 1000.
+     *
+     * @param maxInFlightMessages the maximum number of in-flight messages per processor
+     * @throws IllegalArgumentException if the limit is not positive
+     * @return this instance for fluent API
+     */
+    @Nonnull
+    public PulsarSinkBuilder<E, M> maxInFlightMessages(int maxInFlightMessages) {
+        config.setMaxInFlightMessages(maxInFlightMessages);
+        return this;
+    }
+
+    /**
      * @param extractKeyFn extracts the message key from the emitted items.
      */
     @Nonnull

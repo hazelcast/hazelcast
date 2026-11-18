@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.spi.annotation.NamespacesSupported;
 
@@ -39,31 +38,34 @@ import java.util.Map;
  * the distributed map, and they will stay in memory until they are explicitly
  * removed or implicitly evicted (if eviction is configured).
  * <p>
- * MapLoader implementations are executed by a partition thread, therefore care
- * should be taken not to block the thread with an expensive operation or an
- * operation that may potentially never return, the partition thread does not
- * time out the operation. While the partition thread is executing the
- * MapLoader it is unable to respond to requests for data on any other
- * structure that may reside in the same partition, or to respond to other
- * partitions mapped to the same partition thread. For example a very slow
- * MapLoader for one map could block a request for data on another map, or even
- * a queue. It is therefore strongly recommended not to use MapLoader to call
- * across a WAN or to a system which will take on average longer than a few
- * milliseconds to respond.
+ * Do not block a MapLoader with calls that may never return, as Hazelcast
+ * does not time out the call. A MapLoader should only load data for its own
+ * map; calling a map that has a MapLoader or MapStore from a MapLoader
+ * (including its own map) can deadlock.
  * <p>
- * MapLoaders should not be used to perform cascading operations on other data
- * structures via a {@link HazelcastInstance}, the MapLoader should only
- * concern itself with the operation on the assigned map. If the MapLoader
- * attempts to access another data structure on a different partition to the
- * key used in the MapLoader, a {@link java.lang.IllegalThreadStateException}
- * is thrown. A MapLoader can only interact with other data structures that
- * reside on the same partition.
- * <p>
- * If a blocked partition thread is called from a Hazelcast Client the caller
- * will also block indefinitely, for example
- * {@link IMap#get(Object)}. If the same call is made from
- * another cluster member the operation will eventually time out with an
- * {@link OperationTimeoutException}.
+ * The initial load and the {@code IMap.loadAll} methods always call
+ * {@link #loadAll(Collection)} outside partition threads. For other map
+ * operations, the thread that calls the MapLoader depends on
+ * {@link com.hazelcast.config.MapStoreConfig#setOffload(boolean)}:
+ * <ul>
+ * <li>With offload enabled (the default), the MapLoader runs on a thread pool
+ * shared by all maps. Most other operations on the same partition of the map
+ * wait for it, and a slow MapLoader can delay MapStore calls of other maps by
+ * occupying all available threads. A blocking call to a map with an
+ * offloaded MapStore, such as a get of a key not in memory, waits for a
+ * thread of the same pool; a call to the same partition of the MapLoader's
+ * own map never runs. Offloaded MapStore operations never time out, so once
+ * every thread in the pool is blocked this way, the pool deadlocks
+ * permanently.
+ * <li>With offload disabled, the MapLoader runs on a partition thread, which
+ * meanwhile cannot serve other partitions or data structures handled by that
+ * thread, such as another map or a queue, so avoid calling across a WAN or
+ * to a system that takes more than a few milliseconds to respond. A
+ * synchronous call to a different partition throws
+ * {@link java.lang.IllegalThreadStateException}. A Hazelcast client calling a
+ * blocked partition thread blocks indefinitely; a call from another member
+ * eventually fails with {@link OperationTimeoutException}.
+ * </ul>
  *
  * @param <K> type of the MapLoader key
  * @param <V> type of the MapLoader value

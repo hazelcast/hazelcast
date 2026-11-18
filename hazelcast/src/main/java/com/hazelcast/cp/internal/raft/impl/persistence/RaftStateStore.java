@@ -19,6 +19,7 @@ package com.hazelcast.cp.internal.raft.impl.persistence;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
+import com.hazelcast.cp.internal.raft.impl.log.SnapshotChunk;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 
 import javax.annotation.Nonnull;
@@ -133,7 +134,7 @@ public interface RaftStateStore extends Closeable {
      * @see #persistEntry(LogEntry)
      * @see RaftAlgorithmConfig
      */
-    void persistSnapshotChunk(Object snapshotChunk) throws IOException;
+    void persistSnapshotChunk(@Nonnull SnapshotChunk snapshotChunk) throws IOException;
 
     /**
      * Deletes all snapshot chunks associated with the given snapshot index from disk storage.

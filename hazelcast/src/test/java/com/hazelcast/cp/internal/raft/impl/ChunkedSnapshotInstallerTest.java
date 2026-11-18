@@ -41,7 +41,6 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
-import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.extractChunksFrom;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -157,7 +156,7 @@ public class ChunkedSnapshotInstallerTest {
 
         ArgumentCaptor<SnapshotEntry> snapshotCaptor = ArgumentCaptor.forClass(SnapshotEntry.class);
         verify(raftNode).installSnapshot(snapshotCaptor.capture());
-        List<SnapshotChunk> installedChunks = extractChunksFrom(snapshotCaptor.getValue());
+        List<SnapshotChunk> installedChunks = snapshotCaptor.getValue().snapshotChunks();
         assertEquals(3, installedChunks.size());
         assertSame(chunk0, installedChunks.get(0));
         assertSame(chunk1, installedChunks.get(1));

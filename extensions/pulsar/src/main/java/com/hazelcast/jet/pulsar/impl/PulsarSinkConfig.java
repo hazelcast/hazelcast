@@ -17,6 +17,7 @@ package com.hazelcast.jet.pulsar.impl;
 
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -29,6 +30,7 @@ import java.io.Serializable;
 import java.time.Duration;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -40,6 +42,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
     @SuppressWarnings("rawtypes")
     private static final FunctionEx RETURN_NULL = anything -> null;
     private static final Duration DEFAULT_TRANSACTION_TIMEOUT = Duration.ofMinutes(1);
+    private static final int DEFAULT_MAX_IN_FLIGHT_MESSAGES = EdgeConfig.DEFAULT_QUEUE_SIZE;
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -52,6 +55,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
     private Duration transactionTimeout;
     private ConsumerEx<ProducerBuilder<M>> producerCustomizer = ConsumerEx.noop();
     private boolean transactional = true;
+    private int maxInFlightMessages = DEFAULT_MAX_IN_FLIGHT_MESSAGES;
 
     // needed for serialization
     @SuppressWarnings("unused")
@@ -67,6 +71,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         transactionTimeout = other.transactionTimeout;
         producerCustomizer = other.producerCustomizer;
         transactional = other.transactional;
+        maxInFlightMessages = other.maxInFlightMessages;
         setConnectionSupplier(other.getConnectionSupplier());
         setDataConnectionRef(other.getDataConnectionRef());
         setOptions(other.getOptions());
@@ -128,6 +133,14 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         this.transactional = transactional;
     }
 
+    public int getMaxInFlightMessages() {
+        return maxInFlightMessages;
+    }
+
+    public void setMaxInFlightMessages(int maxInFlightMessages) {
+        this.maxInFlightMessages = checkPositive("maxInFlightMessages", maxInFlightMessages);
+    }
+
     public FunctionEx<? super E, Map.Entry<String, M>> getExtractKeyAndValueFn() {
         return extractKeyAndValueFn;
     }
@@ -157,6 +170,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         }
         out.writeObject(producerCustomizer);
         out.writeBoolean(transactional);
+        out.writeInt(maxInFlightMessages);
     }
 
     @Override
@@ -175,6 +189,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         }
         producerCustomizer = in.readObject();
         transactional = in.readBoolean();
+        maxInFlightMessages = in.readInt();
     }
 
     public Duration getTransactionTimeout() {

@@ -53,6 +53,9 @@ final class SlowOperationLog {
     SlowOperationLog(String stackTrace, Object task) {
         if (task instanceof Operation op) {
             this.operation = OperationDescriptors.toOperationDesc(op);
+        } else if (task instanceof TaskDescriptor taskDescriptor) {
+            this.operation = task.getClass().getName()
+                    + " (" + taskDescriptor.getTaskDescription() + ")";
         } else {
             this.operation = task.getClass().getName();
         }

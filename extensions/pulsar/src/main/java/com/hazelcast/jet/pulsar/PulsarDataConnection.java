@@ -39,12 +39,14 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static java.util.Collections.emptyList;
 import static org.apache.commons.lang3.StringUtils.isBlank;
@@ -56,13 +58,14 @@ import static org.apache.commons.lang3.StringUtils.isBlank;
  */
 public class PulsarDataConnection extends DataConnectionBase {
     private static final ILogger LOG = Logger.getLogger(PulsarDataConnection.class);
-    private static final Duration CLOSE_TIMEOUT = Duration.ofMinutes(5);
+    private static final long DEFAULT_CLOSE_TIMEOUT_SECONDS = 300L;
     private volatile ConcurrentMemoizingSupplier<PulsarClient> pulsarClientSup;
     private final String brokerUrl;
     private final String serviceHttpUrl;
     private final String namespace;
     private final String tenant;
     private final boolean enableTransactions;
+    private final Duration closeTimeout;
     private volatile boolean destroyed;
 
     public PulsarDataConnection(DataConnectionConfig config) {
@@ -78,6 +81,9 @@ public class PulsarDataConnection extends DataConnectionBase {
         tenant = config.getProperty(Properties.TENANT);
         namespace = config.getProperty(Properties.NAMESPACE);
         enableTransactions = Boolean.parseBoolean(config.getProperty(Properties.ENABLE_TRANSACTIONS, "false"));
+        closeTimeout = Duration.ofSeconds(checkPositive(Properties.CLOSE_TIMEOUT_SECONDS,
+                Long.parseLong(Objects.requireNonNull(config.getProperty(Properties.CLOSE_TIMEOUT_SECONDS,
+                        String.valueOf(DEFAULT_CLOSE_TIMEOUT_SECONDS))))));
         if (config.isShared()) {
             pulsarClientSup = memoizeConcurrent(
                     () -> new CloseablePulsarClient(createClient(),
@@ -120,6 +126,12 @@ public class PulsarDataConnection extends DataConnectionBase {
          *     {@link com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} processing guarantee.
          */
         public static final String ENABLE_TRANSACTIONS = "enableTransactions";
+        /**
+         * How long {@link PulsarDataConnection#destroy()} waits for the underlying shared
+         * {@link PulsarClient} to close gracefully before falling back to
+         * {@link PulsarClient#shutdown()}. Optional, in seconds; defaults to 5 minutes.
+         */
+        public static final String CLOSE_TIMEOUT_SECONDS = "closeTimeoutSeconds";
     }
 
     /**
@@ -228,7 +240,7 @@ public class PulsarDataConnection extends DataConnectionBase {
             if (client != null) {
                 PulsarClient unwrapped = ((CloseablePulsarClient) client).unwrap();
                 try {
-                    unwrapped.closeAsync().get(CLOSE_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+                    unwrapped.closeAsync().get(closeTimeout.toMillis(), TimeUnit.MILLISECONDS);
                 } catch (ExecutionException | InterruptedException | TimeoutException e) {
                     if (e instanceof InterruptedException) {
                         Thread.currentThread().interrupt();

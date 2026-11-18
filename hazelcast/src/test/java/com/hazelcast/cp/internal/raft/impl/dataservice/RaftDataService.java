@@ -17,8 +17,8 @@
 package com.hazelcast.cp.internal.raft.impl.dataservice;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.datastructures.snapshot.DataChunkGroup;
 import com.hazelcast.cp.internal.raft.ChunkedSnapshotAwareService;
+import com.hazelcast.cp.internal.raft.DataChunkGroup;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;

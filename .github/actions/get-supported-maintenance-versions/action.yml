@@ -1,27 +1,28 @@
 name: 'Get Supported maintenance versions'
+description: Gets Hazelcast supported and extended support plus maintenance versions
 
 outputs:
   # Returns a sorted, unique array of major.minor versions
   versions:
-    value: ${{ steps.get-maintenance-versions.outputs.versions }}
+    value: ${{ steps.get-versions.outputs.versions }}
   versions-including-extended-support-plus:
-    value: ${{ steps.get-maintenance-versions-including-extended-support-plus.outputs.versions }}
+    value: ${{ steps.get-versions.outputs.versions-including-extended-support-plus }}
 
 runs:
   using: composite
   steps:
     - shell: bash
-      id: get-maintenance-versions
-      run: echo "versions=['5.6', '5.7']" >> ${GITHUB_OUTPUT}
-
-    - shell: ${{ env.shell }}
-      id: get-extended-support-plus-versions
-      run: echo "versions=['5.3', '5.4', '5.5']" >> ${GITHUB_OUTPUT}
-
-    - shell: ${{ env.shell }}
-      id: get-maintenance-versions-including-extended-support-plus
+      id: get-versions
       run: |
-        echo "versions=$(jq --compact-output --null-input \
-          --argjson maintenance '${{ steps.get-maintenance-versions.outputs.versions }}' \
-          --argjson extended_support_plus '${{ steps.get-extended-support-plus-versions.outputs.versions }}' \
-          '$maintenance + $extended_support_plus | unique')" >> "${GITHUB_OUTPUT}"
+        read_json_config() {
+          local query="$1"
+
+          # Existing callers and unit tests expect single-quoted arrays (e.g. ['5.6','5.7']) instead
+          # of valid JSON double-quotes (e.g. ["5.6","5.7"])
+          #
+          # TODO: Migrate callers to standard JSON and remove below `sed` replacement.
+          jq --compact-output "${query}" "${GITHUB_ACTION_PATH}/versions.json" | sed "s/\"/'/g"
+        }
+
+        echo "versions=$(read_json_config '.supported')" >> "${GITHUB_OUTPUT}"
+        echo "versions-including-extended-support-plus=$(read_json_config '."extended-support-plus" + .supported')" >> "${GITHUB_OUTPUT}"

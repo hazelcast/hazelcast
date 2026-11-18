@@ -90,6 +90,6 @@ public class InstallSnapshotRequestHandlerTask extends RaftNodeStatusAwareTask i
 
         raftNode.updateLastAppendEntriesTimestamp();
 
-        raftNode.getChunkedSnapshotInstaller().processChunk(req);
+        raftNode.processSnapshotChunk(req);
     }
 }

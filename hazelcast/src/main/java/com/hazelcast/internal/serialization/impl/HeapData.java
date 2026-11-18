@@ -22,6 +22,7 @@ import com.hazelcast.internal.util.HashUtil;
 
 import java.util.Arrays;
 
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
 import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
 import static com.hazelcast.internal.util.JVMUtil.REFERENCE_COST_IN_BYTES;
 
@@ -36,8 +37,9 @@ public class HeapData implements Data {
 
     public static final int HEAP_DATA_OVERHEAD = DATA_OFFSET;
 
-    // array (12: array header, 4: length)
-    private static final int ARRAY_HEADER_SIZE_IN_BYTES = 16;
+    // fallback value assumes 8 or 12B object header and 4B length
+   private static final int ARRAY_HEADER_SIZE_IN_BYTES = ARRAY_BYTE_BASE_OFFSET > 0
+            ? ARRAY_BYTE_BASE_OFFSET : OBJECT_HEADER_SIZE + 4;
 
     protected byte[] payload;
 
