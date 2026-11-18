@@ -45,8 +45,9 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -61,8 +62,7 @@ public class ReplicateTaskTest {
     private RaftNodeImpl raftNode;
     @Mock
     private Object operation;
-    @Mock
-    private InternalCompletableFuture resultFuture;
+    private final InternalCompletableFuture<Object> resultFuture = new InternalCompletableFuture<>();
     @Mock
     private ILogger logger;
     @Mock
@@ -91,10 +91,7 @@ public class ReplicateTaskTest {
         when(raftNode.getStatus()).thenReturn(INITIAL);
         ReplicateTask task = new ReplicateTask(raftNode, operation, resultFuture);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof CannotReplicateException
-                        && "Cannot replicate new operations for now".equals(e.getMessage())
-        ));
+        assertFailedWith(CannotReplicateException.class, "Cannot replicate new operations for now");
         verifyNoInteractions(raftLog);
     }
 
@@ -103,11 +100,8 @@ public class ReplicateTaskTest {
         when(raftNode.getStatus()).thenReturn(TERMINATED);
         ReplicateTask task = new ReplicateTask(raftNode, operation, resultFuture);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof NotLeaderException
-                        && "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A"
-                                .equals(e.getMessage())
-        ));
+        assertFailedWith(NotLeaderException.class,
+                "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A");
         verifyNoInteractions(raftLog);
     }
 
@@ -116,10 +110,8 @@ public class ReplicateTaskTest {
         when(raftNode.getStatus()).thenReturn(STEPPED_DOWN);
         ReplicateTask task = new ReplicateTask(raftNode, operation, resultFuture);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof NotLeaderException
-                        && "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A".equals(e.getMessage())
-        ));
+        assertFailedWith(NotLeaderException.class,
+                "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A");
         verifyNoInteractions(raftLog);
     }
 
@@ -130,10 +122,8 @@ public class ReplicateTaskTest {
         when(raftState.role()).thenReturn(FOLLOWER);
         ReplicateTask task = new ReplicateTask(raftNode, operation, resultFuture);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof NotLeaderException
-                        && "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A".equals(e.getMessage())
-        ));
+        assertFailedWith(NotLeaderException.class,
+                "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A");
 
         verifyNoInteractions(raftLog);
     }
@@ -145,10 +135,7 @@ public class ReplicateTaskTest {
         when(raftNode.autoStepDownWhenLeaderForGroup()).thenReturn(true);
         ReplicateTask task = new ReplicateTask(raftNode, operation, resultFuture);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof CPLeaderSteppingDownException
-                        && "Service unavailable, leader is auto stepping down".equals(e.getMessage())
-        ));
+        assertFailedWith(CPLeaderSteppingDownException.class, "Service unavailable, leader is auto stepping down");
 
         verifyNoInteractions(raftLog);
     }
@@ -161,9 +148,7 @@ public class ReplicateTaskTest {
         when(raftNode.canReplicateNewEntry(operation)).thenReturn(false);
         ReplicateTask task = new ReplicateTask(raftNode, operation, resultFuture);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof CannotReplicateException
-                        && "Cannot replicate new operations for now".equals(e.getMessage())));
+        assertFailedWith(CannotReplicateException.class, "Cannot replicate new operations for now");
         verifyNoInteractions(raftLog);
     }
 
@@ -175,10 +160,7 @@ public class ReplicateTaskTest {
         when(raftLog.checkAvailableCapacity(1)).thenReturn(false);
         ReplicateTask task = new ReplicateTask(raftNode, operation, resultFuture);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof IllegalStateException
-                        && "Not enough capacity in RaftLog!".equals(e.getMessage())
-        ));
+        assertFailedWith(IllegalStateException.class, "Not enough capacity in RaftLog!");
 
         verify(raftLog, never()).appendEntries(any());
     }
@@ -198,5 +180,10 @@ public class ReplicateTaskTest {
         verify(raftNode).registerFuture(1, resultFuture);
         verify(raftLog).appendEntries(new LogEntry(1, 1, operation));
         verify(raftNode).broadcastAppendRequest();
+    }
+
+    private void assertFailedWith(Class<? extends Throwable> type, String message) {
+        assertThat(resultFuture).isCompletedExceptionally();
+        assertThatThrownBy(resultFuture::join).cause().isInstanceOf(type).hasMessage(message);
     }
 }

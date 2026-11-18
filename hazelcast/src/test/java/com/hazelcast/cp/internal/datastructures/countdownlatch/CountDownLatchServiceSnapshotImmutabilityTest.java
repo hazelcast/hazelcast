@@ -19,7 +19,7 @@ package com.hazelcast.cp.internal.datastructures.countdownlatch;
 import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.snapshot.NonChunkedSnapshotImmutabilityTest;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -34,7 +34,7 @@ import java.util.UUID;
 public class CountDownLatchServiceSnapshotImmutabilityTest
         extends NonChunkedSnapshotImmutabilityTest<CountDownLatchRegistry, CountDownLatchService> {
 
-    private NodeEngineImpl nodeEngine;
+    private NodeEngine nodeEngine;
     private CPGroupId groupId;
 
     @Before

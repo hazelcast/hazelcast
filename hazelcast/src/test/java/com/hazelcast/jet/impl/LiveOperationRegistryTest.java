@@ -17,8 +17,8 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.jet.impl.operation.AsyncJobOperation;
 import com.hazelcast.spi.impl.operationservice.CallsPerMember;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,7 +36,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.spy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -46,7 +45,7 @@ public class LiveOperationRegistryTest {
 
     @Test
     public void when_registerDuplicateCallId_then_exception() throws UnknownHostException {
-        AsyncJobOperation operation = createOperation("1.2.3.4", 1234, 2222L);
+        Operation operation = createOperation("1.2.3.4", 1234, 2222L);
         assertTrue(r.register(operation));
 
         // this should return true
@@ -58,8 +57,8 @@ public class LiveOperationRegistryTest {
 
     @Test
     public void test_registerAndDeregister() throws UnknownHostException {
-        AsyncJobOperation op1 = createOperation("1.2.3.4", 1234, 2222L);
-        AsyncJobOperation op2 = createOperation("1.2.3.4", 1234, 2223L);
+        Operation op1 = createOperation("1.2.3.4", 1234, 2222L);
+        Operation op2 = createOperation("1.2.3.4", 1234, 2223L);
 
         assertTrue(r.register(op1));
         assertTrue(r.register(op2));
@@ -69,14 +68,14 @@ public class LiveOperationRegistryTest {
 
     @Test
     public void when_deregisterNotExistingAddress_then_fail() throws UnknownHostException {
-        AsyncJobOperation op1 = createOperation("1.2.3.4", 1234, 2222L);
+        Operation op1 = createOperation("1.2.3.4", 1234, 2222L);
         assertThrows(IllegalStateException.class, () -> r.deregister(op1));
     }
 
     @Test
     public void when_deregisterNotExistingCallId_then_fail() throws UnknownHostException {
         r.register(createOperation("1.2.3.4", 1234, 2222L));
-        AsyncJobOperation operation = createOperation("1.2.3.4", 1234, 2223L);
+        Operation operation = createOperation("1.2.3.4", 1234, 2223L);
         assertThrows(IllegalStateException.class, () -> r.deregister(operation));
     }
 
@@ -101,8 +100,8 @@ public class LiveOperationRegistryTest {
         //callIds.
     }
 
-    private AsyncJobOperation createOperation(String host, int port, long callId) throws UnknownHostException {
-        AsyncJobOperation op = spy(AsyncJobOperation.class);
+    private Operation createOperation(String host, int port, long callId) throws UnknownHostException {
+        Operation op = new Operation() { };
         Address address = new Address(host, port);
 
         OperationAccessor.setCallerAddress(op, address);

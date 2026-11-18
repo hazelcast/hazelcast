@@ -27,7 +27,7 @@ import com.hazelcast.cp.internal.datastructures.atomicref.AtomicRefSnapshot;
 import com.hazelcast.cp.internal.datastructures.snapshot.ValueDataChunk;
 import com.hazelcast.cp.internal.raft.DataChunkGroup;
 import com.hazelcast.internal.metrics.MetricsRegistry;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import org.junit.Before;
@@ -44,12 +44,12 @@ import static org.mockito.Mockito.when;
 public class IAtomicReferenceChunkedChunkedSnapshotImmutabilityTest
         extends ChunkedSnapshotImmutabilityTest<ValueDataChunk, AtomicRefSnapshot, AtomicRefService> {
 
-    private NodeEngineImpl nodeEngine;
+    private NodeEngine nodeEngine;
     private CPGroupId groupId;
 
     @Before
     public void setUp() {
-        this.nodeEngine = mockNodeEngineImplForChunking();
+        this.nodeEngine = mockChunkingNodeEngine();
         this.groupId = new RaftGroupId("atomicRefGroup", 1, 1);
     }
 
@@ -99,9 +99,8 @@ public class IAtomicReferenceChunkedChunkedSnapshotImmutabilityTest
         return map;
     }
 
-    private NodeEngineImpl mockNodeEngineImplForChunking() {
-        // AbstractCPMigrationAwareService casts the NodeEngine to NodeEngineImpl.
-        NodeEngineImpl engine = mock(NodeEngineImpl.class);
+    private NodeEngine mockChunkingNodeEngine() {
+        NodeEngine engine = mock(NodeEngine.class);
 
         // Config with CP subsystem enabled
         Config config = new Config();

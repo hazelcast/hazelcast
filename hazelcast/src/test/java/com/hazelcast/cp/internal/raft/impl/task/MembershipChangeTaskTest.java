@@ -48,8 +48,9 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.FOLLOWER;
 import static com.hazelcast.cp.internal.raft.impl.RaftRole.LEADER;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -63,8 +64,7 @@ public class MembershipChangeTaskTest {
 
     @Mock
     private RaftNodeImpl raftNode;
-    @Mock
-    private InternalCompletableFuture resultFuture;
+    private final InternalCompletableFuture<Object> resultFuture = new InternalCompletableFuture<>();
     @Mock
     private ILogger logger;
     @Mock
@@ -89,10 +89,7 @@ public class MembershipChangeTaskTest {
         MembershipChangeTask task = new MembershipChangeTask(raftNode, resultFuture, localEndpoint, ADD);
 
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof CannotReplicateException
-                        && "Cannot replicate new operations for now".equals(e.getMessage())
-        ));
+        assertFailedWith(CannotReplicateException.class, "Cannot replicate new operations for now");
         verify(raftNode, never()).createReplicationTask(any(UpdateRaftGroupMembersCmd.class), eq(resultFuture));
     }
 
@@ -101,11 +98,8 @@ public class MembershipChangeTaskTest {
         when(raftNode.getStatus()).thenReturn(TERMINATED);
         MembershipChangeTask task = new MembershipChangeTask(raftNode, resultFuture, localEndpoint, ADD);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof NotLeaderException
-                        && "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A"
-                                .equals(e.getMessage())
-        ));
+        assertFailedWith(NotLeaderException.class,
+                "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A");
         verify(raftNode, never()).createReplicationTask(any(UpdateRaftGroupMembersCmd.class), eq(resultFuture));
     }
 
@@ -114,10 +108,8 @@ public class MembershipChangeTaskTest {
         when(raftNode.getStatus()).thenReturn(STEPPED_DOWN);
         MembershipChangeTask task = new MembershipChangeTask(raftNode, resultFuture, localEndpoint, ADD);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof NotLeaderException
-                        && "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A".equals(e.getMessage())
-        ));
+        assertFailedWith(NotLeaderException.class,
+                "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A");
         verify(raftNode, never()).createReplicationTask(any(UpdateRaftGroupMembersCmd.class), eq(resultFuture));
     }
 
@@ -127,10 +119,8 @@ public class MembershipChangeTaskTest {
         when(raftState.role()).thenReturn(FOLLOWER);
         MembershipChangeTask task = new MembershipChangeTask(raftNode, resultFuture, localEndpoint, ADD);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof NotLeaderException
-                        && "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A".equals(e.getMessage())
-        ));
+        assertFailedWith(NotLeaderException.class,
+                "localEndpoint is not LEADER of CPGroupId{name='test', seed=1, groupId=1}. Known leader is: N/A");
 
         verify(raftNode, never()).createReplicationTask(any(UpdateRaftGroupMembersCmd.class), eq(resultFuture));
     }
@@ -142,10 +132,7 @@ public class MembershipChangeTaskTest {
         when(raftState.committedGroupMembers()).thenReturn(new RaftGroupMembers(1, Collections.emptyList(), null));
         MembershipChangeTask task = new MembershipChangeTask(raftNode, resultFuture, localEndpoint, ADD, 2L);
         task.run();
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof MismatchingGroupMembersCommitIndexException
-                        && "commit index: 1 members: []".equals(e.getMessage())
-        ));
+        assertFailedWith(MismatchingGroupMembersCommitIndexException.class, "commit index: 1 members: []");
         verify(raftNode, never()).createReplicationTask(any(UpdateRaftGroupMembersCmd.class), eq(resultFuture));
     }
 
@@ -191,11 +178,12 @@ public class MembershipChangeTaskTest {
         MembershipChangeTask task = new MembershipChangeTask(raftNode, resultFuture, localEndpoint, REMOVE);
         task.run();
 
-        verify(resultFuture).completeExceptionally(argThat(e ->
-                e instanceof MemberDoesNotExistException
-                        && ("Member does not exist: " + localEndpoint)
-                                .equals(e.getMessage())
-        ));
+        assertFailedWith(MemberDoesNotExistException.class, "Member does not exist: " + localEndpoint);
         verify(raftNode, never()).createReplicationTask(any(UpdateRaftGroupMembersCmd.class), eq(resultFuture));
+    }
+
+    private void assertFailedWith(Class<? extends Throwable> type, String message) {
+        assertThat(resultFuture).isCompletedExceptionally();
+        assertThatThrownBy(resultFuture::join).cause().isInstanceOf(type).hasMessage(message);
     }
 }

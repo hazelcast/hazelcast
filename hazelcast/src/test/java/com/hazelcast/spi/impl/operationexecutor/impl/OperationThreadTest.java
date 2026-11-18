@@ -33,7 +33,6 @@ import org.junit.runner.RunWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -44,7 +43,12 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
     @Test
     public void testOOME_whenDeserializing() throws Exception {
         handlerFactory = mock(OperationRunnerFactory.class);
-        OperationRunner handler = mock(OperationRunner.class);
+        OperationRunner handler = new NoOpOperationRunner() {
+            @Override
+            public void run(Packet packet) {
+                throw new OutOfMemoryError();
+            }
+        };
         when(handlerFactory.createGenericRunner()).thenReturn(handler);
         when(handlerFactory.createPartitionRunner(anyInt())).thenReturn(handler);
 
@@ -53,8 +57,6 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         DummyOperation operation = new DummyOperation(Operation.GENERIC_PARTITION_ID);
         Packet packet = new Packet(serializationService.toBytes(operation), operation.getPartitionId())
                 .setPacketType(Packet.Type.OPERATION);
-
-        doThrow(new OutOfMemoryError()).when(handler).run(packet);
 
         final int oldCount = OutOfMemoryErrorDispatcher.getOutOfMemoryErrorCount();
 
@@ -119,7 +121,7 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
 
     private void testExecute_withInvalid_partitionId(Object task) {
         handlerFactory = mock(OperationRunnerFactory.class);
-        OperationRunner handler = mock(OperationRunner.class);
+        OperationRunner handler = new NoOpOperationRunner();
         when(handlerFactory.createGenericRunner()).thenReturn(handler);
         when(handlerFactory.createPartitionRunner(anyInt())).thenReturn(handler);
 
@@ -146,5 +148,29 @@ public class OperationThreadTest extends OperationExecutorImpl_AbstractTest {
         ILogger mockLogger = mock(ILogger.class);
         OperationRunner[] runners = new OperationRunner[0];
         return new PartitionOperationThread("threadName", 0, mockOperationQueue, mockLogger, nodeExtension, runners, Thread.currentThread().getContextClassLoader());
+    }
+
+    private static class NoOpOperationRunner extends OperationRunner {
+
+        NoOpOperationRunner() {
+            super(0);
+        }
+
+        @Override
+        public long executedOperationsCount() {
+            return 0;
+        }
+
+        @Override
+        public void run(Packet packet) {
+        }
+
+        @Override
+        public void run(Runnable task) {
+        }
+
+        @Override
+        public void run(Operation task) {
+        }
     }
 }

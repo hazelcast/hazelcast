@@ -21,7 +21,7 @@ import com.hazelcast.cp.CPGroupId;
 import com.hazelcast.cp.internal.RaftGroupId;
 import com.hazelcast.cp.internal.snapshot.NonChunkedSnapshotImmutabilityTest;
 import com.hazelcast.cp.session.CPSession;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 public class RaftSessionServiceSnapshotImmutabilityTest
         extends NonChunkedSnapshotImmutabilityTest<RaftSessionRegistry, RaftSessionService> {
 
-    private NodeEngineImpl nodeEngine;
+    private NodeEngine nodeEngine;
     private CPGroupId groupId;
 
     @Before

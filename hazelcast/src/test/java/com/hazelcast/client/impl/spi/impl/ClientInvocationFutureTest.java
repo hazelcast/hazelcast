@@ -74,7 +74,7 @@ public class ClientInvocationFutureTest {
         request = MapGetCodec.encodeRequest("test", key, 1L);
         response = MapGetCodec.encodeResponse(value);
         callIdSequence = mock(CallIdSequence.class);
-        invocationFuture = new ClientInvocationFuture(mock(ClientInvocation.class),
+        invocationFuture = new ClientInvocationFuture(null,
                 request,
                 logger,
                 callIdSequence);

@@ -37,6 +37,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -773,7 +774,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         return ExpressionEvalContext.createContext(
                 asList(args),
-                instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngineImpl.class),
+                instances() != null ? Util.getNodeEngine(instance()) : mock(NodeEngine.class),
                 TEST_SS,
                 null
         );

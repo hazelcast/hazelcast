@@ -24,7 +24,7 @@ import com.hazelcast.cp.internal.raft.SnapshotAwareService;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import org.junit.Test;
@@ -138,8 +138,8 @@ public abstract class NonChunkedSnapshotImmutabilityTest<Snapshot, Service exten
                 .isEqualTo(fingerprintBefore);
     }
 
-    public NodeEngineImpl mockNodeEngine() {
-        NodeEngineImpl engine = mock(NodeEngineImpl.class);
+    public NodeEngine mockNodeEngine() {
+        NodeEngine engine = mock(NodeEngine.class);
 
         // CP subsystem enabled (for AbstractCPMigrationAwareService)
         Config cfg = new Config();

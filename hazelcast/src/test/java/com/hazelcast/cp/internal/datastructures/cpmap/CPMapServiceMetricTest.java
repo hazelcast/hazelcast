@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.cp.CPMapConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.metrics.MetricDescriptor;
@@ -302,11 +301,9 @@ public class CPMapServiceMetricTest {
 
         Config config = mock(Config.class);
         CPMapConfig mapConfig = mock(CPMapConfig.class);
-        Node node = mock(Node.class);
 
         when(nodeEngine.getClusterService()).thenReturn(clusterService);
         when(nodeEngine.getConfig()).thenReturn(config);
-        when(nodeEngine.getNode()).thenReturn(node);
         when(config.getCPSubsystemConfig()).thenReturn(cpSubsystemConfig);
         when(cpSubsystemConfig.findCPMapConfig(anyString())).thenReturn(mapConfig);
         when(mapConfig.isPurgeEnabled()).thenReturn(true);

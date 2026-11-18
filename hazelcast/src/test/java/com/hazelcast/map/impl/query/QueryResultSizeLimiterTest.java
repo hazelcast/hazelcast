@@ -52,7 +52,6 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -64,7 +63,7 @@ public class QueryResultSizeLimiterTest {
 
     private final Map<Integer, Integer> localPartitions = new HashMap<>();
 
-    private final LocalMapStatsImpl localMapStats = mock(LocalMapStatsImpl.class);
+    private final LocalMapStatsImpl localMapStats = new LocalMapStatsImpl();
 
     private QueryResultSizeLimiter limiter;
 
@@ -198,7 +197,7 @@ public class QueryResultSizeLimiterTest {
         assertThrows(QueryResultSizeExceededException.class,
                 () -> limiter.precheckMaxResultLimitOnLocalPartitions(ANY_MAP_NAME));
 
-        verify(localMapStats).incrementQueryResultSizeExceededCount();
+        assertEquals(1, localMapStats.getQueryResultSizeExceededCount());
 
     }
 
