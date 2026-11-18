@@ -2961,6 +2961,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                           buffer-size: 16
                           delay-seconds: 0
                           in-memory-format: BINARY
+                          mode: PASS_THROUGH
                           coalesce: false
                           populate: true
                           serialize-keys: true
@@ -2989,6 +2990,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(16, queryCacheConfig.getBufferSize());
         assertEquals(0, queryCacheConfig.getDelaySeconds());
         assertEquals(InMemoryFormat.BINARY, queryCacheConfig.getInMemoryFormat());
+        assertEquals(QueryCacheMode.PASS_THROUGH, queryCacheConfig.getMode());
         assertFalse(queryCacheConfig.isCoalesce());
         assertTrue(queryCacheConfig.isPopulate());
         assertTrue(queryCacheConfig.isSerializeKeys());
@@ -2997,6 +2999,23 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(LRU, queryCacheConfig.getEvictionConfig().getEvictionPolicy());
         assertEquals(ENTRY_COUNT, queryCacheConfig.getEvictionConfig().getMaxSizePolicy());
         assertEquals(133, queryCacheConfig.getEvictionConfig().getSize());
+    }
+
+    @Test
+    public void testQueryCacheMode_lowerCase() {
+        String yaml = """
+                hazelcast:
+                  map:
+                    test:
+                      query-caches:
+                        cache-name:
+                          mode: pass_through
+                """;
+
+        Config config = buildConfig(yaml);
+        QueryCacheConfig queryCacheConfig = config.getMapConfig("test").getQueryCacheConfigs().get(0);
+
+        assertEquals(QueryCacheMode.PASS_THROUGH, queryCacheConfig.getMode());
     }
 
     private void assertIndexesEqual(QueryCacheConfig queryCacheConfig) {
