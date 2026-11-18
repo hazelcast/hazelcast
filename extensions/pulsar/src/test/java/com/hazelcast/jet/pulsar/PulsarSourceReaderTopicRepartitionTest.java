@@ -60,8 +60,8 @@ public class PulsarSourceReaderTopicRepartitionTest extends PulsarTestSupport {
         conf.addDataConnectionConfig(new DataConnectionConfig("myPulsar")
                                          .setShared(true)
                                          .setType("Pulsar")
-                                         .setProperty(PulsarDataConnection.Properties.BROKER_URL, getServiceUrl())
-                                         .setProperty(PulsarDataConnection.Properties.HTTP_SERVICE_URL,
+                                         .setProperty(PulsarProperties.BROKER_URL, getServiceUrl())
+                                         .setProperty(PulsarProperties.HTTP_SERVICE_URL,
                                                       pulsarContainer.getHttpServiceUrl()));
 
         HazelcastInstance[] instances = new HazelcastInstance[2];

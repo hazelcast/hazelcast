@@ -125,22 +125,22 @@ public class PulsarConfig<M> implements DataSerializable, Serializable {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(connectionSupplier);
+        out.writeString(httpServiceUrl);
         out.writeString(dataConnectionRef == null ? null : dataConnectionRef.getName());
         out.writeObject(schemaSupplier);
         out.writeObject(options);
         out.writeInt(localParallelism);
-        out.writeString(httpServiceUrl);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         connectionSupplier = in.readObject();
+        httpServiceUrl = in.readString();
         String ref = in.readString();
         dataConnectionRef = ref == null ? null : DataConnectionRef.dataConnectionRef(ref);
         schemaSupplier = in.readObject();
         options = in.readObject();
         localParallelism = in.readInt();
-        httpServiceUrl = in.readString();
     }
 
     protected Validation commonValidation() {

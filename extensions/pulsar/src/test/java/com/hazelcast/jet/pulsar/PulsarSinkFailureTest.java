@@ -56,11 +56,10 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.pipeline.DataConnectionRef.dataConnectionRef;
-import static com.hazelcast.jet.pulsar.PulsarDataConnection.Properties.BROKER_URL;
-import static com.hazelcast.jet.pulsar.PulsarDataConnection.Properties.ENABLE_TRANSACTIONS;
-import static com.hazelcast.jet.pulsar.PulsarDataConnection.Properties.HTTP_SERVICE_URL;
+import static com.hazelcast.jet.pulsar.PulsarProperties.BROKER_URL;
+import static com.hazelcast.jet.pulsar.PulsarProperties.ENABLE_TRANSACTIONS;
+import static com.hazelcast.jet.pulsar.PulsarProperties.HTTP_SERVICE_URL;
 import static com.hazelcast.jet.pulsar.PulsarSchema.json;
-import static com.hazelcast.jet.pulsar.PulsarUtils.newReader;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
