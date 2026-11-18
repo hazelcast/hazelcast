@@ -75,6 +75,14 @@ class AddressUtilTest {
     }
 
     @Test
+    void testMatchInterface_withBracketedIpv6Mask() {
+        assertTrue(AddressUtil.matchInterface("fe80::b359:d8f6:484d:bdf3%eth0",
+                "[fe80::b359:d8f6:484d:bdf3%21]"));
+        assertFalse(AddressUtil.matchInterface("fe80::b359:d8f6:484d:bdf4%eth0",
+                "[fe80::b359:d8f6:484d:bdf3%21]"));
+    }
+
+    @Test
     void testMatchAnyDomain() {
         assertTrue(AddressUtil.matchAnyDomain("hazelcast.com", of("hazelcast.com")));
 
@@ -143,9 +151,16 @@ class AddressUtilTest {
             2001:db8:85a3:*:0:8a2e:370:7334     | true
             fe80::62c5:0-ffff:fe05:480a         | true
             fe80::62c5:*:fe05:480a              | true
+            [::1]                               | true
+            [fe80::b359:d8f6:484d:bdf3%21]      | true
+            [2001:db8:85a3:0:0:8a2e:370:7334]   | true
+            [fe80::62c5:*:fe05:480a]            | true
             # false
             2001:acdb8:85a3:0:0:8a2e:370:7334   | false
             2001::370::7334                     | false
+            [2001::370::7334]                   | false
+            [fe80::62c5:47ff:fe05:480a          | false
+            fe80::62c5:47ff:fe05:480a]          | false
             2001:370::7334.155                  | false
             2001:**:85a3:*:0:8a2e:370:7334      | false
             fe80::62c5:0-ffff:fe05-:480a        | false
@@ -170,6 +185,13 @@ class AddressUtilTest {
         address = AddressUtil.getAddressMatcher("::ffff:192.0.2.128");
         assertTrue(address.isIPv4());
         assertEquals("192.0.2.128", address.getAddress());
+    }
+
+    @Test
+    void testAddressMatcher_withBracketedIpv6Literal() {
+        AddressMatcher address = AddressUtil.getAddressMatcher("[fe80::62c5:*:fe05:480a%en0]");
+        assertTrue(address.isIPv6());
+        assertEquals("fe80:0:0:0:62c5:*:fe05:480a", address.getAddress());
     }
 
     @ParameterizedTest

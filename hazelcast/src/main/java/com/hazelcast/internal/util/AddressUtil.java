@@ -306,33 +306,49 @@ public final class AddressUtil {
      */
     public static AddressMatcher getAddressMatcher(String address) {
         final AddressMatcher matcher;
-        final int indexColon = address.indexOf(':');
-        final int lastIndexColon = address.lastIndexOf(':');
-        final int indexDot = address.indexOf('.');
-        final int lastIndexDot = address.lastIndexOf('.');
+        final String unbracketedAddress = unwrapBrackets(address);
+        final int indexColon = unbracketedAddress.indexOf(':');
+        final int lastIndexColon = unbracketedAddress.lastIndexOf(':');
+        final int indexDot = unbracketedAddress.indexOf('.');
+        final int lastIndexDot = unbracketedAddress.lastIndexOf('.');
 
         if (indexColon > -1 && lastIndexColon > indexColon) {
             if (indexDot == -1) {
                 matcher = new Ip6AddressMatcher();
-                parseIpv6(matcher, address);
+                parseIpv6(matcher, unbracketedAddress);
             } else {
                 // IPv4 mapped IPv6
                 if (indexDot >= lastIndexDot) {
-                    throw new InvalidAddressException(address);
+                    throw new InvalidAddressException(unbracketedAddress);
                 }
-                final int lastIndexColon2 = address.lastIndexOf(':');
-                final String host2 = address.substring(lastIndexColon2 + 1);
+                final int lastIndexColon2 = unbracketedAddress.lastIndexOf(':');
+                final String host2 = unbracketedAddress.substring(lastIndexColon2 + 1);
                 matcher = new Ip4AddressMatcher();
                 parseIpv4(matcher, host2);
             }
         } else if (indexDot > -1 && lastIndexDot > indexDot && indexColon == -1) {
             // IPv4
             matcher = new Ip4AddressMatcher();
-            parseIpv4(matcher, address);
+            parseIpv4(matcher, unbracketedAddress);
         } else {
-            throw new InvalidAddressException(address);
+            throw new InvalidAddressException(unbracketedAddress);
         }
         return matcher;
+    }
+
+    /**
+     * Strips a single pair of surrounding square brackets from an IP literal,
+     * e.g. {@code [fe80::1%eth0]}. Bracketed IPv6 literals are the form
+     * required by RFC 3986/RFC 5952 and are accepted in interface
+     * configuration; the matcher itself works on the bare literal.
+     * Unbalanced brackets are left untouched so that they still fail
+     * validation.
+     */
+    private static String unwrapBrackets(String address) {
+        if (address.startsWith("[") && address.endsWith("]")) {
+            return address.substring(1, address.length() - 1);
+        }
+        return address;
     }
 
     public static Collection<Integer> getOutboundPorts(Collection<Integer> ports,
