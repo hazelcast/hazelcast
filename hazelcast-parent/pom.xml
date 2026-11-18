@@ -770,7 +770,7 @@
             <dependency>
                 <groupId>org.hibernate.orm</groupId>
                 <artifactId>hibernate-core</artifactId>
-                <version>7.4.15.Final</version>
+                <version>7.4.16.Final</version>
             </dependency>
             <dependency>
                 <groupId>org.json</groupId>
@@ -1536,8 +1536,6 @@
                 <maven.source.skip>false</maven.source.skip>
                 <maven.shade.createSourcesJar>true</maven.shade.createSourcesJar>
                 <attribution.skip>false</attribution.skip>
-                <!-- For _accurate_ SBOM generation, OS+EE must be built in a single reactor - this is not yet the case for release, so until then, don't execute -->
-                <cyclonedx.skip>true</cyclonedx.skip>
             </properties>
             <build>
                 <plugins>
