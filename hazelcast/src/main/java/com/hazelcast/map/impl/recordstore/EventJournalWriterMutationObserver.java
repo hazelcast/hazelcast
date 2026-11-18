@@ -42,7 +42,7 @@ public class EventJournalWriterMutationObserver implements MutationObserver {
     }
 
     @Override
-    public void onPutRecord(@Nonnull Data key, Record record, Object oldValue, boolean backup) {
+    public void onPutRecord(@Nonnull Data key, Record record, Object oldValue, Object newValue, boolean backup) {
         eventJournal.writeAddEvent(eventJournalConfig, objectNamespace,
                 partitionId, key, record.getValue());
     }
@@ -68,7 +68,7 @@ public class EventJournalWriterMutationObserver implements MutationObserver {
     }
 
     @Override
-    public void onLoadRecord(@Nonnull Data key, @Nonnull Record record, boolean backup) {
+    public void onLoadRecord(@Nonnull Data key, @Nonnull Record record, Object newValue, boolean backup) {
         eventJournal.writeLoadEvent(eventJournalConfig, objectNamespace,
                 partitionId, key, record.getValue());
     }

@@ -68,7 +68,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_EXECUTOR;
-import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.extractChunksFrom;
+import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.createChunksFromSnapshot;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 
@@ -256,9 +256,7 @@ class NodeEngineRaftIntegration implements RaftIntegration {
         }
     }
 
-    @Nonnull
-    @Override
-    public Object takeServiceSnapshots(long commitIndex) {
+    private Object takeServiceSnapshots(long commitIndex) {
         var snapshotPerServiceInfo = new HashMap<>();
 
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(SnapshotAwareService.class)) {
@@ -276,6 +274,17 @@ class NodeEngineRaftIntegration implements RaftIntegration {
         return snapshotPerServiceInfo;
     }
 
+    @Nonnull
+    @Override
+    public List<SnapshotChunk> takeGroupSnapshotChunks(int snapshotTerm, long commitIndex,
+                                                       Collection<RaftEndpoint> groupMembers,
+                                                       long groupMembersLogIndex) {
+        Object snapshot = takeServiceSnapshots(commitIndex);
+        ILogger logger = nodeEngine.getLogger(getClass());
+        return createChunksFromSnapshot(this, snapshotTerm, commitIndex, groupMembers,
+                groupMembersLogIndex, snapshot, logger);
+    }
+
     @Override
     public void resetForChunkedSnapshotRestore() {
         for (ServiceInfo serviceInfo : nodeEngine.getServiceInfos(ChunkedSnapshotAwareService.class)) {
@@ -285,10 +294,9 @@ class NodeEngineRaftIntegration implements RaftIntegration {
     }
 
     @Override
-    public void restoreSnapshot(Object snapshotEntry, long commitIndex) {
+    public void restoreSnapshot(SnapshotEntry snapshotEntry) {
         ILogger logger = nodeEngine.getLogger(getClass());
-        List<SnapshotChunk> snapshotChunks = extractChunksFrom((SnapshotEntry) snapshotEntry);
-        for (SnapshotChunk snapshotChunk : snapshotChunks) {
+        for (SnapshotChunk snapshotChunk : snapshotEntry.snapshotChunks()) {
             List<Object> ops = (List<Object>) snapshotChunk.operation();
             for (Object snapshotOp : ops) {
                 Object result = runOperation(snapshotOp, snapshotChunk.index());

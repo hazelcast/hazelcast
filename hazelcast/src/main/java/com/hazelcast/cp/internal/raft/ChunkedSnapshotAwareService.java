@@ -17,7 +17,6 @@
 package com.hazelcast.cp.internal.raft;
 
 import com.hazelcast.cp.CPGroupId;
-import com.hazelcast.cp.internal.datastructures.snapshot.DataChunkGroup;
 
 import javax.annotation.Nonnull;
 import java.util.Iterator;
@@ -32,7 +31,6 @@ import java.util.Iterator;
  * @param <C> The type of data contained in each chunk of the snapshot.
  * @param <T> The type of data managed by the {@link SnapshotAwareService}.
  * @see SnapshotAwareService
- * @see com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil#PROP_MAX_CHUNK_SIZE_IN_MB
  */
 public interface ChunkedSnapshotAwareService<C, T> extends SnapshotAwareService<T> {
 

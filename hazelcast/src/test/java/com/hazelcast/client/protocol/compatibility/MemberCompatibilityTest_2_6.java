@@ -6711,6 +6711,7 @@ public class MemberCompatibilityTest_2_6 {
         assertTrue(parameters.isPartitioningAttributeConfigsExists);
         assertTrue(isEqual(aListOfPartitioningAttributeConfigs, parameters.partitioningAttributeConfigs));
         assertFalse(parameters.isUserCodeNamespaceExists);
+        assertFalse(parameters.isOversizedEntryThresholdBytesExists);
     }
 
     @Test

@@ -97,9 +97,6 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
 
     @Test
     public void testIfSensitiveDataIsMasked_whenMaskingEnabled() {
-        String licenseKey = "HazelcastLicenseKey";
-        String maskedLicenseKey = SensitiveDataMasker.mask("license-key", licenseKey);
-
         Config cfg = new Config();
         SSLConfig sslConfig = new SSLConfig();
         sslConfig.setProperty("keyStorePassword", "Hazelcast")
@@ -111,7 +108,7 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         symmetricEncryptionConfig.setSalt("theSalt");
 
         cfg.getNetworkConfig().setSymmetricEncryptionConfig(symmetricEncryptionConfig);
-        cfg.setLicenseKey(licenseKey);
+        cfg.setLicenseKey("HazelcastLicenseKey");
 
         Config newConfigViaGenerator = getNewConfigViaGenerator(cfg, true);
         SSLConfig generatedSSLConfig = newConfigViaGenerator.getNetworkConfig().getSSLConfig();
@@ -123,7 +120,21 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         String theSalt = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
         assertEquals(MASK_FOR_SENSITIVE_DATA, secPassword);
         assertEquals(MASK_FOR_SENSITIVE_DATA, theSalt);
-        assertEquals(maskedLicenseKey, newConfigViaGenerator.getLicenseKey());
+        assertEquals(SensitiveDataMasker.mask("license-key", "HazelcastLicenseKey"), newConfigViaGenerator.getLicenseKey());
+    }
+
+    @Test
+    public void testIfEveryValueIsMasked_whenMaskingEnabled() {
+        Config cfg = new Config();
+        cfg.setProperty("db.password", "PROPERTY_SECRET");
+        cfg.getNetworkConfig().getJoin().getAwsConfig().setEnabled(true).setProperty("secret-key", "AWS_SECRET");
+        cfg.addDataConnectionConfig(new DataConnectionConfig("pg").setType("jdbc")
+                .setProperty("jdbcUrl", "jdbc:postgresql://db.example/app?password=URL_SECRET"));
+
+        String yaml = new DynamicConfigYamlGenerator().generate(cfg, true);
+
+        assertThat(yaml).doesNotContain("PROPERTY_SECRET", "AWS_SECRET", "URL_SECRET")
+                .contains("jdbc:postgresql://****");
     }
 
     @Test

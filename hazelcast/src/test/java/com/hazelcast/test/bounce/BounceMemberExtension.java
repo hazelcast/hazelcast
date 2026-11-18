@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.bounce.BounceTestConfiguration.DriverType;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeEachCallback;
@@ -29,6 +28,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.Supplier;
@@ -71,7 +71,7 @@ public class BounceMemberExtension implements BeforeEachCallback, BeforeTestExec
     }
 
     @Override
-    public void beforeEach(@NonNull ExtensionContext context) {
+    public void beforeEach(@Nonnull ExtensionContext context) {
         if (context.getExecutionMode() == ExecutionMode.CONCURRENT) {
             throw new IllegalArgumentException("BounceMemberExtension cannot be used in ParallelTest. Please use "
                                                    + "@SerialTest annotation instead.");
@@ -86,17 +86,17 @@ public class BounceMemberExtension implements BeforeEachCallback, BeforeTestExec
     }
 
     @Override
-    public void beforeTestExecution(@NonNull ExtensionContext context) {
+    public void beforeTestExecution(@Nonnull ExtensionContext context) {
         delegate.startBouncing();
     }
 
     @Override
-    public void afterTestExecution(@NonNull ExtensionContext context) {
+    public void afterTestExecution(@Nonnull ExtensionContext context) {
         delegate.stopBouncing();
     }
 
     @Override
-    public void afterEach(@NonNull ExtensionContext context) {
+    public void afterEach(@Nonnull ExtensionContext context) {
         if (context.getStore(NAMESPACE).remove(OWNER) == null) {
             return; // this test never owned the cluster
         }

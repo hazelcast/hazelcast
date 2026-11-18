@@ -335,6 +335,11 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
+    public MapConfig setOversizedEntryThresholdBytes(long oversizedEntryThresholdBytes) {
+        throw throwReadOnly();
+    }
+
+    @Override
     public MapConfig setReadBackupData(boolean readBackupData) {
         throw throwReadOnly();
     }

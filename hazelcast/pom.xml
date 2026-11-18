@@ -699,7 +699,6 @@
         <dependency>
             <groupId>io.github.classgraph</groupId>
             <artifactId>classgraph</artifactId>
-            <version>4.8.198</version>
         </dependency>
         <dependency>
             <groupId>com.github.erosb</groupId>
@@ -902,7 +901,7 @@
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>3.9.0</version>
+            <version>3.9.1</version>
             <scope>test</scope>
         </dependency>
 

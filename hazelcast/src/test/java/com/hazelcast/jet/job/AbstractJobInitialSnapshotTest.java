@@ -26,12 +26,13 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
+
+import javax.annotation.Nonnull;
 
 import java.time.Duration;
 import java.util.List;
@@ -118,7 +119,7 @@ public abstract class AbstractJobInitialSnapshotTest extends PipelineTestSupport
         }
 
         @Override
-        protected boolean tryProcess(int ordinal, @NotNull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             return tryEmit(ordinal, item);
         }
 
@@ -152,7 +153,7 @@ public abstract class AbstractJobInitialSnapshotTest extends PipelineTestSupport
         }
 
         @Override
-        protected boolean tryProcess(int ordinal, @NotNull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             return tryEmit(ordinal, item);
         }
 
@@ -175,7 +176,7 @@ public abstract class AbstractJobInitialSnapshotTest extends PipelineTestSupport
         private static final AtomicBoolean block = new AtomicBoolean(false);
 
         @Override
-        protected boolean tryProcess(int ordinal, @NotNull Object item) {
+        protected boolean tryProcess(int ordinal, @Nonnull Object item) {
             if (block.get()) {
                 return false;
             }

@@ -216,6 +216,9 @@ public final class MetricDescriptorConstants {
     public static final String MAP_METRIC_VALUES_COUNT = "valuesCount";
     public static final String MAP_METRIC_ENTRYSET_COUNT = "entrySetCount";
     public static final String MAP_METRIC_QUERY_LIMITER_HIT_COUNT = "queryLimiterHitCount";
+    public static final String MAP_METRIC_OVERSIZED_ENTRIES_SEEN = "oversizedEntriesSeen";
+    public static final String MAP_METRIC_LAST_OVERSIZED_ENTRY_SIZE = "lastOversizedEntrySize";
+    public static final String MAP_METRIC_LAST_OVERSIZED_ENTRY_TIME = "lastOversizedEntryTime";
     public static final String MAP_METRIC_CREATION_TIME = "creationTime";
     public static final String MAP_METRIC_OWNED_ENTRY_COUNT = "ownedEntryCount";
     public static final String MAP_METRIC_BACKUP_ENTRY_COUNT = "backupEntryCount";

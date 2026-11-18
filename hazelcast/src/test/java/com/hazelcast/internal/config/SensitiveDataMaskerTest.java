@@ -95,23 +95,75 @@ public class SensitiveDataMaskerTest {
     }
 
     @Test
-    public void shouldMaskCredentialsInUrlsAndKeepTheHost() {
-        assertEquals("jdbc:postgresql://db.example:5432/app?user=app&password=****",
+    public void shouldMaskUrlsAfterTheirScheme() {
+        assertEquals("jdbc:postgresql://****",
                 mask("jdbcUrl", "jdbc:postgresql://db.example:5432/app?user=app&password=UrlSecret1"));
-        assertEquals("jdbc:sqlserver://db.example:1433;databaseName=app;user=app;password=****",
+        assertEquals("jdbc:sqlserver://****",
                 mask("jdbcUrl", "jdbc:sqlserver://db.example:1433;databaseName=app;user=app;password=UrlSecret1"));
-        assertEquals("mongodb://****@mongo1:27017,mongo2:27017/app",
-                mask("connectionString", "mongodb://app:UrlSecret1@mongo1:27017,mongo2:27017/app"));
-        assertEquals("DefaultEndpointsProtocol=https;AccountName=acc;AccountKey=****;EndpointSuffix=core.windows.net",
-                mask("connectionString",
-                        "DefaultEndpointsProtocol=https;AccountName=acc;AccountKey=UrlSecret1;EndpointSuffix=core.windows.net"));
+        assertEquals("mongodb://****", mask("connectionString", "mongodb://app:UrlSecret1@mongo1:27017,mongo2:27017/app"));
+        assertEquals("mongodb+srv://****", mask("connectionString", "mongodb+srv://app:UrlSecret1@cluster.example/app"));
+        assertEquals("ldap://****", mask("url", "ldap://cn=admin:UrlSecret1@ldap.example:389"));
+        assertEquals("vault+https://****", mask("url", "vault+https://u:UrlSecret1@vault.example"));
+        // URLs without credentials too: whether a URL holds one depends on the driver
+        assertEquals("jdbc:postgresql://****", mask("jdbcUrl", "jdbc:postgresql://db.example:5432/app?ssl=true"));
     }
 
     @Test
-    public void shouldLeaveUrlsWithoutCredentialsUnchanged() {
-        assertEquals("jdbc:postgresql://db.example:5432/app?ssl=true",
-                mask("jdbcUrl", "jdbc:postgresql://db.example:5432/app?ssl=true"));
+    public void shouldMaskJdbcUrlsWithoutSlashesAfterTheirSubprotocol() {
+        // Oracle EZConnect, SID, TNS descriptor, LDAP naming and quoted password containing '@'
+        assertEquals("jdbc:oracle:****", mask("jdbcUrl", "jdbc:oracle:thin:scott/tiger@//db.example:1521/svc"));
+        assertEquals("jdbc:oracle:****", mask("jdbcUrl", "jdbc:oracle:thin:scott/tiger@db.example:1521:orcl"));
+        assertEquals("jdbc:oracle:****",
+                mask("jdbcUrl", "jdbc:oracle:oci:scott/tiger@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=db.example)(PORT=1521)))"));
+        assertEquals("jdbc:oracle:****",
+                mask("jdbcUrl", "jdbc:oracle:thin:scott/tiger@ldap://ldap.example:389/svc,cn=OracleContext"));
+        assertEquals("jdbc:oracle:****", mask("jdbcUrl", "jdbc:oracle:thin:scott/\"p@ss\"@db.example:1521:orcl"));
+        assertEquals("JDBC:ORACLE:****", mask("jdbcUrl", "JDBC:ORACLE:THIN:scott/tiger@//db.example:1521/svc"));
+        assertEquals("jdbc:h2:****", mask("jdbcUrl", "jdbc:h2:mem:test;USER=sa;PASSWORD=UrlSecret1"));
+        assertEquals("jdbc:derby:****", mask("jdbcUrl", "jdbc:derby:app;user=app;password=UrlSecret1"));
+    }
+
+    @Test
+    public void shouldMaskOnlyCredentialsInHttpUrls() {
+        assertEquals("https://vault.example:8200", mask("address", "https://vault.example:8200"));
+        assertEquals("http://k8s.example/api/v1", mask("kubernetes-master", "http://k8s.example/api/v1"));
+        assertEquals("https://****@api.example/v1", mask("url", "https://app:UrlSecret1@api.example/v1"));
+        assertEquals("HTTPS://****@api.example", mask("url", "HTTPS://app:UrlSecret1@api.example"));
+        assertEquals("https://api.example/v1?api_key=****&page=2",
+                mask("url", "https://api.example/v1?api_key=UrlSecret1&page=2"));
+    }
+
+    @Test
+    public void shouldMaskUrlsInsideLongerValues() {
+        assertEquals("Endpoint=sb://****",
+                mask("connectionString", "Endpoint=sb://ns.servicebus.windows.net/;SharedAccessKeyName=root;SharedAccessKey=Secret1"));
+        assertEquals("primary https://****@a.example backup https://****@b.example",
+                mask("endpoints", "primary https://u:Secret1@a.example backup https://u:Secret1@b.example"));
+    }
+
+    @Test
+    public void shouldMaskSensitiveParametersInConnectionStringsWithoutUrl() {
+        assertEquals("DefaultEndpointsProtocol=https;AccountName=acc;AccountKey=****;EndpointSuffix=core.windows.net",
+                mask("connectionString",
+                        "DefaultEndpointsProtocol=https;AccountName=acc;AccountKey=UrlSecret1;EndpointSuffix=core.windows.net"));
+        assertEquals("Server=db.example;User Id=app;Password=****",
+                mask("connectionString", "Server=db.example;User Id=app;Password=UrlSecret1"));
+        assertEquals("user=app;trustStorePassword=****", mask("options", "user=app;trustStorePassword=KeySecret1"));
+        assertEquals("api_key=****&page=2", mask("query", "api_key=KeySecret1&page=2"));
+    }
+
+    @Test
+    public void shouldLeaveValuesWithoutUrlsUnchanged() {
         assertEquals("kafka1:9092,kafka2:9092", mask("bootstrap.servers", "kafka1:9092,kafka2:9092"));
+        assertEquals("127.0.0.1:5701", mask("member", "127.0.0.1:5701"));
+        assertEquals("C:\\data\\hz", mask("base-dir", "C:\\data\\hz"));
+        assertEquals("cluster.name=dev", mask("options", "cluster.name=dev"));
+    }
+
+    @Test
+    public void shouldIgnoreSurroundingWhitespaceWhenMaskingLicenseKey() {
+        assertEquals("ABCDE*********VWXYZ", mask("hazelcast.licensekey", "ABCDE12345FGHIJ67890VWXYZ\n"));
+        assertEquals("ABCDE*********VWXYZ", mask("license-key", "\n    ABCDE12345FGHIJ67890VWXYZ\n    "));
     }
 
     @Test
@@ -126,7 +178,7 @@ public class SensitiveDataMaskerTest {
 
     @Test
     public void shouldMaskWholeSystemPropertyArgValueContainingSpaces() {
-        // -Dkey="a b" as one element without quotes
+        // getInputArguments() returns -Dkey="a b" as one element without quotes
         assertEquals("-Djavax.net.ssl.keyStorePassword=****",
                 maskSystemPropertyArg("-Djavax.net.ssl.keyStorePassword=my secret pass"));
     }
@@ -139,49 +191,8 @@ public class SensitiveDataMaskerTest {
     }
 
     @Test
-    public void shouldMaskCredentialsInSystemPropertyArgUrl() {
-        assertEquals("-Ddb.url=jdbc:postgresql://db.example:5432/app?user=app&password=****",
+    public void shouldMaskUrlInSystemPropertyArg() {
+        assertEquals("-Ddb.url=jdbc:postgresql://****",
                 maskSystemPropertyArg("-Ddb.url=jdbc:postgresql://db.example:5432/app?user=app&password=UrlSecret1"));
-    }
-
-    @Test
-    public void shouldMaskCredentialsInOracleUrlsAndKeepTheHost() {
-        // EZConnect
-        assertEquals("jdbc:oracle:thin:****@//db.example:1521/svc",
-                mask("jdbcUrl", "jdbc:oracle:thin:scott/tiger@//db.example:1521/svc"));
-        // SID
-        assertEquals("jdbc:oracle:thin:****@db.example:1521:orcl",
-                mask("jdbcUrl", "jdbc:oracle:thin:scott/tiger@db.example:1521:orcl"));
-        // TNS descriptor, OCI driver
-        assertEquals("jdbc:oracle:oci:****@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=db.example)(PORT=1521)))",
-                mask("jdbcUrl", "jdbc:oracle:oci:scott/tiger@(DESCRIPTION=(ADDRESS=(PROTOCOL=TCP)(HOST=db.example)(PORT=1521)))"));
-        // LDAP naming
-        assertEquals("jdbc:oracle:thin:****@ldap://ldap.example:389/svc,cn=OracleContext",
-                mask("jdbcUrl", "jdbc:oracle:thin:scott/tiger@ldap://ldap.example:389/svc,cn=OracleContext"));
-        // quoted password containing '@'
-        assertEquals("jdbc:oracle:thin:****@db.example:1521:orcl",
-                mask("jdbcUrl", "jdbc:oracle:thin:scott/\"p@ss\"@db.example:1521:orcl"));
-        assertEquals("JDBC:ORACLE:THIN:****@//db.example:1521/svc",
-                mask("jdbcUrl", "JDBC:ORACLE:THIN:scott/tiger@//db.example:1521/svc"));
-    }
-
-    @Test
-    public void shouldLeaveOracleUrlsWithoutCredentialsUnchanged() {
-        assertEquals("jdbc:oracle:thin:@//db.example:1521/svc",
-                mask("jdbcUrl", "jdbc:oracle:thin:@//db.example:1521/svc"));
-        assertEquals("jdbc:oracle:thin:@db.example:1521:orcl",
-                mask("jdbcUrl", "jdbc:oracle:thin:@db.example:1521:orcl"));
-    }
-
-    @Test
-    public void shouldMaskUrlParametersWhoseNameContainsASensitiveKeyword() {
-        assertEquals("jdbc:postgresql://db.example:5432/app?user=app&sslpassword=****",
-                mask("jdbcUrl", "jdbc:postgresql://db.example:5432/app?user=app&sslpassword=KeySecret1"));
-        assertEquals("jdbc:sqlserver://db.example:1433;user=app;trustStorePassword=****",
-                mask("jdbcUrl", "jdbc:sqlserver://db.example:1433;user=app;trustStorePassword=KeySecret1"));
-        assertEquals("jdbc:mysql://db.example:3306/app?user=app&clientCertificateKeyStorePassword=****",
-                mask("jdbcUrl", "jdbc:mysql://db.example:3306/app?user=app&clientCertificateKeyStorePassword=KeySecret1"));
-        assertEquals("https://api.example/v1?api_key=****&page=2",
-                mask("url", "https://api.example/v1?api_key=KeySecret1&page=2"));
     }
 }

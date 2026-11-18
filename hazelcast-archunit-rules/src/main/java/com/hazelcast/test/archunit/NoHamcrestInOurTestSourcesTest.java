@@ -19,18 +19,13 @@ package com.hazelcast.test.archunit;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import org.junit.Test;
 
-/**
- * Hamcrest is great, but AssertJ is even better.
- * Also, Hamcrest matchers tend to cause the usage of {@code org.junit.Assert#assertThat}
- * (didn't add link to not depend on deprecated method), which is deprecated - and AssertJ is better for fluent assertions.
- *
- */
+/** @see HamcrestMatchersUsageCondition */
 public class NoHamcrestInOurTestSourcesTest extends ArchUnitTestSupport {
 
     @Test
-    public void noClassUsesHamcrest() {
+    public void noTestClassUsesHamcrest() {
         JavaClasses classes = ModuleImportOptions.getCurrentModuleTestClasses(basePackage);
 
-        ArchUnitRules.MATCHERS_USAGE.check(classes);
+        ArchUnitRules.HAMCREST_MATCHERS_USAGE.check(classes);
     }
 }

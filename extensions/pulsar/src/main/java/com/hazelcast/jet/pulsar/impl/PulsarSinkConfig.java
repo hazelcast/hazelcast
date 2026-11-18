@@ -17,18 +17,20 @@ package com.hazelcast.jet.pulsar.impl;
 
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import org.apache.pulsar.client.api.ProducerBuilder;
-import org.jspecify.annotations.NonNull;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
 import java.time.Duration;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.util.Collections.emptyMap;
 
 /**
@@ -40,6 +42,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
     @SuppressWarnings("rawtypes")
     private static final FunctionEx RETURN_NULL = anything -> null;
     private static final Duration DEFAULT_TRANSACTION_TIMEOUT = Duration.ofMinutes(1);
+    private static final int DEFAULT_MAX_IN_FLIGHT_MESSAGES = EdgeConfig.DEFAULT_QUEUE_SIZE;
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -48,9 +51,11 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
     private FunctionEx<? super E, String> extractKeyFn;
     private FunctionEx<? super E, Map<String, String>> extractPropertiesFn;
     private FunctionEx<? super E, Long> extractTimestampFn;
+    private FunctionEx<? super E, Map.Entry<String, M>> extractKeyAndValueFn;
     private Duration transactionTimeout;
     private ConsumerEx<ProducerBuilder<M>> producerCustomizer = ConsumerEx.noop();
     private boolean transactional = true;
+    private int maxInFlightMessages = DEFAULT_MAX_IN_FLIGHT_MESSAGES;
 
     // needed for serialization
     @SuppressWarnings("unused")
@@ -66,6 +71,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         transactionTimeout = other.transactionTimeout;
         producerCustomizer = other.producerCustomizer;
         transactional = other.transactional;
+        maxInFlightMessages = other.maxInFlightMessages;
         setConnectionSupplier(other.getConnectionSupplier());
         setDataConnectionRef(other.getDataConnectionRef());
         setOptions(other.getOptions());
@@ -127,6 +133,22 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         this.transactional = transactional;
     }
 
+    public int getMaxInFlightMessages() {
+        return maxInFlightMessages;
+    }
+
+    public void setMaxInFlightMessages(int maxInFlightMessages) {
+        this.maxInFlightMessages = checkPositive("maxInFlightMessages", maxInFlightMessages);
+    }
+
+    public FunctionEx<? super E, Map.Entry<String, M>> getExtractKeyAndValueFn() {
+        return extractKeyAndValueFn;
+    }
+
+    public void setExtractKeyAndValueFn(FunctionEx<? super E, Map.Entry<String, M>> extractKeyAndValueFn) {
+        this.extractKeyAndValueFn = extractKeyAndValueFn;
+    }
+
     private <I, O> FunctionEx<I, O> returnNullFn() {
         //noinspection unchecked
         return RETURN_NULL;
@@ -140,6 +162,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         out.writeObject(extractKeyFn);
         out.writeObject(extractPropertiesFn);
         out.writeObject(extractTimestampFn);
+        out.writeObject(extractKeyAndValueFn);
         out.writeBoolean(transactionTimeout != null);
         if (transactionTimeout != null) {
             out.writeLong(transactionTimeout.getSeconds());
@@ -147,6 +170,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         }
         out.writeObject(producerCustomizer);
         out.writeBoolean(transactional);
+        out.writeInt(maxInFlightMessages);
     }
 
     @Override
@@ -157,6 +181,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         extractKeyFn = in.readObject();
         extractPropertiesFn = in.readObject();
         extractTimestampFn = in.readObject();
+        extractKeyAndValueFn = in.readObject();
         if (in.readBoolean()) {
             long sec = in.readLong();
             int nano = in.readInt();
@@ -164,6 +189,7 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
         }
         producerCustomizer = in.readObject();
         transactional = in.readBoolean();
+        maxInFlightMessages = in.readInt();
     }
 
     public Duration getTransactionTimeout() {
@@ -186,11 +212,11 @@ public class PulsarSinkConfig<E, M> extends PulsarConfig<M> implements DataSeria
             .throwIfErrors();
     }
 
-    public void setProducerCustomizer(ConsumerEx<@NonNull ProducerBuilder<M>> producerCustomizer) {
+    public void setProducerCustomizer(ConsumerEx<ProducerBuilder<M>> producerCustomizer) {
         this.producerCustomizer = producerCustomizer;
     }
 
-    @NonNull
+    @Nonnull
     public ConsumerEx<ProducerBuilder<M>> getProducerCustomizer() {
         return producerCustomizer == null ? ConsumerEx.noop() : producerCustomizer;
     }

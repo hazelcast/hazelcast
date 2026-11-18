@@ -17,9 +17,9 @@
 package com.hazelcast.internal.memory.impl;
 
 import com.hazelcast.internal.memory.GlobalMemoryAccessor;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.util.ExceptionUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -314,6 +314,32 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
         assertEquals('D', memoryAccessor.getCharVolatile(sampleObject, SampleObject.CHAR_VALUE_OFFSET));
     }
 
+    void assert_putGetCharUnalignedFails() {
+        long address = baseAddress1 + 1;
+        long objectOffset = SampleObject.CHAR_VALUE_OFFSET + CHAR_MISALIGNMENT;
+
+        try {
+            memoryAccessor.putChar(address, 'A');
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getChar(address);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.putChar(sampleObject, objectOffset, 'A');
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getChar(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
     void assert_putGetCharVolatileUnalignedFails() {
         long address = baseAddress1 + 1;
         long objectOffset = SampleObject.CHAR_VALUE_OFFSET + CHAR_MISALIGNMENT;
@@ -370,6 +396,32 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
         assertEquals(4, memoryAccessor.getShortVolatile(sampleObject, SampleObject.SHORT_VALUE_OFFSET));
     }
 
+    void assert_putGetShortUnalignedFails() {
+        long address = baseAddress1 + SHORT_MISALIGNMENT;
+        long objectOffset = SampleObject.SHORT_VALUE_OFFSET + SHORT_MISALIGNMENT;
+
+        try {
+            memoryAccessor.putShort(address, (short) 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getShort(address);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.putShort(sampleObject, objectOffset, (short) 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getShort(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
     void assert_putGetShortVolatileUnalignedFails() {
         long address = baseAddress1 + SHORT_MISALIGNMENT;
         long objectOffset = SampleObject.SHORT_VALUE_OFFSET + SHORT_MISALIGNMENT;
@@ -422,6 +474,32 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
 
         memoryAccessor.putIntVolatile(sampleObject, SampleObject.INT_VALUE_OFFSET, 4);
         assertEquals(4, memoryAccessor.getIntVolatile(sampleObject, SampleObject.INT_VALUE_OFFSET));
+    }
+
+    void assert_putGetIntUnalignedFails() {
+        long address = baseAddress1 + 2;
+        long objectOffset = SampleObject.INT_VALUE_OFFSET + INT_MISALIGNMENT;
+
+        try {
+            memoryAccessor.putInt(address, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getInt(address);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.putInt(sampleObject, objectOffset, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getInt(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
     void assert_putGetIntVolatileUnalignedFails() {
@@ -477,6 +555,32 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
 
         memoryAccessor.putFloatVolatile(sampleObject, SampleObject.FLOAT_VALUE_OFFSET, 4f);
         assertEquals(4f, memoryAccessor.getFloatVolatile(sampleObject, SampleObject.FLOAT_VALUE_OFFSET), 0f);
+    }
+
+    void assert_putGetFloatUnalignedFails() {
+        long address = baseAddress1 + FLOAT_MISALIGNMENT;
+        long objectOffset = SampleObject.FLOAT_VALUE_OFFSET + FLOAT_MISALIGNMENT;
+
+        try {
+            memoryAccessor.putFloat(address, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getFloat(address);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.putFloat(sampleObject, objectOffset, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getFloat(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
     void assert_putGetFloatVolatileUnalignedFails() {
@@ -535,6 +639,31 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
         assertEquals(4, memoryAccessor.getLongVolatile(sampleObject, SampleObject.LONG_VALUE_OFFSET));
     }
 
+    void assert_putGetLongUnalignedFails() {
+        long address = baseAddress1 + LONG_MISALIGNMENT;
+        long objectOffset = SampleObject.LONG_VALUE_OFFSET + LONG_MISALIGNMENT;
+        try {
+            memoryAccessor.putLong(address, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getLong(address);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.putLong(sampleObject, objectOffset, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getLong(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+    }
+
     void assert_putGetLongVolatileUnalignedFails() {
         long address = baseAddress1 + LONG_MISALIGNMENT;
         long objectOffset = SampleObject.LONG_VALUE_OFFSET + LONG_MISALIGNMENT;
@@ -588,6 +717,32 @@ public abstract class BaseMemoryAccessorTest extends AbstractUnsafeDependentMemo
 
         memoryAccessor.putDoubleVolatile(sampleObject, SampleObject.DOUBLE_VALUE_OFFSET, 4f);
         assertEquals(4f, memoryAccessor.getDoubleVolatile(sampleObject, SampleObject.DOUBLE_VALUE_OFFSET), 0f);
+    }
+
+    void assert_putGetDoubleUnalignedFails() {
+        long address = baseAddress1 + DOUBLE_MISALIGNMENT;
+        long objectOffset = SampleObject.DOUBLE_VALUE_OFFSET + DOUBLE_MISALIGNMENT;
+
+        try {
+            memoryAccessor.putDouble(address, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getDouble(address);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.putDouble(sampleObject, objectOffset, 1);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
+        try {
+            memoryAccessor.getDouble(sampleObject, objectOffset);
+            fail();
+        } catch (IllegalArgumentException ignored) {
+        }
     }
 
     void assert_putGetDoubleVolatileUnalignedFails() {

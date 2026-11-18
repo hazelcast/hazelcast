@@ -18,7 +18,6 @@ package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 import com.hazelcast.test.starter.MavenInterface;
-import org.jspecify.annotations.NonNull;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +26,8 @@ import org.testcontainers.containers.KafkaContainer;
 import org.testcontainers.containers.output.Slf4jLogConsumer;
 import org.testcontainers.kafka.ConfluentKafkaContainer;
 import org.testcontainers.utility.DockerImageName;
+
+import javax.annotation.Nonnull;
 
 import java.util.Locale;
 import java.util.Map;
@@ -73,7 +74,7 @@ class DockerizedKafkaTestSupport extends KafkaTestSupport {
         return confluentKafkaContainer.getBootstrapServers();
     }
 
-    static @NonNull String getKafkaVersion() {
+    static @Nonnull String getKafkaVersion() {
         String kafkaVersion = System.getProperty("test.kafka.version");
         if (kafkaVersion == null) {
             kafkaVersion = MAVEN_CONFLUENT_VERSION.get();

@@ -2025,6 +2025,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 mapConfig.setStatisticsEnabled(getBooleanValue(getTextContent(node)));
             } else if (matches("per-entry-stats-enabled", nodeName)) {
                 mapConfig.setPerEntryStatsEnabled(getBooleanValue(getTextContent(node)));
+            } else if (matches("oversized-entry-threshold-bytes", nodeName)) {
+                mapConfig.setOversizedEntryThresholdBytes(getLongValue("oversized-entry-threshold-bytes", getTextContent(node)));
             } else if (matches("cache-deserialized-values", nodeName)) {
                 CacheDeserializedValues cacheDeserializedValues = CacheDeserializedValues
                         .parseString(getTextContent(node));

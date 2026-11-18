@@ -156,7 +156,7 @@ public class ConfigXmlGenerator {
                 .append("http://www.hazelcast.com/schema/config/hazelcast-config-")
                 .append(Versions.CURRENT_CLUSTER_VERSION)
                 .append(".xsd\">");
-        gen.node("license-key", getOrMaskValue("license-key", config.getLicenseKey()))
+        gen.node("license-key", config.getLicenseKey())
                 .node("instance-name", config.getInstanceName())
                 .node("cluster-name", config.getClusterName())
         ;
@@ -211,17 +211,6 @@ public class ConfigXmlGenerator {
 
         String xmlString = xml.toString();
         return formatted ? format(xmlString, INDENT) : xmlString;
-    }
-
-    private String getOrMaskValue(String key, String value) {
-        return maskSensitiveFields ? SensitiveDataMasker.mask(key, value) : value;
-    }
-
-    private String getOrMaskValue(String value) {
-        if (value == null) {
-            return null;
-        }
-        return maskSensitiveFields ? MASK_FOR_SENSITIVE_DATA : value;
     }
 
     private void managementCenterXmlGenerator(XmlGenerator gen, Config config) {
@@ -315,11 +304,11 @@ public class ConfigXmlGenerator {
             }
             UsernamePasswordIdentityConfig upi = c.getUsernamePasswordIdentityConfig();
             if (upi != null) {
-                gen.node("username-password", null, "username", upi.getUsername(), "password", getOrMaskValue(upi.getPassword()));
+                gen.node("username-password", null, "username", upi.getUsername(), "password", upi.getPassword());
             }
             TokenIdentityConfig ti = c.getTokenIdentityConfig();
             if (ti != null) {
-                gen.node("token", getOrMaskValue(ti.getTokenEncoded()), "encoding", ti.getEncoding().toString());
+                gen.node("token", ti.getTokenEncoded(), "encoding", ti.getEncoding().toString());
             }
             kerberosIdentityGenerator(gen, c.getKerberosIdentityConfig());
             gen.close();
@@ -357,7 +346,7 @@ public class ConfigXmlGenerator {
                 .nodeIfContents("role-search-scope", c.getRoleSearchScope())
                 .nodeIfContents("user-name-attribute", c.getUserNameAttribute())
                 .nodeIfContents("system-user-dn", c.getSystemUserDn())
-                .nodeIfContents("system-user-password", getOrMaskValue(c.getSystemUserPassword()))
+                .nodeIfContents("system-user-password", c.getSystemUserPassword())
                 .nodeIfContents("system-authentication", c.getSystemAuthentication())
                 .nodeIfContents("security-realm", c.getSecurityRealm())
                 .nodeIfContents("password-attribute", c.getPasswordAttribute())
@@ -390,7 +379,7 @@ public class ConfigXmlGenerator {
         XmlGenerator simpleGen = gen.open("simple");
         addClusterLoginElements(simpleGen, c).nodeIfContents("role-separator", c.getRoleSeparator());
         for (String username : c.getUsernames()) {
-            simpleGen.open("user", "username", username, "password", getOrMaskValue(c.getPassword(username)));
+            simpleGen.open("user", "username", username, "password", c.getPassword(username));
             for (String role : c.getRoles(username)) {
                 simpleGen.node("role", role);
             }
@@ -783,15 +772,6 @@ public class ConfigXmlGenerator {
             if (factoryClassName != null) {
                 ssl.setFactoryClassName(factoryClassName);
             }
-            Properties props = ssl.getProperties();
-
-            if (maskSensitiveFields && props.containsKey("trustStorePassword")) {
-                props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
-            }
-
-            if (maskSensitiveFields && props.containsKey("keyStorePassword")) {
-                props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
-            }
         }
 
         factoryWithPropertiesXmlGenerator(gen, "ssl", ssl);
@@ -827,7 +807,7 @@ public class ConfigXmlGenerator {
             return;
         }
         gen.node("algorithm", sec.getAlgorithm())
-                .node("salt", getOrMaskValue(sec.getSalt()));
+                .node("salt", sec.getSalt());
     }
 
     private void symmetricEncInterceptorConfigXmlGenerator(XmlGenerator gen, SymmetricEncryptionConfig sec) {
@@ -836,7 +816,7 @@ public class ConfigXmlGenerator {
         }
         gen.open("symmetric-encryption", "enabled", sec.isEnabled());
         commonSymmetricEncInterceptorConfigXmlBodyGenerator(gen, sec);
-        gen.node("password", getOrMaskValue(sec.getPassword()))
+        gen.node("password", sec.getPassword())
                 .node("iteration-count", sec.getIterationCount());
         gen.close();
     }
@@ -939,7 +919,7 @@ public class ConfigXmlGenerator {
         gen.open("keystore")
                 .node("path", secureStoreConfig.getPath().getAbsolutePath())
                 .node("type", secureStoreConfig.getType())
-                .node("password", getOrMaskValue(secureStoreConfig.getPassword()))
+                .node("password", secureStoreConfig.getPassword())
                 .node("polling-interval", secureStoreConfig.getPollingInterval())
                 .node("current-key-alias", secureStoreConfig.getCurrentKeyAlias());
         gen.close();
@@ -949,7 +929,7 @@ public class ConfigXmlGenerator {
         gen.open("vault")
                 .node("address", secureStoreConfig.getAddress())
                 .node("secret-path", secureStoreConfig.getSecretPath())
-                .node("token", getOrMaskValue(secureStoreConfig.getToken()))
+                .node("token", secureStoreConfig.getToken())
                 .node("polling-interval", secureStoreConfig.getPollingInterval());
         sslConfigXmlGenerator(gen, secureStoreConfig.getSSLConfig());
         gen.close();
@@ -1272,13 +1252,13 @@ public class ConfigXmlGenerator {
                 .node("ciphers", ssl.getCiphers())
                 .node("enabled-protocols", ssl.getEnabledProtocols())
                 .node("key-alias", ssl.getKeyAlias())
-                .node("key-password", getOrMaskValue(ssl.getKeyPassword()))
+                .node("key-password", ssl.getKeyPassword())
                 .node("key-store", ssl.getKeyStore())
-                .node("key-store-password", getOrMaskValue(ssl.getKeyStorePassword()))
+                .node("key-store-password", ssl.getKeyStorePassword())
                 .node("key-store-type", ssl.getKeyStoreType())
                 .node("key-store-provider", ssl.getKeyStoreProvider())
                 .node("trust-store", ssl.getTrustStore())
-                .node("trust-store-password", getOrMaskValue(ssl.getTrustStorePassword()))
+                .node("trust-store-password", ssl.getTrustStorePassword())
                 .node("trust-store-type", ssl.getTrustStoreType())
                 .node("trust-store-provider", ssl.getTrustStoreProvider())
                 .node("protocol", ssl.getProtocol())
@@ -1344,8 +1324,10 @@ public class ConfigXmlGenerator {
         }
 
         /**
-         * @param maskSensitiveFields whether free-form property values are masked with
-         *                            {@link SensitiveDataMasker#mask(String, String)}.
+         * @param maskSensitiveFields whether element and attribute values are masked with
+         *                            {@link SensitiveDataMasker#mask(String, String)}, keyed by
+         *                            the element or attribute name, or by the {@code name}
+         *                            attribute of {@code <property>} and {@code <attribute>}.
          *                            Leave it {@code false} for any output that is parsed
          *                            back as configuration.
          */
@@ -1357,10 +1339,9 @@ public class ConfigXmlGenerator {
         /**
          * Returns the value to write for a free-form property. If this generator masks
          * sensitive fields and the value is a string, the result of
-         * {@link SensitiveDataMasker#mask(String, String)}, which masks values of
-         * sensitive keys and credentials embedded in URLs, the value itself otherwise.
+         * {@link SensitiveDataMasker#mask(String, String)}, the value itself otherwise.
          */
-        public Object propertyValue(String key, Object value) {
+        private Object propertyValue(String key, Object value) {
             if (maskSensitiveFields && value instanceof String stringValue) {
                 return SensitiveDataMasker.mask(key, stringValue);
             }
@@ -1368,21 +1349,48 @@ public class ConfigXmlGenerator {
         }
 
         public XmlGenerator open(String name, Object... attributes) {
-            appendOpenNode(xml, name, attributes);
+            appendOpenNode(xml, name, maskAttributes(attributes));
             openNodes.addLast(name);
             return this;
         }
 
         public XmlGenerator node(String name, Object contents, Object... attributes) {
-            appendNode(xml, name, contents, attributes);
+            appendNode(xml, name, maskContents(name, contents, attributes), maskAttributes(attributes));
             return this;
         }
 
         public XmlGenerator nodeIfContents(String name, Object contents, Object... attributes) {
             if (contents != null) {
-                appendNode(xml, name, contents, attributes);
+                node(name, contents, attributes);
             }
             return this;
+        }
+
+        private Object maskContents(String name, Object contents, Object... attributes) {
+            if (!maskSensitiveFields) {
+                return contents;
+            }
+            String key = name;
+            // free-form entries carry their key in the name attribute: <property name="password">
+            if (name.equals("property") || name.equals("attribute")) {
+                for (int i = 0; i < attributes.length - 1; i += 2) {
+                    if ("name".equals(attributes[i]) && attributes[i + 1] != null) {
+                        key = attributes[i + 1].toString();
+                    }
+                }
+            }
+            return propertyValue(key, contents);
+        }
+
+        private Object[] maskAttributes(Object... attributes) {
+            if (!maskSensitiveFields || attributes.length == 0) {
+                return attributes;
+            }
+            Object[] masked = attributes.clone();
+            for (int i = 0; i < masked.length - 1; i += 2) {
+                masked[i + 1] = propertyValue(String.valueOf(masked[i]), masked[i + 1]);
+            }
+            return masked;
         }
 
         public XmlGenerator close() {
@@ -1407,7 +1415,7 @@ public class ConfigXmlGenerator {
                 Set keys = props.keySet();
                 for (Object key : keys) {
                     String name = key.toString();
-                    node("property", propertyValue(name, props.getProperty(name)), "name", name);
+                    node("property", props.getProperty(name), "name", name);
                 }
                 close();
             }
@@ -1424,7 +1432,7 @@ public class ConfigXmlGenerator {
             if (!MapUtil.isNullOrEmpty(props)) {
                 open("properties");
                 for (Map.Entry<String, ?> entry : props.entrySet()) {
-                    node("property", propertyValue(entry.getKey(), entry.getValue()), "name", entry.getKey());
+                    node("property", entry.getValue(), "name", entry.getKey());
                 }
                 close();
             }

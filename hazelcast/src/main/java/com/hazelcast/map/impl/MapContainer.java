@@ -60,6 +60,8 @@ public interface MapContainer {
 
     AtomicLong getLastInvalidMergePolicyCheckTime();
 
+    AtomicLong getLastOversizedEntryLogTime();
+
     void initEvictor();
 
     boolean shouldUseGlobalIndex();

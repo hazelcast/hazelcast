@@ -18,6 +18,7 @@ package com.hazelcast.internal.management.operation;
 
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
@@ -33,6 +34,7 @@ import com.hazelcast.nio.serialization.impl.Versioned;
 import java.io.IOException;
 
 import static com.hazelcast.internal.cluster.Versions.V5_4;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 /**
  * Operation to update map configuration from Management Center.
@@ -73,6 +75,9 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation implem
     public void run() throws Exception {
         MapService service = getService();
         MapConfig oldConfig = service.getMapServiceContext().getMapContainer(mapName).getMapConfig();
+        EvictionPolicy newEvictionPolicy = EvictionPolicy.getById(evictionPolicyId);
+        validateEvictionPolicyUpdate(oldConfig, newEvictionPolicy);
+
         MapConfig newConfig = new MapConfig(oldConfig);
         newConfig.setTimeToLiveSeconds(timeToLiveSeconds);
         newConfig.setMaxIdleSeconds(maxIdleSeconds);
@@ -82,7 +87,7 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation implem
         }
 
         EvictionConfig evictionConfig = newConfig.getEvictionConfig();
-        evictionConfig.setEvictionPolicy(EvictionPolicy.getById(evictionPolicyId));
+        evictionConfig.setEvictionPolicy(newEvictionPolicy);
         evictionConfig.setMaxSizePolicy(MaxSizePolicy.getById(maxSizePolicyId));
         evictionConfig.setSize(maxSize);
 
@@ -96,6 +101,56 @@ public class UpdateMapConfigOperation extends AbstractManagementOperation implem
             applyMapConfig(mapContainer, oldConfig);
             throw new InvalidConfigurationException("Applying the MapConfig failed: " + ex.getMessage(), ex);
         }
+    }
+
+    private void validateEvictionPolicyUpdate(MapConfig oldConfig, EvictionPolicy newPolicy) {
+        if (oldConfig.getInMemoryFormat() != InMemoryFormat.NATIVE
+                || oldConfig.isPerEntryStatsEnabled()) {
+            return;
+        }
+
+        EvictionConfig oldEvictionConfig = oldConfig.getEvictionConfig();
+        EvictionPolicy oldPolicy = oldEvictionConfig.getEvictionPolicy();
+        if (oldPolicy == newPolicy) {
+            return;
+        }
+
+        if (hasCustomEvictionComparator(oldEvictionConfig)) {
+            throw new InvalidConfigurationException(String.format(
+                    "Cannot dynamically change eviction policy from %s to %s on NATIVE map '%s' "
+                            + "configured with a custom eviction policy comparator when perEntryStatsEnabled is false. "
+                            + "To allow dynamic eviction policy transitions, enable perEntryStatsEnabled "
+                            + "on the map configuration before creating the map.",
+                    oldPolicy, newPolicy, mapName
+            ));
+        }
+
+        if (!isCompatibleNativeEvictionTransition(oldPolicy, newPolicy)) {
+            String reason = isNoneOrRandom(oldPolicy)
+                    ? "from current policy " + oldPolicy + ", only transitions within [NONE, RANDOM] are safe"
+                    : "the eviction policy cannot be changed from " + oldPolicy;
+
+            throw new InvalidConfigurationException(String.format(
+                    "Cannot dynamically change eviction policy from %s to %s on NATIVE map '%s'. "
+                            + "When perEntryStatsEnabled is false, off-heap record layouts are fixed at creation time; %s. "
+                            + "To allow arbitrary eviction policy transitions (including NONE <-> LRU/LFU and LRU <-> LFU), "
+                            + "enable perEntryStatsEnabled on the map configuration before creating the map.",
+                    oldPolicy, newPolicy, mapName, reason
+            ));
+        }
+    }
+
+    private static boolean hasCustomEvictionComparator(EvictionConfig evictionConfig) {
+        return evictionConfig.getComparator() != null
+                || !isNullOrEmpty(evictionConfig.getComparatorClassName());
+    }
+
+    private static boolean isCompatibleNativeEvictionTransition(EvictionPolicy oldPolicy, EvictionPolicy newPolicy) {
+        return oldPolicy == newPolicy || (isNoneOrRandom(oldPolicy) && isNoneOrRandom(newPolicy));
+    }
+
+    private static boolean isNoneOrRandom(EvictionPolicy policy) {
+        return policy == EvictionPolicy.NONE || policy == EvictionPolicy.RANDOM;
     }
 
     private void applyMapConfig(MapContainer mapContainer, MapConfig config) {

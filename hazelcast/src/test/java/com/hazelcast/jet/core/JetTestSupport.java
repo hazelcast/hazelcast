@@ -303,7 +303,12 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return new Watermark(timestamp, key);
     }
 
-    public void waitForFirstSnapshot(JobRepository jr, long jobId, int timeoutSeconds, boolean allowEmptySnapshot) {
+    public static void waitForFirstSnapshot(HazelcastInstance instance, Job job) {
+        JobRepository jobRepository = new JobRepository(instance);
+        waitForFirstSnapshot(jobRepository, job.getId(), 60, false);
+    }
+
+    public static void waitForFirstSnapshot(JobRepository jr, long jobId, int timeoutSeconds, boolean allowEmptySnapshot) {
         long[] snapshotId = {-1};
         assertTrueEventually(() -> {
             JobExecutionRecord record = jr.getJobExecutionRecord(jobId);

@@ -27,9 +27,9 @@ import static com.tngtech.archunit.lang.SimpleConditionEvent.violated;
  * Also, Hamcrest matchers tend to cause the usage of {@code org.junit.Assert#assertThat}
  * (didn't add link to not depend on deprecated method), which is deprecated - and AssertJ is better for fluent assertions.
  */
-public class MatchersUsageCondition extends ArchCondition<JavaClass> {
+public class HamcrestMatchersUsageCondition extends ArchCondition<JavaClass> {
 
-    public MatchersUsageCondition() {
+    public HamcrestMatchersUsageCondition() {
         super("Use AssertJ instead of Hamcrest matchers");
     }
 
@@ -45,6 +45,6 @@ public class MatchersUsageCondition extends ArchCondition<JavaClass> {
     }
 
     public static ArchCondition<JavaClass> notUseHamcrestMatchers() {
-        return new MatchersUsageCondition();
+        return new HamcrestMatchersUsageCondition();
     }
 }

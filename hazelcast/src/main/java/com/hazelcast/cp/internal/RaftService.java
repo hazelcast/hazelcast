@@ -1615,8 +1615,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
                             state.commitIndex(), state.lastApplied(), log.lastLogOrSnapshotTerm(), log.snapshotIndex(),
                             log.lastLogOrSnapshotIndex(), log.availableCapacity(), state.getLeadershipStats(),
                             raftNode.getLastSnapshotBuildDurationMs(), raftNode.getSnapshotBuildCount(),
-                            raftNode.getChunkedSnapshotInstaller().getLastSnapshotTransferDurationMs(),
-                            raftNode.getChunkedSnapshotInstaller().getSnapshotTransferCount());
+                            raftNode.getLastSnapshotTransferDurationMs(), raftNode.getSnapshotTransferCount());
                     nodeMetrics.put(node.getGroupId(), metrics);
                 });
             }

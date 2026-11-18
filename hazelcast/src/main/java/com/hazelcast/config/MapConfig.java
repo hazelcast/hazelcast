@@ -40,6 +40,7 @@ import static com.hazelcast.internal.util.Preconditions.checkAsyncBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkBackupCount;
 import static com.hazelcast.internal.util.Preconditions.checkFalse;
 import static com.hazelcast.internal.util.Preconditions.checkNoNullInside;
+import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
 
@@ -101,6 +102,12 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      */
     public static final boolean DEFAULT_ENTRY_STATS_ENABLED = false;
     /**
+     * Default serialized entry size in bytes above which an entry is reported as oversized.
+     *
+     * @since 6.0
+     */
+    public static final long DEFAULT_OVERSIZED_ENTRY_THRESHOLD_BYTES = 1024L * 1024L;
+    /**
      * Default max size.
      */
     public static final int DEFAULT_MAX_SIZE = Integer.MAX_VALUE;
@@ -118,6 +125,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
     private boolean readBackupData;
     private boolean statisticsEnabled = DEFAULT_STATISTICS_ENABLED;
     private boolean perEntryStatsEnabled = DEFAULT_ENTRY_STATS_ENABLED;
+    private long oversizedEntryThresholdBytes = DEFAULT_OVERSIZED_ENTRY_THRESHOLD_BYTES;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
@@ -173,6 +181,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         this.cacheDeserializedValues = config.cacheDeserializedValues;
         this.statisticsEnabled = config.statisticsEnabled;
         this.perEntryStatsEnabled = config.perEntryStatsEnabled;
+        this.oversizedEntryThresholdBytes = config.oversizedEntryThresholdBytes;
         this.mergePolicyConfig = new MergePolicyConfig(config.mergePolicyConfig);
         this.wanReplicationRef = config.wanReplicationRef != null ? new WanReplicationRef(config.wanReplicationRef) : null;
         this.entryListenerConfigs = new ArrayList<>(config.getEntryListenerConfigs());
@@ -488,6 +497,49 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
      */
     public MapConfig setPerEntryStatsEnabled(boolean perEntryStatsEnabled) {
         this.perEntryStatsEnabled = perEntryStatsEnabled;
+        return this;
+    }
+
+    /**
+     * Returns the serialized entry size, in bytes, above which an entry
+     * written to this map is reported as oversized.
+     *
+     * @return the oversized entry threshold in bytes, or {@code 0} if entry size tracking is disabled
+     * @see #setOversizedEntryThresholdBytes(long)
+     * @since 6.0
+     */
+    public long getOversizedEntryThresholdBytes() {
+        return oversizedEntryThresholdBytes;
+    }
+
+    /**
+     * Sets the serialized entry size, in bytes, above which an entry written
+     * to this map is reported as oversized. Large entries can cause memory
+     * pressure and slow down migrations and WAN replication.
+     * <p>
+     * When an entry larger than this threshold is written, the
+     * {@code oversizedEntriesSeen} map metric is incremented and a warning is
+     * logged, at most once every 30 minutes per map on each member. The
+     * {@code lastOversizedEntrySize} and {@code lastOversizedEntryTime} map
+     * metrics record the most recent oversized entry. The size is the sum of
+     * the serialized key and value sizes. For {@link InMemoryFormat#OBJECT}
+     * format, this can differ significantly from the heap memory used by the
+     * entry. Some {@code OBJECT} format writes may not be reported, such as
+     * entry processor results (unless WAN replication is enabled), read-through
+     * loads and writes to maps with a {@link com.hazelcast.map.MapInterceptor}.
+     * Statistics must be enabled for the map.
+     * <p>
+     * Its default value is {@value #DEFAULT_OVERSIZED_ENTRY_THRESHOLD_BYTES}.
+     * Set to {@code 0} to disable entry size tracking.
+     *
+     * @param oversizedEntryThresholdBytes the threshold in bytes, or {@code 0} to disable
+     * @return the current map config instance
+     * @throws IllegalArgumentException if the threshold is negative
+     * @since 6.0
+     */
+    public MapConfig setOversizedEntryThresholdBytes(long oversizedEntryThresholdBytes) {
+        this.oversizedEntryThresholdBytes = checkNotNegative(oversizedEntryThresholdBytes,
+                "Oversized entry threshold cannot be negative");
         return this;
     }
 
@@ -899,6 +951,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (perEntryStatsEnabled != that.perEntryStatsEnabled) {
             return false;
         }
+        if (oversizedEntryThresholdBytes != that.oversizedEntryThresholdBytes) {
+            return false;
+        }
         if (!name.equals(that.name)) {
             return false;
         }
@@ -993,6 +1048,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         result = 31 * result + getPartitionLostListenerConfigs().hashCode();
         result = 31 * result + (statisticsEnabled ? 1 : 0);
         result = 31 * result + (perEntryStatsEnabled ? 1 : 0);
+        result = 31 * result + Long.hashCode(oversizedEntryThresholdBytes);
         result = 31 * result + (partitioningStrategyConfig != null ? partitioningStrategyConfig.hashCode() : 0);
         result = 31 * result + (splitBrainProtectionName != null ? splitBrainProtectionName.hashCode() : 0);
         result = 31 * result + merkleTreeConfig.hashCode();
@@ -1033,6 +1089,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
                 + ", cacheDeserializedValues=" + cacheDeserializedValues
                 + ", statisticsEnabled=" + statisticsEnabled
                 + ", entryStatsEnabled=" + perEntryStatsEnabled
+                + ", oversizedEntryThresholdBytes=" + oversizedEntryThresholdBytes
                 + ", tieredStoreConfig=" + tieredStoreConfig
                 + ", partitioningAttributeConfigs=" + partitioningAttributeConfigs
                 + ", userCodeNamespace=" + userCodeNamespace
@@ -1087,6 +1144,11 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         if (out.getVersion().isGreaterOrEqual(Versions.V5_4)) {
             out.writeString(userCodeNamespace);
         }
+
+        // RU_COMPAT_5_7
+        if (out.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+            out.writeLong(oversizedEntryThresholdBytes);
+        }
     }
 
     @Override
@@ -1126,6 +1188,11 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versi
         // RU_COMPAT_5_3
         if (in.getVersion().isGreaterOrEqual(Versions.V5_4)) {
             userCodeNamespace = in.readString();
+        }
+
+        // RU_COMPAT_5_7
+        if (in.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+            oversizedEntryThresholdBytes = in.readLong();
         }
     }
 }

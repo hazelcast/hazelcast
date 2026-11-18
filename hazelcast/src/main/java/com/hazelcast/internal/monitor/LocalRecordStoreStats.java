@@ -65,4 +65,28 @@ public interface LocalRecordStoreStats {
      * Sets the last update time of the locally owned entries of this partition.
      */
     void setLastUpdateTime(long time);
+
+    /**
+     * Returns the number of times an entry larger than the oversized entry
+     * threshold was written to this partition.
+     */
+    long getOversizedEntriesSeen();
+
+    /**
+     * Returns the serialized size, in bytes, of the last oversized entry written to this partition.
+     */
+    long getLastOversizedEntrySize();
+
+    /**
+     * Returns the time the last oversized entry was written to this partition.
+     */
+    long getLastOversizedEntryTime();
+
+    /**
+     * Records an oversized entry written to this partition.
+     *
+     * @param entrySize the serialized entry size in bytes
+     * @param time      the time the entry was written
+     */
+    void recordOversizedEntry(long entrySize, long time);
 }

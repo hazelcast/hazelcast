@@ -16,6 +16,7 @@
 package com.hazelcast.jet.pulsar.impl;
 
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -36,11 +37,10 @@ import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.Reader;
 import org.apache.pulsar.client.api.ReaderBuilder;
 import org.apache.pulsar.client.api.TopicMessageId;
-import org.apache.pulsar.common.naming.TopicName;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
+import org.apache.pulsar.shade.org.apache.pulsar.common.naming.TopicName;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serial;
 import java.io.Serializable;
@@ -62,11 +62,12 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.impl.util.JetExceptionUtil.rethrow;
+import static com.hazelcast.jet.pulsar.PulsarMetricNames.ASSIGNED_PARTITION_COUNT;
 import static com.hazelcast.jet.pulsar.impl.Utils.wrapFailure;
 import static org.apache.pulsar.common.naming.TopicDomain.persistent;
 
 /**
- * Reads each physical topic through a single {@link Reader}.
+ * Reads each physical topic through its own {@link Reader}.
  * Before the reading it queries partition and subscribes only to a subset
  * of them.
  * <p>The subscription backing the reader must be dedicated to this source and must not be deleted,
@@ -82,6 +83,10 @@ import static org.apache.pulsar.common.naming.TopicDomain.persistent;
 public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
     private static final long PARTITION_GET_TIMEOUT = 120;
     private static final int SCAN_DELAY_SECONDS = 5;
+    /**
+     * Soft limit on how many messages should be at most in one batch.
+     */
+    private static final int DEFAULT_MAX_MESSAGES_PER_BATCH = 4096;
 
     private final FunctionEx<Message<M>, T> projectionFn;
     private final PulsarSourceConfig<M, T> pulsarConfig;
@@ -91,19 +96,21 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
 
     private ILogger logger;
     private final PulsarClient client;
-    private Reader<M> reader;
+    private final Map<String, PartitionReader> readers = new HashMap<>();
     private Traverser<Object> traverser = Traversers.empty();
     private Traverser<Map.Entry<BroadcastKey<String>, SnapshotData>> snapshotTraverser;
     private final AtomicBoolean partitionNumberChanged = new AtomicBoolean(false);
     private final List<String> assignedPartitions = new ArrayList<>();
+    @Probe(name = ASSIGNED_PARTITION_COUNT)
+    private volatile int assignedPartitionCount;
     private Context context;
-    private Future<Message<M>> nextMessageFuture;
+
     private final AtomicReference<Throwable> exceptionRef = new AtomicReference<>();
     private PartitionAssigner partitionAssigner;
 
     public StreamPulsarViaReaderP(@Nonnull PulsarSourceConfig<M, T> config,
                                   @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-                                  @NonNull PulsarClient pulsarClient) {
+                                  @Nonnull PulsarClient pulsarClient) {
         this.pulsarConfig = config;
         this.projectionFn = config.getProjectionFn();
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
@@ -123,7 +130,6 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
     }
 
     private void assignPartitions() {
-        int oldPartitionCount = assignedPartitions.size();
         boolean snapshottingEnabled = context.snapshottingEnabled();
         try {
             for (String topic : pulsarConfig.getTopics()) {
@@ -144,6 +150,7 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
                     }
                 }
             }
+            assignedPartitionCount = assignedPartitions.size();
             int count = eventTimeMapper.partitionCount();
             if (assignedPartitions.size() > count) {
                 eventTimeMapper.addPartitions(assignedPartitions.size() - count);
@@ -151,35 +158,35 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
 
             assert eventTimeMapper.partitionCount() == assignedPartitions.size();
 
-            // force recreation of reader
-            if (reader != null && oldPartitionCount != assignedPartitions.size()) {
-                reader.close();
-                reader = null;
-            }
             logger.info("Assigned partitions: " + assignedPartitions);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw wrapFailure(e.getMessage(), e.getCause());
-        } catch (ExecutionException | TimeoutException | IOException e) {
+        } catch (ExecutionException | TimeoutException e) {
             throw wrapFailure("Unable to subscribe to Pulsar partitions", e);
         }
     }
 
-    // tbd to parameterize
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private void createReaderAndStartReading() {
-        if (!assignedPartitions.isEmpty()) {
+    private void createReadersAndStartReading() {
+        for (String partition : assignedPartitions) {
+            if (readers.containsKey(partition)) {
+                continue;
+            }
             try {
                 ReaderBuilder<M> builder =
-                    client.newReader(pulsarConfig.getSchemaSupplier().get());
+                    client.newReader(pulsarConfig.getSchemaSupplier().get())
+                          .loadConf(pulsarConfig.getOptions());
                 pulsarConfig.getReaderCustomizer().accept(builder);
-                reader = builder.autoUpdatePartitions(false)
-                                .topics(List.copyOf(assignedPartitions))
-                                .poolMessages(false)
-                                .startMessageId(offsets.isEmpty() ? MessageId.earliest : MessageId.latest)
+                boolean enableMessagePooling = pulsarConfig.isEnableMessagePooling();
+                // Set the restored position before the reader can prefetch. Creating a multi-topic reader
+                // and seeking afterwards can deliver prefetched history or reorder messages around the seek.
+                Reader<M> reader = builder.autoUpdatePartitions(false)
+                                .subscriptionName(pulsarConfig.getSubscriberName())
+                                .topic(partition)
+                                .poolMessages(enableMessagePooling)
+                                .startMessageId(offsets.getOrDefault(partition, pulsarConfig.getInitialOffset()))
                                 .create();
-                reader.seek(topic -> offsets.getOrDefault(topic, MessageId.earliest));
-                nextMessageFuture = reader.readNextAsync();
+                readers.put(partition, new PartitionReader(reader));
             } catch (IOException e) {
                 throw wrapFailure(e.getMessage(), e.getCause());
             }
@@ -204,20 +211,26 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
             emitFromTraverser(eventTimeMapper.flatMapIdle());
             return false;
         }
-        if (reader == null) {
-            createReaderAndStartReading();
-        }
-
-        if (!nextMessageFuture.isDone()) {
-            emitFromTraverser(eventTimeMapper.flatMapIdle());
-            return false;
+        if (readers.size() != assignedPartitions.size()) {
+            createReadersAndStartReading();
         }
         try {
-            List<Message<M>> messages = new ArrayList<>();
-
-            while (nextMessageFuture.isDone()) {
-                messages.add(nextMessageFuture.get());
-                nextMessageFuture = reader.readNextAsync();
+            int allowedMessagesRemaining = DEFAULT_MAX_MESSAGES_PER_BATCH;
+            List<Message<M>> messages = null;
+            Collection<PartitionReader> partitionReaders = readers.values();
+            for (PartitionReader partitionReader : partitionReaders) {
+                while (allowedMessagesRemaining > 0 && partitionReader.isDone()) {
+                    if (messages == null) {
+                        messages = new ArrayList<>(partitionReaders.size());
+                    }
+                    messages.add(partitionReader.nextMessage());
+                    partitionReader.scheduleNextReading();
+                    allowedMessagesRemaining--;
+                }
+            }
+            if (messages == null) {
+                emitFromTraverser(eventTimeMapper.flatMapIdle());
+                return false;
             }
             traverser = traverseIterable(messages).flatMap(this::processMessage)
                                                   .onFirstNull(() -> traverser = null);
@@ -232,19 +245,23 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
     }
 
     private Traverser<Object> processMessage(Message<M> message) {
-        String topicName = message.getTopicName();
-        Integer partitionIndex = assignedPartitionIndexesForWatermarks.get(topicName);
-        if (partitionIndex == null) {
-            throw new JetException("Received a message from a removed Pulsar partition and"
-                                       + " connector does not support removal of partitions");
+        try {
+            String topicName = message.getTopicName();
+            Integer partitionIndex = assignedPartitionIndexesForWatermarks.get(topicName);
+            if (partitionIndex == null) {
+                throw new JetException("Received a message from a removed Pulsar partition and"
+                                           + " connector does not support removal of partitions");
+            }
+            MessageId messageId = message.getMessageId();
+            T projectedRecord = projectionFn.apply(message);
+            offsets.put(topicName, messageId);
+            long timestamp = message.getEventTime() != 0 ? message.getEventTime() : message.getPublishTime();
+            return projectedRecord == null
+                   ? eventTimeMapper.flatMapIdle()
+                   : eventTimeMapper.flatMapEvent(projectedRecord, partitionIndex, timestamp);
+        } finally {
+            message.release();
         }
-        MessageId messageId = message.getMessageId();
-        T projectedRecord = projectionFn.apply(message);
-        offsets.put(topicName, messageId);
-        long timestamp = message.getEventTime() != 0 ? message.getEventTime() : message.getPublishTime();
-        return projectedRecord == null
-               ? eventTimeMapper.flatMapIdle()
-               : eventTimeMapper.flatMapEvent(projectedRecord, partitionIndex, timestamp);
     }
 
     @Override
@@ -301,12 +318,46 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
 
     @Override
     public void close() {
-        if (reader != null) {
+        JetException failure = null;
+        for (PartitionReader partitionReader : readers.values()) {
             try {
-                reader.close();
+                partitionReader.close();
             } catch (Exception e) {
-                throw new JetException("Error while closing the Pulsar Reader processor.", e);
+                if (failure == null) {
+                    failure = new JetException("Error while closing the Pulsar Reader processor.", e);
+                } else {
+                    failure.addSuppressed(e);
+                }
             }
+        }
+        readers.clear();
+        if (failure != null) {
+            throw failure;
+        }
+    }
+
+    private final class PartitionReader {
+        private final Reader<M> reader;
+        private Future<Message<M>> nextMessageFuture;
+
+        private PartitionReader(Reader<M> reader) {
+            this.reader = reader;
+            this.nextMessageFuture = reader.readNextAsync();
+        }
+        void close() throws IOException {
+            reader.close();
+        }
+
+        Message<M> nextMessage() throws ExecutionException, InterruptedException {
+            return nextMessageFuture.get();
+        }
+
+        void scheduleNextReading() {
+            nextMessageFuture = reader.readNextAsync();
+        }
+
+        boolean isDone() {
+            return nextMessageFuture.isDone();
         }
     }
 
@@ -392,7 +443,7 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
         }
 
         @Override
-        public @NonNull Collection<? extends Processor> get(int count) {
+        public @Nonnull Collection<? extends Processor> get(int count) {
             processors = IntStream.range(0, count)
                                   .mapToObj(i -> new StreamPulsarViaReaderP<>(config, eventTimePolicy, pulsarClient))
                                   .toList();

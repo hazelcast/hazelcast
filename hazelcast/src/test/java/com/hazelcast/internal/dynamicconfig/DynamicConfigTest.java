@@ -935,7 +935,8 @@ public class DynamicConfigTest extends HazelcastTestSupport {
                 .setMetadataPolicy(MetadataPolicy.OFF)
                 .setReadBackupData(true)
                 .setStatisticsEnabled(false)
-                .setPerEntryStatsEnabled(true);
+                .setPerEntryStatsEnabled(true)
+                .setOversizedEntryThresholdBytes(2048);
 
         mapConfig.getEvictionConfig()
                 .setEvictionPolicy(EvictionPolicy.RANDOM)

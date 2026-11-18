@@ -84,8 +84,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 
-import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.createChunksFromSnapshot;
-import static com.hazelcast.cp.internal.datastructures.snapshot.ChunkUtil.extractChunksFrom;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.ACTIVE;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.INITIAL;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.STEPPED_DOWN;
@@ -244,8 +242,11 @@ public class RaftNodeImpl implements RaftNode {
         return new RaftNodeImpl(groupId, restoredState, raftStateStore, config, integration);
     }
 
-    public ChunkedSnapshotInstaller getChunkedSnapshotInstaller() {
-        return chunkedSnapshotInstaller;
+    /**
+     * Processes an incoming snapshot chunk request from a leader.
+     */
+    public void processSnapshotChunk(InstallSnapshotRequest request) {
+        chunkedSnapshotInstaller.processChunk(request);
     }
 
     /**
@@ -261,6 +262,21 @@ public class RaftNodeImpl implements RaftNode {
      */
     public long getSnapshotBuildCount() {
         return snapshotBuildCount;
+    }
+
+    /**
+     * Wall-clock duration (ms) of the most recently completed snapshot transfer from a leader.
+     * Holds its last value between transfers.
+     */
+    public long getLastSnapshotTransferDurationMs() {
+        return chunkedSnapshotInstaller.getLastSnapshotTransferDurationMs();
+    }
+
+    /**
+     * Cumulative number of snapshot transfers successfully installed from a leader.
+     */
+    public long getSnapshotTransferCount() {
+        return chunkedSnapshotInstaller.getSnapshotTransferCount();
     }
 
     public RaftIntegration getRaftIntegration() {
@@ -333,9 +349,7 @@ public class RaftNodeImpl implements RaftNode {
                 invalidateFuturesFrom(state.commitIndex() + 1);
                 LeaderState leaderState = state.leaderState();
                 if (leaderState != null) {
-                    for (BiTuple<Object, InternalCompletableFuture> t : leaderState.queryState().operations()) {
-                        t.element2.completeExceptionally(new LeaderDemotedException(state.localEndpoint(), null));
-                    }
+                    leaderState.queryState().fail(new LeaderDemotedException(state.localEndpoint(), null));
                 }
                 state.completeLeadershipTransfer(new LeaderDemotedException(state.localEndpoint(), null));
                 setStatus(TERMINATED);
@@ -621,6 +635,8 @@ public class RaftNodeImpl implements RaftNode {
      * <ul>
      * <li>Node is terminating, terminated or stepped down.
      * See {@link RaftNodeStatus}.</li>
+     * <li>The leader has applied its own removal from the group, hence it is no
+     * longer part of the quorum that would have to acknowledge the query.</li>
      * <li>If the leader has not yet marked an entry from its current term
      * committed. See Section 6.4 of Raft Dissertation.</li>
      * <li>There are already
@@ -630,6 +646,11 @@ public class RaftNodeImpl implements RaftNode {
      */
     public boolean canQueryLinearizable() {
         if (isTerminatedOrSteppedDown()) {
+            return false;
+        }
+
+        // a leaving leader is no longer part of the query quorum, so it stops serving these reads
+        if (!state.lastGroupMembers().isKnownMember(getLocalMember())) {
             return false;
         }
 
@@ -783,7 +804,7 @@ public class RaftNodeImpl implements RaftNode {
         final LeaderState leaderState = state.leaderState();
         final SnapshotEntry snapshotEntry = state.log().snapshot();
 
-        if (extractChunksFrom(snapshotEntry).isEmpty()) {
+        if (snapshotEntry.snapshotChunks().isEmpty()) {
             throw new IllegalStateException("No chunks extracted from snapshot");
         }
 
@@ -813,7 +834,7 @@ public class RaftNodeImpl implements RaftNode {
         } else {
             // Happy Path: The follower is requesting
             // a chunk of the current snapshot.
-            List<SnapshotChunk> snapshotChunks = extractChunksFrom(snapshotEntry);
+            List<SnapshotChunk> snapshotChunks = snapshotEntry.snapshotChunks();
             if (requestedChunkNumber < 0 || requestedChunkNumber >= snapshotChunks.size()) {
                 logger.warning(format("Received invalid chunk number %d (total chunks: %d) from %s for snapshot index %d",
                         requestedChunkNumber, snapshotChunks.size(), follower, currentSnapshotIndex));
@@ -846,7 +867,7 @@ public class RaftNodeImpl implements RaftNode {
     }
 
     private static SnapshotChunk createMetadataChunk(SnapshotEntry snapshotEntry) {
-        List<SnapshotChunk> chunks = extractChunksFrom(snapshotEntry);
+        List<SnapshotChunk> chunks = snapshotEntry.snapshotChunks();
         return ((SnapshotChunk) new SnapshotChunk()
                 .setChunkCount(chunks.size())
                 .setChunkNumber(METADATA_CHUNK_NUMBER)
@@ -1172,27 +1193,18 @@ public class RaftNodeImpl implements RaftNode {
 
         long buildStartNanos = System.nanoTime();
         try {
-            Object snapshot;
-            try {
-                snapshot = raftIntegration.takeServiceSnapshots(commitIndex);
-            } catch (Throwable t) {
-                logger.severe("Could not take snapshot at commit index: " + commitIndex, t);
-                return;
-            }
-
             RaftLog log = state.log();
             int snapshotTerm = log.getLogEntry(commitIndex).term();
             RaftGroupMembers members = state.committedGroupMembers();
 
-            List<SnapshotChunk> chunksFromSnapshot = createChunksFromSnapshot(
-                    raftIntegration,
-                    snapshotTerm,
-                    commitIndex,
-                    members.members(),
-                    members.index(),
-                    snapshot,
-                    logger
-            );
+            List<SnapshotChunk> chunksFromSnapshot;
+            try {
+                chunksFromSnapshot = raftIntegration.takeGroupSnapshotChunks(
+                        snapshotTerm, commitIndex, members.members(), members.index());
+            } catch (Throwable t) {
+                logger.severe("Could not take snapshot at commit index: " + commitIndex, t);
+                return;
+            }
 
             logger.fine("SnapshotChunk creation result: created %d chunks", chunksFromSnapshot.size());
 
@@ -1201,8 +1213,6 @@ public class RaftNodeImpl implements RaftNode {
             } catch (IOException e) {
                 throw new HazelcastException(e);
             }
-
-            snapshot = chunksFromSnapshot;
 
             long highestLogIndexToTruncate = commitIndex - maxNumberOfLogsToKeepAfterSnapshot;
             LeaderState leaderState = state.leaderState();
@@ -1236,7 +1246,7 @@ public class RaftNodeImpl implements RaftNode {
             // it is safe to modify the memory state now.
 
             SnapshotEntry snapshotEntry = new SnapshotEntry(snapshotTerm, commitIndex,
-                    snapshot, members.index(), members.members());
+                    chunksFromSnapshot, members.index(), members.members());
 
             int truncatedEntryCount = log.setSnapshot(snapshotEntry, highestLogIndexToTruncate, true);
 
@@ -1307,7 +1317,7 @@ public class RaftNodeImpl implements RaftNode {
             logger.info(truncated + " entries are truncated to install " + snapshot);
         }
 
-        raftIntegration.restoreSnapshot(snapshot, snapshot.index());
+        raftIntegration.restoreSnapshot(snapshot);
 
         // The group command pre-applied from an uncommitted entry was reverted above, together with the status
         // it set, so the status is already ACTIVE here. It is set again only as a safeguard. The local member may
@@ -1363,7 +1373,7 @@ public class RaftNodeImpl implements RaftNode {
 
         if (isNonInitial(snapshotEntry)) {
             printMemberState();
-            raftIntegration.restoreSnapshot(snapshotEntry, snapshotEntry.index());
+            raftIntegration.restoreSnapshot(snapshotEntry);
             if (logger.isFineEnabled()) {
                 logger.info(snapshotEntry + " is restored.");
             } else {
@@ -1444,7 +1454,32 @@ public class RaftNodeImpl implements RaftNode {
      */
     public void updateGroupMembers(long logIndex, Collection<RaftEndpoint> members) {
         state.updateGroupMembers(logIndex, members);
+        failPendingQueriesIfLeaving();
         printMemberState();
+    }
+
+    /**
+     * Fails the queries that are waiting for a heartbeat round if the local Raft
+     * node has just applied its own removal. Those queries were admitted while
+     * this node was still a member, so completing them would count the vote of
+     * a non-member towards the quorum of the new member list.
+     * <p>
+     * Although {@link LeaderDemotedException} is designed for another case, we use
+     * it here since invocations internally retry when they receive it.
+     */
+    private void failPendingQueriesIfLeaving() {
+        LeaderState leaderState = state.leaderState();
+        if (leaderState == null || state.lastGroupMembers().isKnownMember(getLocalMember())) {
+            return;
+        }
+
+        QueryState queryState = leaderState.queryState();
+        if (queryState.queryCount() == 0) {
+            return;
+        }
+
+        logger.warning("Failing " + queryState.queryCount() + " queries since this node is leaving the group");
+        queryState.fail(new LeaderDemotedException(state.localEndpoint(), null));
     }
 
     /**
@@ -1494,9 +1529,7 @@ public class RaftNodeImpl implements RaftNode {
     public void toFollower(int term) {
         LeaderState leaderState = state.leaderState();
         if (leaderState != null) {
-            for (BiTuple<Object, InternalCompletableFuture> t : leaderState.queryState().operations()) {
-                t.element2.completeExceptionally(new LeaderDemotedException(state.localEndpoint(), null));
-            }
+            leaderState.queryState().fail(new LeaderDemotedException(state.localEndpoint(), null));
         }
 
         // Suppress pre-voting for one leader election timeout after this demotion.

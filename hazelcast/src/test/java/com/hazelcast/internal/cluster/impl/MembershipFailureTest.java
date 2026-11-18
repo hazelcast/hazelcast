@@ -336,6 +336,56 @@ public class MembershipFailureTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void nonMaster_heartbeats_remove_mutual_suspicion() {
+        Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+        HazelcastInstance master = newHazelcastInstance(config);
+        HazelcastInstance nonMaster1 = newHazelcastInstance(config);
+        HazelcastInstance nonMaster2 = newHazelcastInstance(config);
+
+        assertClusterSize(3, master, nonMaster2);
+        assertClusterSizeEventually(3, nonMaster1);
+
+        dropOperationsBetween(nonMaster1, nonMaster2, F_ID, List.of(HEARTBEAT));
+        dropOperationsBetween(nonMaster2, nonMaster1, F_ID, List.of(HEARTBEAT));
+
+        MembershipManager membershipManager1 = getNode(nonMaster1).getClusterService().getMembershipManager();
+        MembershipManager membershipManager2 = getNode(nonMaster2).getClusterService().getMembershipManager();
+        MemberImpl member1 = (MemberImpl) nonMaster1.getCluster().getLocalMember();
+        MemberImpl member2 = (MemberImpl) nonMaster2.getCluster().getLocalMember();
+        assertTrueEventually(() -> {
+            assertTrue(membershipManager1.isMemberSuspected(member2));
+            assertTrue(membershipManager2.isMemberSuspected(member1));
+        });
+
+        resetPacketFiltersFrom(nonMaster1);
+        resetPacketFiltersFrom(nonMaster2);
+
+        assertTrueEventually(() -> {
+            assertFalse(membershipManager1.isMemberSuspected(member2));
+            assertFalse(membershipManager2.isMemberSuspected(member1));
+        }, 30);
+        assertClusterSize(3, master, nonMaster1, nonMaster2);
+    }
+
+    @Test
+    public void heartbeat_not_sent_to_suspected_master_by_nonMaster() {
+        Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), "15")
+                .setProperty(HEARTBEAT_INTERVAL_SECONDS.getName(), "1");
+        HazelcastInstance master = newHazelcastInstance(config);
+        HazelcastInstance nonMaster1 = newHazelcastInstance(config);
+        HazelcastInstance nonMaster2 = newHazelcastInstance(config);
+
+        assertClusterSize(3, master, nonMaster2);
+        assertClusterSizeEventually(3, nonMaster1);
+
+        // nonMaster2 suspects the master but does not claim mastership, since nonMaster1 is not suspected
+        dropOperationsBetween(master, nonMaster2, F_ID, List.of(HEARTBEAT));
+
+        assertClusterSizeEventually(2, master, nonMaster1);
+    }
+
+    @Test
     public void slave_receives_member_list_from_non_master() throws InterruptedException {
         String infiniteTimeout = Integer.toString(Integer.MAX_VALUE);
         Config config = smallInstanceConfig().setProperty(MAX_NO_HEARTBEAT_SECONDS.getName(), infiniteTimeout)

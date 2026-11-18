@@ -20,11 +20,12 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jspecify.annotations.NonNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import javax.annotation.Nonnull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,7 @@ public class HeapCPMapStoreTest {
         store = createStore(CAPACITY_MB);
     }
 
-    protected @NonNull HeapCPMapStore createStore(int capacityInMb) {
+    protected @Nonnull HeapCPMapStore createStore(int capacityInMb) {
         return new HeapCPMapStore(capacityInMb);
     }
 

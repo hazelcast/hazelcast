@@ -312,7 +312,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
             if (!membershipManager.isMemberSuspected(member)) {
                 if (logger.isFineEnabled()) {
                     logger.fine("Should not accept mastership claim of " + candidate + ", because " + member
-                            + " is not suspected at the moment and is before than " + candidate + " in the member list.");
+                            + " is not suspected at the moment and is before " + candidate + " in the member list.");
                 }
 
                 return false;

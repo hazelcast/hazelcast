@@ -234,6 +234,7 @@ hazelcast:
       # implement a custom eviction policy, out-of-the-box
       # eviction policies work regardless of this setting.
       per-entry-stats-enabled: false
+      oversized-entry-threshold-bytes: 2048
 
       cache-deserialized-values: ALWAYS
 

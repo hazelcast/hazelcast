@@ -514,6 +514,15 @@ public class MembershipManager {
         return suspectedMembers.contains(member);
     }
 
+    /**
+     * Returns whether {@code address} is before the master in the member list. That is only the case after a
+     * mastership claim, until the new master's member list removes such members.
+     */
+    boolean isBeforeMaster(Address address) {
+        Address masterAddress = clusterService.getMasterAddress();
+        return masterAddress != null && getMemberMap().isBefore(address, masterAddress);
+    }
+
     boolean clearMemberSuspicion(MemberImpl member, String reason) {
         clusterServiceLock.lock();
         try {
@@ -521,12 +530,10 @@ public class MembershipManager {
                 return true;
             }
 
-            MemberMap memberMap = getMemberMap();
-            Address masterAddress = clusterService.getMasterAddress();
-            if (masterAddress != null && memberMap.isBeforeThan(member.getAddress(), masterAddress)) {
+            if (isBeforeMaster(member.getAddress())) {
                 if (logger.isFineEnabled()) {
-                    logger.fine("Not removing suspicion of %s since it is before than current master %s in member list.",
-                            member, masterAddress);
+                    logger.fine("Not removing suspicion of %s since it is before current master %s in member list.",
+                            member, clusterService.getMasterAddress());
                 }
 
                 return false;
@@ -844,7 +851,7 @@ public class MembershipManager {
             if (m1.equals(m2)) {
                 return 0;
             }
-            return memberMap.isBeforeThan(m1.getAddress(), m2.getAddress()) ? -1 : 1;
+            return memberMap.isBefore(m1.getAddress(), m2.getAddress()) ? -1 : 1;
         });
     }
 

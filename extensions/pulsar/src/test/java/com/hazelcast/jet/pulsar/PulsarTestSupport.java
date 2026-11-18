@@ -26,12 +26,15 @@ import org.apache.pulsar.client.admin.PulsarAdmin;
 import org.apache.pulsar.client.admin.PulsarAdminException;
 import org.apache.pulsar.client.api.Consumer;
 import org.apache.pulsar.client.api.Message;
+import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.PulsarClient;
 import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Producer;
+import org.apache.pulsar.client.api.Reader;
 import org.apache.pulsar.client.api.Schema;
 import org.apache.pulsar.client.api.SubscriptionInitialPosition;
 import org.apache.pulsar.client.api.SubscriptionType;
+import org.junit.jupiter.api.TestInfo;
 import org.junit.jupiter.params.AfterParameterizedClassInvocation;
 import org.junit.jupiter.params.BeforeParameterizedClassInvocation;
 import org.junit.jupiter.params.Parameter;
@@ -43,19 +46,22 @@ import org.testcontainers.containers.PulsarContainer;
 import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
-@ParameterizedClass
+@ParameterizedClass(allowZeroInvocations = true)
 @MethodSource("pulsarVersions")
 public abstract class PulsarTestSupport extends JetTestSupport {
     private static final ILogger LOGGER = Logger.getLogger(PulsarTestSupport.class.getName());
@@ -203,6 +209,16 @@ public abstract class PulsarTestSupport extends JetTestSupport {
         );
     }
 
+    public static String sanitizedTestName(TestInfo testInfo) {
+        Optional<Method> testMethod = testInfo.getTestMethod();
+        String name = testMethod.orElseThrow(IllegalArgumentException::new).getName();
+        name = name.replace("(TestInfo)", "");
+        name = name.replace("-", "_");
+        name = name.replace(",", "_");
+        name = name.replaceAll("\\s+", "_");
+        return name;
+    }
+
     protected SupplierEx<PulsarClient> notSerializableConnectionSupplier() {
         return new SupplierEx<>() {
             // used to make class non-serializable
@@ -216,11 +232,43 @@ public abstract class PulsarTestSupport extends JetTestSupport {
         };
     }
 
-    static void createTopic(String topicName, boolean partitioned) {
+    protected  <T> Reader<T> newReader(String topicName, Schema<T> schema, List<T> results, Lock lock) {
+        try {
+            return getClient().newReader(schema)
+                       .topic(topicName)
+                       .subscriptionName(randomName())
+                       .startMessageId(MessageId.earliest)
+                       .readerListener((r, msg) -> {
+                           lock.lock();
+                           try {
+                               results.add(msg.getValue());
+                           } finally {
+                               lock.unlock();
+                           }
+                       })
+                       .create();
+        } catch (PulsarClientException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    protected  <T> Reader<T> newReader(String topicName, Schema<T> schema, Map<String, T> results) {
+        try {
+            return getClient().newReader(schema)
+                              .topic(topicName)
+                              .subscriptionName(randomName())
+                              .startMessageId(MessageId.earliest)
+                              .readerListener((r, msg) -> results.put(msg.getKey(), msg.getValue()))
+                              .create();
+        } catch (PulsarClientException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    protected static void createTopic(String topicName, boolean partitioned) {
         createTopic(topicName, partitioned ? NUM_PARTITIONS : null);
     }
 
-    static void createTopic(String topicName, Integer partitionCount) {
+    protected static void createTopic(String topicName, Integer partitionCount) {
         boolean partitioned = partitionCount != null;
         try (var admin = PulsarAdmin.builder().serviceHttpUrl(pulsarContainer.getHttpServiceUrl()).build()) {
             if (partitioned) {

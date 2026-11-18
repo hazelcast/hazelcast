@@ -359,6 +359,7 @@ public class TestFullApplicationContext {
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
         assertTrue(testMapConfig.isReadBackupData());
         assertEquals("ns1", testMapConfig.getUserCodeNamespace());
+        assertEquals(2048, testMapConfig.getOversizedEntryThresholdBytes());
         assertEquals(3, testMapConfig.getIndexConfigs().size());
         for (IndexConfig index : testMapConfig.getIndexConfigs()) {
             if ("name".equals(index.getAttributes().get(0))) {

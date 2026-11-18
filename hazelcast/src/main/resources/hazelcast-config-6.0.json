@@ -1196,6 +1196,11 @@
             "type": "boolean",
             "default": false
           },
+          "oversized-entry-threshold-bytes": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 1048576
+          },
           "cache-deserialized-values": {
             "enum": [
               "INDEX_ONLY",

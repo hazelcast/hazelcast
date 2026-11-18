@@ -16,13 +16,13 @@
 package com.hazelcast.jet.pulsar;
 
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.impl.util.Util;
 import org.apache.pulsar.client.api.Schema;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 
 /**
  * Helper class that holds context info about Pulsar's Schema, without using Pulsar API directly.
@@ -34,14 +34,14 @@ public class PulsarSchema<E> {
     private final SupplierEx<Schema<E>> schemaV4Supplier;
 
     private PulsarSchema(SupplierEx<Schema<E>> schemaV4Supplier) {
-        Util.checkNonNullAndSerializable(schemaV4Supplier, "schemaV4Supplier");
+        checkNonNullAndSerializable(schemaV4Supplier, "schemaV4Supplier");
         this.schemaV4Supplier = schemaV4Supplier;
     }
 
     // intentionally raw type to avoid casting problems in builders
     @SuppressWarnings("rawtypes")
     @Nonnull
-    SupplierEx supplierV4() {
+    public SupplierEx supplierV4() {
         return schemaV4Supplier;
     }
 
@@ -65,7 +65,7 @@ public class PulsarSchema<E> {
      * Returns the equivalent of {@link Schema#DOUBLE}.
      */
     @Nonnull
-    public static PulsarSchema<Double> doubles() {
+    public static PulsarSchema<Double> float64() {
         return new PulsarSchema<>(() -> Schema.DOUBLE);
     }
 
@@ -73,7 +73,7 @@ public class PulsarSchema<E> {
      * Returns the equivalent of {@link Schema#FLOAT}.
      */
     @Nonnull
-    public static PulsarSchema<Float> floats() {
+    public static PulsarSchema<Float> float32() {
         return new PulsarSchema<>(() -> Schema.FLOAT);
     }
 
@@ -124,5 +124,13 @@ public class PulsarSchema<E> {
     public static <T> PulsarSchema<T> json(@Nonnull Class<T> clazz) {
         checkNotNull(clazz, "class");
         return new PulsarSchema<>(() -> Schema.JSON(clazz));
+    }
+
+    /**
+     * Returns the equivalent of {@link Schema#AVRO(Class)}.
+     */
+    @Nonnull
+    public static <T> PulsarSchema<T> avro(@Nonnull Class<T> clazz) {
+        return new PulsarSchema<>(() -> Schema.AVRO(clazz));
     }
 }

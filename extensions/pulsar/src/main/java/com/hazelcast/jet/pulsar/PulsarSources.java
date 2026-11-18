@@ -443,14 +443,13 @@ public final class PulsarSources {
      *  }</pre>
      *
      * @param <M>                the type of the message read by {@code pulsarReader}
-     * @param <T>                the type of data emitted from {@code StreamSource}
      * @param schema             schema of Pulsar message value
      * @return {@link PulsarReaderBuilder} that used to create a {@link StreamSource}
      *
      * @since 6.0
      */
     @Nonnull
-    public static <M, T> PulsarReaderBuilder<M, T> pulsarReaderBuilder(@Nonnull PulsarSchema<M> schema) {
+    public static <M> PulsarReaderBuilder<M, M> pulsarReaderBuilder(@Nonnull PulsarSchema<M> schema) {
         checkNotNull(schema, "schema");
         //noinspection unchecked
         SupplierEx<Schema<M>> schemaSupplier = schema.supplierV4();

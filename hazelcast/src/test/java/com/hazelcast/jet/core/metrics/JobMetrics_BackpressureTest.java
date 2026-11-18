@@ -31,9 +31,10 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+
+import javax.annotation.Nonnull;
 
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicLong;
@@ -110,13 +111,13 @@ public class JobMetrics_BackpressureTest extends TestInClusterSupport {
         private boolean snapshotCommitFinish = true;
 
         @Override
-        protected boolean tryProcess0(@NotNull Object item) {
+        protected boolean tryProcess0(@Nonnull Object item) {
             // sink does not forward items, but consumes them immediately
             return true;
         }
 
         @Override
-        public boolean tryProcessWatermark(@NotNull Watermark watermark) {
+        public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
             // sink generally does not forward watermarks, so this method should be fast
             // but for the purpose of the test it simulates slow Wm processing
             // e.g. due to downstream processor inbox being full.

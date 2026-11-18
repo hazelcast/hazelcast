@@ -23,8 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.test.annotation.QuickTest;
-import org.jspecify.annotations.NonNull;
-import org.jspecify.annotations.Nullable;
 import org.junit.AssumptionViolatedException;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -33,6 +31,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 import org.opentest4j.TestAbortedException;
+
+import javax.annotation.Nonnull;
 
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
@@ -158,7 +158,7 @@ public abstract class AbstractHazelcastExtension
     }
 
     @Override
-    public void afterAll(@NonNull ExtensionContext context) throws Exception {
+    public void afterAll(@Nonnull ExtensionContext context) throws Exception {
         // check for running Hazelcast instances
         Set<HazelcastInstance> instances = tryGetOrElse(() -> Hazelcast.getAllHazelcastInstances(), Set.of());
         if (!instances.isEmpty()) {
@@ -190,44 +190,44 @@ public abstract class AbstractHazelcastExtension
     }
 
     @Override
-    public void interceptTestMethod(@NonNull Invocation<Void> invocation,
-                                    @NonNull ReflectiveInvocationContext<Method> invocationContext,
-                                    @NonNull ExtensionContext extensionContext) throws Throwable {
+    public void interceptTestMethod(@Nonnull Invocation<Void> invocation,
+                                    @Nonnull ReflectiveInvocationContext<Method> invocationContext,
+                                    @Nonnull ExtensionContext extensionContext) throws Throwable {
         invoke(invocation, invocationContext, extensionContext);
     }
 
     @Override
-    public void interceptTestTemplateMethod(@NonNull Invocation<Void> invocation,
-                                            @NonNull ReflectiveInvocationContext<Method> invocationContext,
-                                            @NonNull ExtensionContext extensionContext) throws Throwable {
+    public void interceptTestTemplateMethod(@Nonnull Invocation<Void> invocation,
+                                            @Nonnull ReflectiveInvocationContext<Method> invocationContext,
+                                            @Nonnull ExtensionContext extensionContext) throws Throwable {
         invoke(invocation, invocationContext, extensionContext);
     }
 
     @Override
-    public void interceptAfterAllMethod(@NonNull Invocation<@Nullable Void> invocation,
-                                        @NonNull ReflectiveInvocationContext<Method> invocationContext,
-                                        @NonNull ExtensionContext extensionContext) throws Throwable {
+    public void interceptAfterAllMethod(@Nonnull Invocation<Void> invocation,
+                                        @Nonnull ReflectiveInvocationContext<Method> invocationContext,
+                                        @Nonnull ExtensionContext extensionContext) throws Throwable {
         invoke(invocation, invocationContext, extensionContext);
     }
 
     @Override
-    public void interceptAfterEachMethod(@NonNull Invocation<@Nullable Void> invocation,
-                                         @NonNull ReflectiveInvocationContext<Method> invocationContext,
-                                         @NonNull ExtensionContext extensionContext) throws Throwable {
+    public void interceptAfterEachMethod(@Nonnull Invocation<Void> invocation,
+                                         @Nonnull ReflectiveInvocationContext<Method> invocationContext,
+                                         @Nonnull ExtensionContext extensionContext) throws Throwable {
         invoke(invocation, invocationContext, extensionContext);
     }
 
     @Override
-    public void interceptBeforeEachMethod(@NonNull Invocation<@Nullable Void> invocation,
-                                          @NonNull ReflectiveInvocationContext<Method> invocationContext,
-                                          @NonNull ExtensionContext extensionContext) throws Throwable {
+    public void interceptBeforeEachMethod(@Nonnull Invocation<Void> invocation,
+                                          @Nonnull ReflectiveInvocationContext<Method> invocationContext,
+                                          @Nonnull ExtensionContext extensionContext) throws Throwable {
         invoke(invocation, invocationContext, extensionContext);
     }
 
     @Override
-    public void interceptBeforeAllMethod(@NonNull Invocation<@Nullable Void> invocation,
-                                         @NonNull ReflectiveInvocationContext<Method> invocationContext,
-                                         @NonNull ExtensionContext extensionContext) throws Throwable {
+    public void interceptBeforeAllMethod(@Nonnull Invocation<Void> invocation,
+                                         @Nonnull ReflectiveInvocationContext<Method> invocationContext,
+                                         @Nonnull ExtensionContext extensionContext) throws Throwable {
         invoke(invocation, invocationContext, extensionContext);
     }
 

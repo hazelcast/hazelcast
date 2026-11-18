@@ -1035,6 +1035,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setCacheDeserializedValues(CacheDeserializedValues.ALWAYS)
                 .setStatisticsEnabled(true)
                 .setPerEntryStatsEnabled(false)
+                .setOversizedEntryThresholdBytes(2048)
                 .setReadBackupData(true)
                 .setBackupCount(2)
                 .setAsyncBackupCount(3)

@@ -103,6 +103,7 @@ public class MapContainerImpl implements MapContainer {
      */
     protected final AtomicInteger invalidationListenerCount = new AtomicInteger();
     protected final AtomicLong lastInvalidMergePolicyCheckTime = new AtomicLong();
+    protected final AtomicLong lastOversizedEntryLogTime = new AtomicLong();
     protected final AtomicBoolean onDestroyCalled = new AtomicBoolean();
 
     protected volatile MapConfig mapConfig;
@@ -195,6 +196,11 @@ public class MapContainerImpl implements MapContainer {
     @Override
     public AtomicLong getLastInvalidMergePolicyCheckTime() {
         return lastInvalidMergePolicyCheckTime;
+    }
+
+    @Override
+    public AtomicLong getLastOversizedEntryLogTime() {
+        return lastOversizedEntryLogTime;
     }
 
     private class IndexResultFilterFactory implements Supplier<Predicate<QueryableEntry>> {

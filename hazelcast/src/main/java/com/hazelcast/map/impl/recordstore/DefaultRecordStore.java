@@ -1106,23 +1106,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                                   boolean backup) {
         Record record = createRecord(key, newValue, now);
         if (mapDataStore != EMPTY_MAP_DATA_STORE && store) {
-            putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
+            newValue = putIntoMapStore(record, key, newValue, ttl, maxIdle, now, transactionId);
         }
-        putMemory(record, key, oldValue, ttl, maxIdle, expiryTime, now, entryEventType, backup);
+        putMemory(record, key, oldValue, newValue, ttl, maxIdle, expiryTime, now, entryEventType, backup);
         return record;
     }
 
     @SuppressWarnings("checkstyle:parameternumber")
-    public Record putMemory(Record record, Data key, Object oldValue, long ttl, long maxIdle,
+    public Record putMemory(Record record, Data key, Object oldValue, Object newValue, long ttl, long maxIdle,
                             long expiryTime, long now, EntryEventType entryEventType,
                             boolean backup) {
         storage.put(key, record);
         expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
 
         if (entryEventType == EntryEventType.LOADED) {
-            mutationObserver.onLoadRecord(key, record, backup);
+            mutationObserver.onLoadRecord(key, record, newValue, backup);
         } else {
-            mutationObserver.onPutRecord(key, record, oldValue, backup);
+            mutationObserver.onPutRecord(key, record, oldValue, newValue, backup);
         }
 
         return record;

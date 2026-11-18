@@ -1,19 +1,19 @@
 /*
- * Copyright 2026 Hazelcast Inc.
+ * Copyright (c) 2008-2026, Hazelcast, Inc. All Rights Reserved.
  *
- * Licensed under the Hazelcast Community License (the "License");
+ * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- * http://hazelcast.com/hazelcast-community-license
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.jet.kafka.connect;
+package com.hazelcast.jet.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
@@ -25,12 +25,12 @@ import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
-class MultiNodeMetricsCollector<T extends MetricsCollector> implements AutoCloseable {
+public class MultiNodeMetricsCollector<T extends MetricsCollector> implements AutoCloseable {
 
     private final ScheduledExecutorService scheduler;
     private final T collector;
 
-    MultiNodeMetricsCollector(HazelcastInstance[] instances, T collector) {
+    public MultiNodeMetricsCollector(HazelcastInstance[] instances, T collector) {
         this.scheduler = Executors.newScheduledThreadPool(instances.length);
         this.collector = collector;
 
@@ -41,7 +41,7 @@ class MultiNodeMetricsCollector<T extends MetricsCollector> implements AutoClose
         }
     }
 
-    T collector() {
+    public T collector() {
         return collector;
     }
 

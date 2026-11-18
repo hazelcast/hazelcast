@@ -93,7 +93,9 @@ public class QueryTask implements Runnable {
             return;
         }
 
-        // TODO: We can reject the query, if leader is not able to reach majority of the followers
+        // TODO: We can reject the query, if leader is not able to reach majority of the followers.
+        // That would also cover a leader which has applied its own removal from the group and is
+        // still serving this policy, unlike LINEARIZABLE queries. See RaftNodeImpl#canQueryLinearizable.
 
         handleAnyLocalRead();
     }

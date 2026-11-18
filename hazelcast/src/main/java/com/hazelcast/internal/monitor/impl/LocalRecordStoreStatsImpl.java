@@ -37,12 +37,20 @@ public class LocalRecordStoreStatsImpl
     private static final VarHandle EXPIRATION_COUNT = ReflectionUtil.findVarHandle("expirationCount", long.class);
     private static final VarHandle LAST_ACCESS_TIME = ReflectionUtil.findVarHandle("lastAccessTime", long.class);
     private static final VarHandle LAST_UPDATE_TIME = ReflectionUtil.findVarHandle("lastUpdateTime", long.class);
+    private static final VarHandle OVERSIZED_ENTRIES_SEEN = ReflectionUtil.findVarHandle("oversizedEntriesSeen", long.class);
+    private static final VarHandle LAST_OVERSIZED_ENTRY_SIZE =
+            ReflectionUtil.findVarHandle("lastOversizedEntrySize", long.class);
+    private static final VarHandle LAST_OVERSIZED_ENTRY_TIME =
+            ReflectionUtil.findVarHandle("lastOversizedEntryTime", long.class);
 
     private volatile long hits;
     private volatile long lastAccessTime;
     private volatile long lastUpdateTime;
     private volatile long evictionCount;
     private volatile long expirationCount;
+    private volatile long oversizedEntriesSeen;
+    private volatile long lastOversizedEntrySize;
+    private volatile long lastOversizedEntryTime;
 
     public void copyFrom(LocalRecordStoreStats stats) {
         this.hits = stats.getHits();
@@ -50,6 +58,9 @@ public class LocalRecordStoreStatsImpl
         this.lastUpdateTime = stats.getLastUpdateTime();
         this.evictionCount = stats.getEvictionCount();
         this.expirationCount = stats.getExpirationCount();
+        this.oversizedEntriesSeen = stats.getOversizedEntriesSeen();
+        this.lastOversizedEntrySize = stats.getLastOversizedEntrySize();
+        this.lastOversizedEntryTime = stats.getLastOversizedEntryTime();
     }
 
     @Override
@@ -102,12 +113,37 @@ public class LocalRecordStoreStatsImpl
         HITS.setOpaque(this, hits + 1);
     }
 
+    @Override
+    public long getOversizedEntriesSeen() {
+        return oversizedEntriesSeen;
+    }
+
+    @Override
+    public long getLastOversizedEntrySize() {
+        return lastOversizedEntrySize;
+    }
+
+    @Override
+    public long getLastOversizedEntryTime() {
+        return lastOversizedEntryTime;
+    }
+
+    @Override
+    public void recordOversizedEntry(long entrySize, long time) {
+        OVERSIZED_ENTRIES_SEEN.setOpaque(this, oversizedEntriesSeen + 1);
+        LAST_OVERSIZED_ENTRY_SIZE.setOpaque(this, entrySize);
+        LAST_OVERSIZED_ENTRY_TIME.setOpaque(this, time);
+    }
+
     public void reset() {
         this.hits = 0;
         this.lastAccessTime = 0;
         this.lastUpdateTime = 0;
         this.evictionCount = 0;
         this.expirationCount = 0;
+        this.oversizedEntriesSeen = 0;
+        this.lastOversizedEntrySize = 0;
+        this.lastOversizedEntryTime = 0;
     }
 
     @Override
@@ -121,6 +157,13 @@ public class LocalRecordStoreStatsImpl
             out.writeLong(evictionCount);
             out.writeLong(expirationCount);
         }
+
+        // RU_COMPAT_5_7
+        if (out.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+            out.writeLong(oversizedEntriesSeen);
+            out.writeLong(lastOversizedEntrySize);
+            out.writeLong(lastOversizedEntryTime);
+        }
     }
 
     @Override
@@ -133,6 +176,13 @@ public class LocalRecordStoreStatsImpl
         if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
             evictionCount = in.readLong();
             expirationCount = in.readLong();
+        }
+
+        // RU_COMPAT_5_7
+        if (in.getVersion().isGreaterOrEqual(Versions.V6_0)) {
+            oversizedEntriesSeen = in.readLong();
+            lastOversizedEntrySize = in.readLong();
+            lastOversizedEntryTime = in.readLong();
         }
     }
 

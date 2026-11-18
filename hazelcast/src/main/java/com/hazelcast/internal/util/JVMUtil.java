@@ -43,7 +43,10 @@ public final class JVMUtil {
     static {
         if (JVM.is32bit()) {
             OBJECT_HEADER_SIZE = 8;
-        } else if (isCompressedOops()) {
+        } else if (isCompactObjectHeader()) {
+            // Compact Object header requires Compressed Class Pointers
+            OBJECT_HEADER_SIZE = 8;
+        } else if (isCompressedClassPointers()) {
             OBJECT_HEADER_SIZE = 12;
         } else {
             OBJECT_HEADER_SIZE = 16;
@@ -70,6 +73,33 @@ public final class JVMUtil {
         // accept compressed oops is used by default
         getLogger(JVMUtil.class).info("Could not determine memory cost of reference; setting to default of 4 bytes.");
         return true;
+    }
+
+    // not private for testing
+    public static boolean isCompressedClassPointers() {
+        Boolean enabled = isHotSpotCompressedClassPointersOrNull();
+        if (enabled != null) {
+            return enabled;
+        }
+
+        // Assume compressed class pointers are enabled when CompressedOOPS are enabled.
+        // This is not really true, but this fallback behaves in the same way as previous logic.
+        getLogger(JVMUtil.class).fine("Could not determine if compressed class pointers are enabled;"
+                + " setting same as compressed OOPS.");
+        return isCompressedOops();
+    }
+
+    // not private for testing
+    public static boolean isCompactObjectHeader() {
+        Boolean enabled = isHotSpotCompactObjectHeaderOrNull();
+        if (enabled != null) {
+            return enabled;
+        }
+
+        // assume compact object headers are not used by default
+        // (to be revised in the future, as of JDK25 it is a reasonable assumption)
+        getLogger(JVMUtil.class).fine("Could not determine if compact object headers are enabled; setting to default disabled.");
+        return false;
     }
 
     /**
@@ -103,19 +133,14 @@ public final class JVMUtil {
 
     // not private for testing
     static Boolean isHotSpotCompressedOopsOrNull() {
-        try {
-            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
-            ObjectName mbean = new ObjectName("com.sun.management:type=HotSpotDiagnostic");
-            Object[] objects = {"UseCompressedOops"};
-            String[] strings = {"java.lang.String"};
-            String operation = "getVMOption";
-            CompositeDataSupport compressedOopsValue = (CompositeDataSupport) server.invoke(mbean, operation, objects, strings);
-            return Boolean.valueOf(compressedOopsValue.get("value").toString());
-        } catch (Exception e) {
-            getLogger(JVMUtil.class).fine("Failed to read HotSpot specific configuration: " + e.getMessage());
-        }
-        return null;
+        return getHotSpotOption("UseCompressedOops");
     }
+
+    static Boolean isHotSpotCompressedClassPointersOrNull() {
+        // note: UseCompressedClassPointers is deprecated in JDK25 and removed in JDK27
+        return getHotSpotOption("UseCompressedClassPointers");
+    }
+
 
     /**
      * Fallback when checking CompressedOopsEnabled.
@@ -132,6 +157,26 @@ public final class JVMUtil {
 
         // when reference size does not equal address size then it's safe to assume references are compressed
         return referenceSize != UNSAFE.addressSize();
+    }
+
+    // not private for testing
+    static Boolean isHotSpotCompactObjectHeaderOrNull() {
+        return getHotSpotOption("UseCompactObjectHeaders");
+    }
+
+    private static Boolean getHotSpotOption(String propertyName) {
+        try {
+            MBeanServer server = ManagementFactory.getPlatformMBeanServer();
+            ObjectName mbean = new ObjectName("com.sun.management:type=HotSpotDiagnostic");
+            Object[] objects = {propertyName};
+            String[] strings = {"java.lang.String"};
+            String operation = "getVMOption";
+            CompositeDataSupport compressedOopsValue = (CompositeDataSupport) server.invoke(mbean, operation, objects, strings);
+            return Boolean.valueOf(compressedOopsValue.get("value").toString());
+        } catch (Exception e) {
+            getLogger(JVMUtil.class).fine("Failed to read HotSpot specific configuration: " + e.getMessage());
+        }
+        return null;
     }
 
     /**

@@ -68,6 +68,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected RecordFactory recordFactory;
     protected Storage<Data, Record> storage;
     protected IndexingMutationObserver<Record> indexingObserver;
+    private EntrySizeMutationObserver entrySizeObserver;
 
     protected AbstractRecordStore(MapContainer mapContainer, int partitionId) {
         this.name = mapContainer.getName();
@@ -127,9 +128,24 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
                     JsonMetadataInitializer.INSTANCE, getOrCreateMetadataStore(), inMemoryFormat));
         }
 
+        // Add observer for entry size statistics
+        MapConfig mapConfig = mapContainer.getMapConfig();
+        long oversizedEntryThreshold = mapConfig.getOversizedEntryThresholdBytes();
+        if (oversizedEntryThreshold > 0 && mapConfig.isStatisticsEnabled()) {
+            entrySizeObserver = new EntrySizeMutationObserver(mapContainer, partitionId, oversizedEntryThreshold, stats);
+            mutationObserver.add(entrySizeObserver);
+        }
+
         // Add observer for indexing
         indexingObserver = new IndexingMutationObserver<>(this, serializationService);
         mutationObserver.add(indexingObserver);
+    }
+
+    @Override
+    public void recordEntrySize(Data key, Data value, boolean backup) {
+        if (entrySizeObserver != null) {
+            entrySizeObserver.recordEntrySize(key, value, backup);
+        }
     }
 
     public IndexingMutationObserver<Record> getIndexingObserver() {

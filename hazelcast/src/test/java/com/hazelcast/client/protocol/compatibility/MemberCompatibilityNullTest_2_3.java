@@ -6645,6 +6645,7 @@ public class MemberCompatibilityNullTest_2_3 {
         assertFalse(parameters.isTieredStoreConfigExists);
         assertFalse(parameters.isPartitioningAttributeConfigsExists);
         assertFalse(parameters.isUserCodeNamespaceExists);
+        assertFalse(parameters.isOversizedEntryThresholdBytesExists);
     }
 
     @Test

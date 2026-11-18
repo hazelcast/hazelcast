@@ -36,6 +36,7 @@ import com.hazelcast.map.impl.LockAwareLazyMapEntry;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.event.MapEventPublisher;
+import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.listener.EntryUpdatedListener;
@@ -448,8 +449,30 @@ public final class EntryOperator {
         if (eventType == REMOVED) {
             mapOperation.publishWanRemove(dataKey);
         } else {
-            mapOperation.publishWanUpdate(dataKey, entry.getByPrioritizingDataValue());
+            Object newValue = entry.getByPrioritizingDataValue();
+            if (inMemoryFormat == OBJECT && mapOperation.isWanPublishingEnabled()) {
+                // OBJECT entry processor results are not measured when stored, so
+                // reuse the serialization the WAN event needs to record their size
+                Data newDataValue = mapServiceContext.toData(newValue);
+                if (!isMeasuredByWriteBehindStore()) {
+                    recordStore.recordEntrySize(dataKey, newDataValue, backup);
+                }
+                newValue = newDataValue;
+            }
+            mapOperation.publishWanUpdate(dataKey, newValue);
         }
+    }
+
+    /**
+     * Without write coalescing, the write-behind store serializes OBJECT values
+     * and, on primary replicas, passes them to the record store, so they are
+     * already measured when stored.
+     */
+    private boolean isMeasuredByWriteBehindStore() {
+        MapStoreContext mapStoreContext = mapContainer.getMapStoreContext();
+        return !backup
+                && mapStoreContext.isWriteBehindMapStoreEnabled()
+                && !mapStoreContext.getMapStoreConfig().isWriteCoalescing();
     }
 
     private void publishEntryEvent() {

@@ -166,6 +166,18 @@ public class QueryState {
     }
 
     /**
+     * Completes the queries that are waiting for a heartbeat round exceptionally
+     * with the given failure, and clears the waiting queries and the collected
+     * acknowledgements.
+     */
+    public void fail(Throwable failure) {
+        for (BiTuple<Object, InternalCompletableFuture> operation : operations) {
+            operation.element2.completeExceptionally(failure);
+        }
+        reset();
+    }
+
+    /**
      * Resets the collection of waiting queries and acknowledged followers.
      */
     public void reset() {

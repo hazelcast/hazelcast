@@ -29,18 +29,18 @@ import org.apache.pulsar.client.api.Message;
 import org.apache.pulsar.client.api.MessageId;
 import org.apache.pulsar.client.api.Reader;
 import org.apache.pulsar.client.api.Schema;
-import org.apache.pulsar.client.impl.ClientCnx;
-import org.apache.pulsar.client.impl.ConnectionPool;
-import org.apache.pulsar.client.impl.PulsarClientImpl;
-import org.apache.pulsar.client.impl.conf.ClientConfigurationData;
-import org.apache.pulsar.client.impl.metrics.InstrumentProvider;
-import org.apache.pulsar.common.api.proto.CommandSendReceipt;
-import org.apache.pulsar.common.util.netty.EventLoopUtil;
+import org.apache.pulsar.shade.org.apache.pulsar.client.impl.ClientCnx;
+import org.apache.pulsar.shade.org.apache.pulsar.client.impl.ConnectionPool;
+import org.apache.pulsar.shade.org.apache.pulsar.client.impl.PulsarClientImpl;
+import org.apache.pulsar.shade.org.apache.pulsar.client.impl.conf.ClientConfigurationData;
+import org.apache.pulsar.shade.org.apache.pulsar.client.impl.metrics.InstrumentProvider;
+import org.apache.pulsar.shade.org.apache.pulsar.common.api.proto.CommandSendReceipt;
+import org.apache.pulsar.shade.org.apache.pulsar.common.util.netty.EventLoopUtil;
 import org.apache.pulsar.shade.io.netty.channel.EventLoopGroup;
-import org.jspecify.annotations.NonNull;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
 
+import javax.annotation.Nonnull;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -93,7 +93,7 @@ class PulsarSinkSendRetryTest extends PulsarTestSupport {
                                      .create()) {
             var config = createConfig(topic, client);
 
-            var sink = new WritePulsarP<>(config);
+            var sink = new WritePulsarP<>(config, client);
             var dc = PulsarDataConnection.pulsarDataConnectionConf("pulsar",
                                                                    pulsarContainer.getPulsarBrokerUrl(),
                                                                    pulsarContainer.getHttpServiceUrl(),
@@ -126,7 +126,7 @@ class PulsarSinkSendRetryTest extends PulsarTestSupport {
         }
     }
 
-    private static @NonNull PulsarSinkConfig<String, String> createConfig(String topic, PulsarClientImpl client) {
+    private static @Nonnull PulsarSinkConfig<String, String> createConfig(String topic, PulsarClientImpl client) {
         var config = new PulsarSinkConfig<String, String>();
         config.setTopic(topic);
         config.setConnectionSupplier(() -> client);

@@ -257,7 +257,7 @@ public final class MemberMap {
         return result;
     }
 
-    boolean isBeforeThan(Address address1, Address address2) {
+    boolean isBefore(Address address1, Address address2) {
         if (address1.equals(address2)) {
             return false;
         }

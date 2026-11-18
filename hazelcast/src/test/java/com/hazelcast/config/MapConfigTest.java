@@ -172,6 +172,11 @@ public class MapConfigTest {
         config.setAsyncBackupCount(-1);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void setOversizedEntryThresholdBytes_whenItsNegative() {
+        new MapConfig().setOversizedEntryThresholdBytes(-1);
+    }
+
     @Test
     public void setAsyncBackupCount_whenItsZero() {
         MapConfig config = new MapConfig();
