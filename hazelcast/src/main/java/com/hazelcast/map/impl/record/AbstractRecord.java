@@ -146,10 +146,7 @@ public abstract class AbstractRecord<V> implements Record<V> {
         if (creationTime != that.creationTime) {
             return false;
         }
-        if (lastStoredTime != that.lastStoredTime) {
-            return false;
-        }
-        return true;
+        return lastStoredTime == that.lastStoredTime;
     }
 
     @Override

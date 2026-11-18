@@ -54,11 +54,7 @@ public final class LockWaitNotifyKey implements WaitNotifyKey {
         if (!key.equals(that.key)) {
             return false;
         }
-        if (!namespace.equals(that.namespace)) {
-            return false;
-        }
-
-        return true;
+        return namespace.equals(that.namespace);
     }
 
     @Override

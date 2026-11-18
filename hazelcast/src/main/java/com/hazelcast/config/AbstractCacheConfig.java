@@ -592,11 +592,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
             return false;
         }
 
-        if (!getValueType().equals(that.getValueType())) {
-            return false;
-        }
-
-        return true;
+        return getValueType().equals(that.getValueType());
     }
 
     void setSerializationService(SerializationService serializationService) {

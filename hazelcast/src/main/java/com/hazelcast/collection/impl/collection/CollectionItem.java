@@ -78,10 +78,7 @@ public class CollectionItem implements Comparable<CollectionItem>, IdentifiedDat
         }
 
         CollectionItem item = (CollectionItem) o;
-        if (value != null ? !value.equals(item.value) : item.value != null) {
-            return false;
-        }
-        return true;
+        return value != null ? value.equals(item.value) : item.value == null;
     }
 
     @Override

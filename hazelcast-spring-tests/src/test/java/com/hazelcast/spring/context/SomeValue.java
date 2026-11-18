@@ -65,10 +65,7 @@ public class SomeValue implements DataSerializable, ApplicationContextAware, Ini
         if (context != null ? !context.equals(someValue.context) : someValue.context != null) {
             return false;
         }
-        if (someBean != null ? !someBean.equals(someValue.someBean) : someValue.someBean != null) {
-            return false;
-        }
-        return true;
+        return someBean != null ? someBean.equals(someValue.someBean) : someValue.someBean == null;
     }
 
     @Override

@@ -58,11 +58,7 @@ class ByteArrayDataSerializable implements DataSerializable {
         }
 
         ByteArrayDataSerializable that = (ByteArrayDataSerializable) o;
-        if (!Arrays.equals(data, that.data)) {
-            return false;
-        }
-
-        return true;
+        return Arrays.equals(data, that.data);
     }
 
     @Override

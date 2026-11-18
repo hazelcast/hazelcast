@@ -469,11 +469,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             return false;
         }
 
-        if (operation.getReplicaIndex() != 0) {
-            // backup partitions have no indexRegistry to populate
-            return false;
-        }
-
-        return true;
+        // backup partitions have no indexRegistry to populate
+        return operation.getReplicaIndex() == 0;
     }
 }

@@ -41,11 +41,7 @@ public class MapRecordKey {
         if (key != null ? !key.equals(that.key) : that.key != null) {
             return false;
         }
-        if (mapName != null ? !mapName.equals(that.mapName) : that.mapName != null) {
-            return false;
-        }
-
-        return true;
+        return mapName != null ? mapName.equals(that.mapName) : that.mapName == null;
     }
 
     @Override

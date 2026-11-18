@@ -93,10 +93,7 @@ public class TokenIdentityConfig implements IdentityConfig {
         if (encoding != other.encoding) {
             return false;
         }
-        if (!Arrays.equals(token, other.token)) {
-            return false;
-        }
-        return true;
+        return Arrays.equals(token, other.token);
     }
 
     @Override
