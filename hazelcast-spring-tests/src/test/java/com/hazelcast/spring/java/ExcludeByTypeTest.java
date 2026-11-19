@@ -23,6 +23,7 @@ import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.spring.ExposeHazelcastObjects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -30,6 +31,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(classes = ExcludeByTypeTest.UsingExcludeByType.class)
@@ -39,8 +41,8 @@ public class ExcludeByTypeTest extends AppContextTestBase {
     @Test
     @Override
     public void testMap() {
-        assertThat((Object) map1).isNull();
-        assertThat((Object) testMap).isNull();
+        assertThatCode(() -> map1.put("1", "1")).isInstanceOf(NoSuchBeanDefinitionException.class);
+        assertThatCode(() -> testMap.put("1", "1")).isInstanceOf(NoSuchBeanDefinitionException.class);
         assertThat((Object) ringbuffer).isNotNull();
     }
 

@@ -22,6 +22,7 @@ import com.hazelcast.spring.CustomSpringExtension;
 import com.hazelcast.spring.ExposeHazelcastObjects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -30,6 +31,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(classes = IncludeByNameTest.UsingIncludeByName.class)
@@ -39,7 +41,7 @@ public class IncludeByNameTest extends AppContextTestBase {
     @Test
     @Override
     public void testMap() {
-        assertThat((Object) map1).isNull();
+        assertThatCode(() -> map1.put("1", "1")).isInstanceOf(NoSuchBeanDefinitionException.class);
         assertThat((Object) testMap).isNotNull();
         testMap.set("key1", "value1");
         assertEqualsEventually(() -> testMap.get("key1"), "value1");

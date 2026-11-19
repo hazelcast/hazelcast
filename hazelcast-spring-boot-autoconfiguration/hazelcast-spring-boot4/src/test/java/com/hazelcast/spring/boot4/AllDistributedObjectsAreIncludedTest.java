@@ -20,11 +20,13 @@ import com.hazelcast.spring.java.AllDistributedObjectsAreIncludedTestBase;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 @SpringBootTest(classes = Spring4HazelcastConfiguration.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
+@TestPropertySource("classpath:test-params.properties")
 public class AllDistributedObjectsAreIncludedTest extends AllDistributedObjectsAreIncludedTestBase {
 
 }

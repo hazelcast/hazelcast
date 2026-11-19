@@ -14,8 +14,30 @@
  * limitations under the License.
  */
 
+package com.hazelcast.spring.boot;
+
+import com.hazelcast.map.IMap;
+import org.springframework.beans.factory.InitializingBean;
+
 /**
- * Contains tests related to using {@link com.hazelcast.spring.ExposeHazelcastObjects} and related configuration without
- * using autoconfiguration.
+ * Plain Java (with no annotations) service, configured externally.
  */
-package com.hazelcast.spring.java.withoutautoconfiguration;
+public class PlainJavaService implements InitializingBean {
+
+    public static boolean initDone;
+
+    private final IMap<String, String> testMap;
+
+    public PlainJavaService(IMap<String, String> testMap) {
+        this.testMap = testMap;
+    }
+
+    public IMap<String, String> getTestMap() {
+        return testMap;
+    }
+
+    @Override
+    public void afterPropertiesSet() {
+        initDone = true;
+    }
+}

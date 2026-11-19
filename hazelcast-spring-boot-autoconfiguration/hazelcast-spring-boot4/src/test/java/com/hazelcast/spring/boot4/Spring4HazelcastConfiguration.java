@@ -15,10 +15,11 @@
  */
 package com.hazelcast.spring.boot4;
 
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.spring.ConfigCreator;
+import com.hazelcast.spring.boot.HzConfProps;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
@@ -27,13 +28,17 @@ import org.springframework.core.io.ClassPathResource;
 /**
  * A Java-based equivalent of {@code com/hazelcast/spring/springaware/springAware-enabled-applicationContext-hazelcast.xml}
  */
-@Configuration(proxyBeanMethods = false)
+@Configuration
 @EnableAutoConfiguration
+@EnableConfigurationProperties(HzConfProps.class)
 public class Spring4HazelcastConfiguration {
 
-    @Bean(destroyMethod = "shutdown")
-    public HazelcastInstance hazelcastInstance() {
-        return HazelcastInstanceFactory.newHazelcastInstance(ConfigCreator.createConfigWithStructures());
+    @Bean
+    public Config hazelcastInstanceConfig(HzConfProps props) {
+        Config configWithStructures = ConfigCreator.createConfigWithStructures();
+        configWithStructures.setInstanceName(props.instanceName());
+        configWithStructures.setClusterName(props.clusterName());
+        return configWithStructures;
     }
 
     @Bean
