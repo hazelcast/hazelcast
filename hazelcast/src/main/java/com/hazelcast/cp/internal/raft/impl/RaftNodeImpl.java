@@ -1300,8 +1300,14 @@ public class RaftNodeImpl implements RaftNode {
         // pre-applied from any of them is reverted. One of them may already be committed on the leader. The snapshot's
         // group members, restored below, include its effect.
         RaftLog raftLog = state.log();
-        if (raftLog.lastLogOrSnapshotIndex() > commitIndex) {
-            List<LogEntry> uncommitted = raftLog.deleteEntriesFrom(commitIndex + 1);
+        long lastLogIndex = raftLog.lastLogOrSnapshotIndex();
+        if (lastLogIndex > commitIndex) {
+            List<LogEntry> uncommitted = Arrays.asList(raftLog.getEntriesBetween(commitIndex + 1, lastLogIndex));
+            // The store may already have the snapshot, persisted with its chunks, so only the entries after
+            // the snapshot's index are deleted. setSnapshot() below truncates the rest.
+            if (lastLogIndex > snapshot.index()) {
+                raftLog.deleteEntriesFrom(snapshot.index() + 1);
+            }
             logger.warning("Discarded " + uncommitted.size() + " uncommitted entries to install " + snapshot);
             // Only the entries after the snapshot's index are known not to be committed. The futures of the entries
             // up to it are completed below as indeterminate, since some of them may be committed on the leader.

@@ -224,6 +224,8 @@ public class ChunkedSnapshotInstaller {
                 raftNode.state().commitIndex(), snapshotIndex, request.snapshotChunk().term(), request.leader()));
 
         raftNode.state().commitIndex(snapshotIndex);
+        // before applyLogEntries, which may terminate the node, close the store and skip the stale transfer cleanup
+        cleanupStaleTransferIfNeeded();
         raftNode.applyLogEntries();
         notifySuccess(request);
     }

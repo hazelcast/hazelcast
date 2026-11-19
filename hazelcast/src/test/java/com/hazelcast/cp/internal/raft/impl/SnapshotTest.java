@@ -614,7 +614,7 @@ public class SnapshotTest extends HazelcastTestSupport {
         });
 
         // The follower fast-forwarded without any snapshot transfer
-        assertThat(follower.getChunkedSnapshotInstaller().getSnapshotTransferCount()).isZero();
+        assertThat(follower.getSnapshotTransferCount()).isZero();
 
         // Once its acks are allowed, the follower catches up with appends
         group.allowAllMessagesToMember(follower.getLocalMember(), leader.getLocalMember());
@@ -670,7 +670,7 @@ public class SnapshotTest extends HazelcastTestSupport {
         // and fails their futures
         assertTrueEventually(() -> assertEquals(snapshotIndex, getSnapshotEntry(leader).index()));
 
-        assertThat(leader.getChunkedSnapshotInstaller().getSnapshotTransferCount()).isEqualTo(1L);
+        assertThat(leader.getSnapshotTransferCount()).isEqualTo(1L);
         assertEquals(snapshotIndex, getLastLogOrSnapshotEntry(leader).index());
         for (InternalCompletableFuture<?> f : isolatedFutures) {
             assertTrue(f.isCompletedExceptionally());

@@ -16,15 +16,19 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.internal.RaftEndpointImpl;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshotRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshotResponse;
+import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotChunk;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
+import com.hazelcast.cp.internal.raft.impl.testing.InMemoryRaftStateStore;
+import com.hazelcast.cp.internal.raft.impl.testing.TestRaftGroupId;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -41,6 +45,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -81,6 +87,7 @@ public class ChunkedSnapshotInstallerTest {
         when(raftNode.state()).thenReturn(raftState);
         when(raftNode.getLogger(any())).thenReturn(logger);
         when(raftNode.getRaftIntegration()).thenReturn(raftIntegration);
+        when(raftIntegration.getLogger(any())).thenReturn(logger);
         when(raftState.stateStore()).thenReturn(stateStore);
         when(raftState.commitIndex()).thenReturn(10L);
         when(raftState.localEndpoint()).thenReturn(localEndpoint);
@@ -294,6 +301,47 @@ public class ChunkedSnapshotInstallerTest {
         verify(raftState).commitIndex(13L);
         verify(raftIntegration, never()).resetForChunkedSnapshotRestore();
         verify(raftNode, never()).installSnapshot(any());
+    }
+
+    @Test
+    public void deletes_partial_transfer_on_fast_forward_when_node_is_terminated() throws IOException {
+        // a real node, so the fast-forward applies the entries from its log
+        RaftNodeImpl node = newRaftNode(new TestRaftGroupId("test"), localEndpoint, List.of(localEndpoint, leader),
+                new RaftAlgorithmConfig(), raftIntegration, stateStore);
+
+        // the local log has no entry at the snapshot's index when the transfer starts
+        node.processSnapshotChunk(newRequest(newSnapshotChunk(1L, 2, 0, 1)));
+
+        // An append request adds the entry at the snapshot's index, so the last chunk fast-forwards over it.
+        node.state().log().appendEntries(new LogEntry(1, 1, null));
+        // On a terminated node, takeSnapshotIfCommitIndexAdvanced(), which cleans up a stale transfer
+        // after the entries are applied, is skipped.
+        node.setStatus(TERMINATED);
+        node.processSnapshotChunk(newRequest(newSnapshotChunk(1L, 2, 1, 1)));
+
+        verify(stateStore).deleteSnapshotChunks(1L);
+    }
+
+    @Test
+    public void installs_snapshot_over_uncommitted_entries_and_truncates_store() {
+        // a store that, like the on-disk one, sets the snapshot in its log when its chunks are flushed
+        InMemoryRaftStateStore store = new InMemoryRaftStateStore(100);
+        RaftNodeImpl node = newRaftNode(new TestRaftGroupId("test"), localEndpoint, List.of(localEndpoint, leader),
+                new RaftAlgorithmConfig(), raftIntegration, store);
+
+        // add uncommitted entries from an older term, so the one at the snapshot's index conflicts and the last is past it
+        node.state().log().appendEntries(
+                new LogEntry(1, 1, null), new LogEntry(1, 2, null),
+                new LogEntry(1, 3, null), new LogEntry(1, 4, null));
+
+        // Flushing the last chunk sets the snapshot in the store first, so the store keeps only the entries past its index.
+        // After this, installing the snapshot deletes all uncommitted entries from the RaftLog and the store.
+        node.processSnapshotChunk(new InstallSnapshotRequest(leader, 2, newSnapshotChunk(3L, 1, 0, 2), 0, 0));
+
+        assertEquals(3L, node.state().log().snapshotIndex());
+        assertEquals(3L, node.state().log().lastLogOrSnapshotIndex());
+        // the entry past the snapshot's index is deleted from the store too
+        assertEquals(0, store.toRestoredRaftState().entries().length);
     }
 
     @Test
