@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.expression.predicate.OrPredicate;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
@@ -58,14 +59,15 @@ class IndexScanSelectQueryBuilder extends AbstractQueryBuilder {
     private final List<FunctionEx<Object, ?>> converters = new ArrayList<>();
 
     IndexScanSelectQueryBuilder(JdbcTable table,
+                                PhysicalRel rel,
                                 SqlDialect dialect,
                                 RexNode predicate,
                                 List<RexNode> projection,
                                 JetJoinInfo joinInfo) {
-        super(table, dialect);
+        super(table, dialect, rel);
 
         // Add new column with an alias to SQL. This alias will be used by the processor to sort the results
-        SelectQueryBuilder selectQueryBuilder = new SelectQueryBuilder(table, dialect, null, projection) {
+        SelectQueryBuilder selectQueryBuilder = new SelectQueryBuilder(table, rel, dialect, null, projection) {
 
             @Override
             protected void appendProjection(StringBuilder sb, List<RexNode> projection) {

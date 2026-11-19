@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastIntegerType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -24,8 +23,11 @@ import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.type.SqlTypeName;
+
+import java.math.BigDecimal;
 
 import static org.apache.calcite.sql.type.SqlTypeName.ANY;
 
@@ -44,6 +46,18 @@ public final class HazelcastRexBuilder extends RexBuilder {
     }
 
     @Override
+    @SuppressWarnings("rawtypes")
+    protected RexLiteral makeLiteral(Comparable value, RelDataType type, SqlTypeName typeName) {
+        RexLiteral literal = super.makeLiteral(value, type, typeName);
+        // Hazelcast DECIMAL preserves the value's scale, as before Calcite 1.42.
+        if (value instanceof BigDecimal && type.getSqlTypeName() == SqlTypeName.DECIMAL
+                && typeName == SqlTypeName.DECIMAL) {
+            return RexLiteral.fromJdbcString(literal.getType(), typeName, value.toString());
+        }
+        return literal;
+    }
+
+    @Override
     public RexNode makeLiteral(Object value, RelDataType type, boolean allowCast) {
         // Make sure that numeric literals get a correct return type during the conversion.
         // Without this code, Apache Calcite may assign incorrect types to some literals during conversion.
@@ -56,15 +70,9 @@ public final class HazelcastRexBuilder extends RexBuilder {
 
             if (converter != null) {
                 QueryDataTypeFamily typeFamily = converter.getTypeFamily();
+                SqlTypeName typeName = HazelcastTypeUtils.toCalciteType(typeFamily);
 
-                if (typeFamily.isNumericInteger()) {
-                    int bitWidth = HazelcastIntegerType.bitWidthOf(number.longValue());
-                    type = HazelcastIntegerType.create(bitWidth, false);
-                } else {
-                    SqlTypeName typeName = HazelcastTypeUtils.toCalciteType(typeFamily);
-
-                    type = HazelcastTypeFactory.INSTANCE.createSqlType(typeName);
-                }
+                type = HazelcastTypeFactory.INSTANCE.createSqlType(typeName);
             }
         }
 

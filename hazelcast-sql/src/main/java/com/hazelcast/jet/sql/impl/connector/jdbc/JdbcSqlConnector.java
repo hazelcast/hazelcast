@@ -375,7 +375,9 @@ public class JdbcSqlConnector implements SqlConnector {
         RexNode rexPredicate = predicate == null ? null : predicate.unwrap(RexNode.class);
         List<RexNode> rexProjection = Util.toList(projection, n -> n.unwrap(RexNode.class));
 
-        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(), dialect, rexPredicate, rexProjection);
+        SelectQueryBuilder builder = new SelectQueryBuilder(context.getTable(),
+                                                            context.getRel(),
+                                                            dialect, rexPredicate, rexProjection);
 
         return context.getDag().newUniqueVertex(
                 "Select(" + table.getExternalNameList() + ")",
@@ -437,12 +439,14 @@ public class JdbcSqlConnector implements SqlConnector {
         List<RexNode> rexExpressions = Util.toList(expressions, n -> n.unwrap(RexNode.class));
         RexNode rexPredicate = predicate == null ? null : predicate.unwrap(RexNode.class);
 
-        UpdateQueryBuilder builder = new UpdateQueryBuilder(table,
-                resolveDialect(table, context),
-                fieldNames,
-                rexExpressions,
-                rexPredicate,
-                hasInput
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(
+            table,
+            context.getRel(),
+            resolveDialect(table, context),
+            fieldNames,
+            rexExpressions,
+            rexPredicate,
+            hasInput
         );
 
         DmlProcessorSupplier updatePS = new DmlProcessorSupplier(
@@ -471,6 +475,7 @@ public class JdbcSqlConnector implements SqlConnector {
         RexNode rexPredicate = predicate == null ? null : predicate.unwrap(RexNode.class);
 
         DeleteQueryBuilder builder = new DeleteQueryBuilder(table,
+                context.getRel(),
                 resolveDialect(table, context),
                 rexPredicate,
                 hasInput
@@ -539,7 +544,7 @@ public class JdbcSqlConnector implements SqlConnector {
         // If dialect is supported
         if (SupportedDatabases.isDialectSupported(dialect)) {
             // Get the upsert statement
-            String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable, dialect);
+            String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable, dialect, context.getRel());
 
             // Create Vertex with the UPSERT statement
             return context.getDag().newUniqueVertex(

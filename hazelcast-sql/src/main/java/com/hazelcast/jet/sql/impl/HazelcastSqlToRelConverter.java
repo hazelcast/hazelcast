@@ -34,8 +34,6 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
-import com.hazelcast.sql.impl.type.converter.Converter;
-import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
@@ -134,11 +132,30 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return convertIn((SqlCall) node, blackboard);
         } else if (node.getKind() == SqlKind.BETWEEN) {
             return convertBetween((SqlCall) node, blackboard);
+        }  else if (node.getKind() == SqlKind.LIKE) {
+            validateLikeOperands((SqlBasicCall) node);
+            return convertCall(node, blackboard);
         } else if (node instanceof SqlCall) {
             return convertCall(node, blackboard);
         }
 
         return null;
+    }
+
+    private void validateLikeOperands(SqlBasicCall node) {
+        List<SqlNode> operandList = node.getOperandList();
+        if (operandList.size() == 3) {
+            SqlNode escapeCharacter = operandList.get(2);
+            if (!(escapeCharacter instanceof SqlLiteral literal)) {
+                return;
+            }
+            if (literal.getTypeName() != SqlTypeName.NULL) {
+                String stringValue = literal.getValueAs(String.class);
+                if (stringValue == null || stringValue.length() != 1) {
+                    throw QueryException.error("ESCAPE parameter must be a single character");
+                }
+            }
+        }
     }
 
     /**
@@ -226,18 +243,6 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
                 TimeString timeString = new TimeString(time.getHour(), time.getMinute(), time.getSecond());
 
                 return getRexBuilder().makeLiteral(timeString, to, true);
-            }
-
-            // Apache Calcite uses an expression simplification logic that treats CASTs with inexact literals incorrectly.
-            // For example, "CAST(1.0 as DOUBLE) = CAST(1.0000000000000001 as DOUBLE)" is converted to "false", while it should
-            // be "true". See CastFunctionIntegrationTest.testApproximateTypeSimplification - it will fail without this fix.
-            if (fromType.getTypeFamily().isNumeric()) {
-                if (toType.getTypeFamily().isNumericApproximate()) {
-                    Converter converter = Converters.getConverter(literal.getValue().getClass());
-                    Object convertedValue = toType.getConverter().convertToSelf(converter, literal.getValue());
-
-                    return getRexBuilder().makeLiteral(convertedValue, to, false);
-                }
             }
         }
 
@@ -361,7 +366,13 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
 
         if (callSet.add(node)) {
             try {
-                RelDataType type = validator.getValidatedNodeType(node);
+                RelDataType type = validator.getValidatedNodeTypeIfKnown(node);
+                if (type == null) {
+                    // if there was expression substitution, like "x IN(1) -> x = 1",
+                    // then the type may not be cached
+                    node.validate(validator, validator.getEmptyScope());
+                    type = validator.getValidatedNodeType(node);
+                }
 
                 HazelcastReturnTypeInference.push(type);
 

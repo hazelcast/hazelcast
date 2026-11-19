@@ -22,9 +22,12 @@ import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLambda;
+import org.apache.calcite.rex.RexLambdaRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexLocalRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexNodeAndFieldIndex;
 import org.apache.calcite.rex.RexOver;
 import org.apache.calcite.rex.RexPatternFieldRef;
 import org.apache.calcite.rex.RexRangeRef;
@@ -123,5 +126,23 @@ final class RexToMongoVisitor implements RexVisitor<Object> {
     @Override
     public Expression<?> visitPatternFieldRef(RexPatternFieldRef fieldRef) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object visitLambda(RexLambda lambda) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object visitLambdaRef(RexLambdaRef lambdaRef) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Object visitNodeAndFieldIndex(RexNodeAndFieldIndex nodeAndFieldIndex) {
+        int nodeIndex = nodeAndFieldIndex.getNodeIndex();
+        int fieldIndex = nodeAndFieldIndex.getFieldIndex();
+        int index = (nodeIndex + 1) * fieldIndex;
+        return new InputRef(index).asString();
     }
 }

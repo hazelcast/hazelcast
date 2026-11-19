@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.h2;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.AbstractQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import org.apache.calcite.sql.SqlDialect;
 
 /**
@@ -25,8 +26,8 @@ import org.apache.calcite.sql.SqlDialect;
  */
 public class H2UpsertQueryBuilder extends AbstractQueryBuilder {
 
-    public H2UpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
-        super(jdbcTable, dialect);
+    public H2UpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect, PhysicalRel rel) {
+        super(jdbcTable, dialect, rel);
 
         StringBuilder sb = new StringBuilder();
         appendMergeClause(sb);

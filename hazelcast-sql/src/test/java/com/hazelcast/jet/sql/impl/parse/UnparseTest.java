@@ -30,6 +30,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.mockEngine;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertNotNull;
 
@@ -96,11 +97,12 @@ public class UnparseTest {
 
     private static OptimizerContext createContext() {
         return OptimizerContext.create(
-                new SqlCatalog(emptyList()),
-                emptyList(),
-                emptyList(),
-                name -> null,
-                null,
-                NoOpSqlSecurityContext.INSTANCE);
+            mockEngine(),
+            new SqlCatalog(emptyList()),
+            emptyList(),
+            emptyList(),
+            name -> null,
+            null,
+            NoOpSqlSecurityContext.INSTANCE);
     }
 }

@@ -45,6 +45,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import static com.hazelcast.jet.sql.SqlTestSupport.mockEngine;
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Collections.emptyList;
 import static org.junit.Assert.assertEquals;
@@ -223,12 +224,13 @@ public class ParserNameResolutionTest {
         List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(emptyList(), tableResolvers);
 
         return OptimizerContext.create(
-                new SqlCatalog(tableResolvers),
-                searchPaths,
-                emptyList(),
-                name -> null,
-                null,
-                NoOpSqlSecurityContext.INSTANCE);
+            mockEngine(),
+            new SqlCatalog(tableResolvers),
+            searchPaths,
+            emptyList(),
+            name -> null,
+            null,
+            NoOpSqlSecurityContext.INSTANCE);
     }
 
     private static <E> E last(E[] array) {

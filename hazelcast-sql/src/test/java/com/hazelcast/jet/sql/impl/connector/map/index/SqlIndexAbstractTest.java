@@ -240,10 +240,14 @@ public abstract class SqlIndexAbstractTest extends SqlIndexTestSupport {
         check(query(toLiteral(f1, f1.valueFrom()) + "=field1"), c_notHashComposite(), eq(f1.valueFrom()));
 
         // WHERE f1=literal1 or f1=literal2
+        // For BOOLEAN, Calcite simplifies the disjunction to IS NOT NULL.
+        boolean booleanDisjunction = f1 == ExpressionTypes.BOOLEAN;
+        boolean useIndex = booleanDisjunction ? c_sorted() : c_notHashComposite();
+        boolean useIndexWithAnd = !booleanDisjunction && c_notHashComposite();
         check(query("field1=" + toLiteral(f1, f1.valueFrom()) + " or field1=" + toLiteral(f1, f1.valueTo())),
-                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+                useIndex, useIndexWithAnd, or(eq(f1.valueFrom()), eq(f1.valueTo())));
         check(query(toLiteral(f1, f1.valueFrom()) + "=field1 or " + toLiteral(f1, f1.valueTo()) + "=field1"),
-                c_notHashComposite(), or(eq(f1.valueFrom()), eq(f1.valueTo())));
+                useIndex, useIndexWithAnd, or(eq(f1.valueFrom()), eq(f1.valueTo())));
 
         // WHERE f1=?
         check(query("field1=?", f1.valueFrom()), c_notHashComposite(), eq(f1.valueFrom()));

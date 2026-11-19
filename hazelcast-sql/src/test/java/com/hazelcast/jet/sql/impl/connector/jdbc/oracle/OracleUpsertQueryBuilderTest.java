@@ -48,7 +48,7 @@ public class OracleUpsertQueryBuilderTest {
 
     @Test
     public void appendMergeClause() {
-        OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect);
+        OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendMergeClause(sb);
         String mergeClause = sb.toString();
@@ -61,7 +61,7 @@ public class OracleUpsertQueryBuilderTest {
 
     @Test
     public void appendMatchedClause() {
-        OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect);
+        OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendMatchedClause(sb);
 
@@ -78,7 +78,7 @@ public class OracleUpsertQueryBuilderTest {
 
     @Test
     public void query() {
-        OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect);
+        OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect, null);
         String result = builder.query();
         assertThat(result).isEqualTo(
                 "MERGE INTO \"table1\" TARGET "
@@ -107,7 +107,7 @@ public class OracleUpsertQueryBuilderTest {
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "pk1"));
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1"));
 
-        OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect);
+        OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect, null);
         String result = builder.query();
         assertThat(result).isEqualTo(
                 "MERGE INTO \"table1\" TARGET "

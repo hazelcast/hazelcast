@@ -154,7 +154,11 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         Object value = row.getObject(0);
 
         if (expectedResult != SKIP_VALUE_CHECK) {
-            assertEquals(expectedResult, value);
+            if (expectedResult instanceof BigDecimal) {
+                assertThat((BigDecimal) expectedResult).isEqualByComparingTo((BigDecimal) value);
+            } else {
+                assertEquals(expectedResult, value);
+            }
         }
 
         return value;

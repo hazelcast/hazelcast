@@ -121,6 +121,17 @@
                         <artifactId>freemarker</artifactId>
                         <version>2.3.35</version>
                     </dependency>
+                    <dependency>
+                        <groupId>net.sourceforge.fmpp</groupId>
+                        <artifactId>fmpp</artifactId>
+                        <version>0.9.16</version>
+                        <exclusions>
+                            <exclusion>
+                                <groupId>org.freemarker</groupId>
+                                <artifactId>freemarker</artifactId>
+                            </exclusion>
+                        </exclusions>
+                    </dependency>
                 </dependencies>
                 <executions>
                     <execution>
@@ -231,6 +242,7 @@
                                     <include>commons-codec:commons-codec</include>
                                     <include>org.apache.commons:commons-lang3</include>
                                     <include>org.apache.commons:commons-math3</include>
+                                    <include>org.apache.commons:commons-text</include>
                                     <include>org.codehaus.janino:commons-compiler</include>
                                     <include>org.codehaus.janino:janino</include>
                                     <include>com.google.code.gson:gson</include>
@@ -245,6 +257,7 @@
                                     <!-- added while JSurfer don't upgrade -->
                                     <include>tools.jackson.jr:jackson-jr-objects</include>
                                     <include>tools.jackson.jr:jackson-jr-annotation-support</include>
+                                    <include>org.jooq:joou-java-6</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -298,6 +311,10 @@
                                 <relocation>
                                     <pattern>org.antlr</pattern>
                                     <shadedPattern>${relocation.root}.org.antlr</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.joou</pattern>
+                                    <shadedPattern>${relocation.root}.org.joou</shadedPattern>
                                 </relocation>
                             </relocations>
                             <transformers>
@@ -489,7 +506,17 @@
                     <groupId>org.locationtech.proj4j</groupId>
                     <artifactId>proj4j</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.jooq</groupId>
+                    <artifactId>joou-java-6</artifactId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <!-- Resolves internal dependency convergence issue within Calcite -->
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>joou-java-6</artifactId>
+            <version>0.9.5</version>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>

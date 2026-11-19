@@ -132,6 +132,7 @@
 
     <!-- SQL -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]sql[\\/]impl[\\/]SqlPlanImpl"/>
+    <suppress checks="LineLength" files="org[\\/]apache[\\/]calcite[\\/]runtime[\\/]CalciteResource.properties"/>
 
     <!-- Security -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]security[\\/]"/>

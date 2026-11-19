@@ -26,7 +26,6 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.RewriteVisitor;
 import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
-import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastCastFunction;
 import com.hazelcast.jet.sql.impl.validate.param.AbstractParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeCoercion;
@@ -34,6 +33,7 @@ import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryUtils;
@@ -52,7 +52,6 @@ import org.apache.calcite.sql.SqlBasicCall;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlDelete;
 import org.apache.calcite.sql.SqlDynamicParam;
-import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlInsert;
 import org.apache.calcite.sql.SqlIntervalLiteral;
@@ -66,7 +65,6 @@ import org.apache.calcite.sql.SqlSelect;
 import org.apache.calcite.sql.SqlUpdate;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.parser.SqlParserPos;
-import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.util.SqlBasicVisitor;
 import org.apache.calcite.sql.util.SqlShuttle;
 import org.apache.calcite.sql.validate.SelectScope;
@@ -74,6 +72,7 @@ import org.apache.calcite.sql.validate.SqlQualified;
 import org.apache.calcite.sql.validate.SqlValidatorCatalogReader;
 import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.sql.validate.SqlValidatorImplBridge;
+import org.apache.calcite.sql.validate.SqlValidatorNamespace;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.SqlValidatorTable;
 import org.apache.calcite.sql.validate.SqlValidatorUtil;
@@ -91,6 +90,7 @@ import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.validate.ValidatorResource.RESOURCE;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_CYCLIC_TYPES_ENABLED;
 import static org.apache.calcite.sql.JoinType.FULL;
 import static org.apache.calcite.sql.SqlKind.AS;
 import static org.apache.calcite.sql.SqlKind.COLLECTION_TABLE;
@@ -136,11 +136,14 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     private final IMapResolver iMapResolver;
     private final SqlSecurityContext ssc;
 
+    private final boolean cyclesInUDTAllowed;
+
     public HazelcastSqlValidator(
-            SqlValidatorCatalogReader catalogReader,
-            List<Object> arguments,
-            IMapResolver iMapResolver,
-            SqlSecurityContext ssc
+        NodeEngine nodeEngine,
+        SqlValidatorCatalogReader catalogReader,
+        List<Object> arguments,
+        IMapResolver iMapResolver,
+        SqlSecurityContext ssc
     ) {
         super(HazelcastSqlOperatorTable.instance(), catalogReader, HazelcastTypeFactory.INSTANCE, CONFIG);
 
@@ -149,6 +152,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
         this.arguments = arguments;
         this.iMapResolver = iMapResolver;
         this.ssc = ssc;
+        this.cyclesInUDTAllowed = nodeEngine.getProperties().getBoolean(SQL_CUSTOM_CYCLIC_TYPES_ENABLED);
     }
 
     @Override
@@ -206,32 +210,35 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
     @Override
-    public void validateInsert(final SqlInsert insert) {
-        super.validateInsert(insert);
-        validateUpsertRowType((SqlIdentifier) insert.getTargetTable());
+    protected void validateNamespace(SqlValidatorNamespace namespace, RelDataType targetRowType) {
+        namespace.validate(targetRowType);
+        if (!cyclesInUDTAllowed && namespace.getNode() != null && hasCycle(namespace.getType())) {
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION,
+                                       "Experimental feature of using cyclic custom types isn't enabled. "
+                                           + "To enable, set " + SQL_CUSTOM_CYCLIC_TYPES_ENABLED
+                                           + " to true");
+        }
+        super.validateNamespace(namespace, targetRowType);
+    }
+
+    private boolean hasCycle(RelDataType type) {
+        for (final RelDataTypeField field : type.getFieldList()) {
+            final RelDataType fieldType = field.getType();
+            if (!(fieldType instanceof HazelcastObjectType)) {
+                continue;
+            }
+
+            if (QueryUtils.containsCycles((HazelcastObjectType) fieldType, new HashSet<>())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
-    public void validateColumnListParams(
-            final SqlFunction function,
-            final List<RelDataType> argTypes,
-            final List<SqlNode> operands
-    ) {
-        if (!(function instanceof HazelcastCastFunction)) {
-            super.validateColumnListParams(function, argTypes, operands);
-        }
-
-        if (argTypes.get(0).getSqlTypeName() != SqlTypeName.COLUMN_LIST) {
-            throw QueryException.error("Cannot convert " + argTypes.get(0).getSqlTypeName()
-                    + " to " + argTypes.get(1).getSqlTypeName());
-        }
-
-        final SqlCall call = (SqlCall) operands.get(0);
-
-        assert call.getOperator().getKind() == SqlKind.ROW
-                : "CAST column list argument is not a RowExpression call";
-
-        throw QueryException.error("Cannot convert ROW to JSON");
+    public void validateInsert(final SqlInsert insert) {
+        super.validateInsert(insert);
+        validateUpsertRowType((SqlIdentifier) insert.getTargetTable());
     }
 
     private void validateSelect(SqlSelect select, SqlValidatorScope scope) {

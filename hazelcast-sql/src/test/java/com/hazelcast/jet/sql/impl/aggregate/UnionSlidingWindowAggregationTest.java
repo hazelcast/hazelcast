@@ -112,10 +112,10 @@ public class UnionSlidingWindowAggregationTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(sql,
                 asList(
                         new Row(timestampTz(0L), 1L),
-                        new Row(timestampTz(0L), 2),
+                        new Row(timestampTz(0L), 2L),
                         new Row(timestampTz(0L), 2L),
                         new Row(timestampTz(3L), 8L),
-                        new Row(timestampTz(3L), 4),
+                        new Row(timestampTz(3L), 4L),
                         new Row(timestampTz(3L), 1L)
                 ));
     }

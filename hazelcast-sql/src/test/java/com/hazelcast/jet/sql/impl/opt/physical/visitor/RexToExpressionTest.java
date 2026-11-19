@@ -48,7 +48,7 @@ import static org.apache.calcite.avatica.util.TimeUnit.SECOND;
 import static org.apache.calcite.avatica.util.TimeUnit.YEAR;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SuppressWarnings({"unchecked", "UnstableApiUsage"})
+@SuppressWarnings("unchecked")
 public class RexToExpressionTest {
 
     private static final RelDataTypeFactory FACTORY = HazelcastTypeFactory.INSTANCE;
@@ -98,14 +98,14 @@ public class RexToExpressionTest {
 
     @Test
     public void test_real() {
-        RexLiteral literal = literal(new BigDecimal(1), new BigDecimal(2), SqlTypeName.REAL);
+        RexLiteral literal = literal(1d, 2d, SqlTypeName.REAL);
         Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(1F, 2F));
     }
 
     @Test
     public void test_double() {
-        RexLiteral literal = literal(new BigDecimal(1), new BigDecimal(2), SqlTypeName.DOUBLE);
+        RexLiteral literal = literal(1d, 2d, SqlTypeName.DOUBLE);
         Sarg<?> converted = convert(literal);
         assertThat(converted).isEqualToComparingFieldByField(range(1D, 2D));
     }

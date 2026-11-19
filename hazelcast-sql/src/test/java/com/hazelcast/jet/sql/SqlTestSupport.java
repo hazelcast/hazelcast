@@ -39,6 +39,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
@@ -60,6 +61,7 @@ import org.apache.avro.Schema;
 import org.junit.After;
 import org.junit.experimental.categories.Category;
 import org.junit.jupiter.api.AfterEach;
+import org.mockito.Mockito;
 
 import javax.annotation.Nonnull;
 import java.time.Instant;
@@ -80,6 +82,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -810,6 +813,12 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 + String.join(", ", Collections.nCopies(values.length, "?")) + ")", values);
     }
 
+    public static NodeEngine mockEngine() {
+        NodeEngine mock = mock(NodeEngine.class);
+        Mockito.when(mock.getProperties()).thenReturn(new HazelcastProperties(new Properties()));
+        return mock;
+    }
+
     public static String toSQL(Object value) {
         if (value instanceof Object[] objects) {
             return "(" + Arrays.stream(objects).map(SqlTestSupport::toSQL).collect(joining(", ")) + ")";
@@ -1051,7 +1060,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
      * - SqlRow doesn't implement `equals`
      * - It's not easy to create SqlRow instance
      */
-    public static final class Row {
+    public static final class Row implements Comparable<Row> {
         private final Object[] values;
 
         public Row(SqlRow row) {
@@ -1087,12 +1096,47 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
                 return false;
             }
             Row row = (Row) o;
-            return Arrays.equals(values, row.values);
+            return this.compareTo(row) == 0;
         }
 
         @Override
         public int hashCode() {
             return Arrays.hashCode(values);
+        }
+
+        @Override
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        public int compareTo(SqlTestSupport.Row o) {
+            int min = Math.min(values.length, o.values.length);
+
+            for (int i = 0; i < min; i++) {
+                boolean thisNull = values[i] == null;
+                boolean thatNull = o.values[i] == null;
+                if (thisNull && thatNull) {
+                    continue;
+                }
+                if (thisNull != thatNull) {
+                    return thisNull ? 1 : -1;
+                } else {
+                    Object valueThis = values[i];
+                    Object valueThat = o.values[i];
+                    if (valueThis instanceof Comparable v1) {
+                        int compare = v1.compareTo(valueThat);
+                        if (compare != 0) {
+                            return compare;
+                        }
+                    } else {
+                        boolean equals = valueThis.equals(valueThat);
+                        if (!equals) {
+                            // to preserve signum(v1.compareTo(v2)) == -signum(v2.compareTo(v1))
+                            int hash1 = valueThis.hashCode();
+                            int hash2 = valueThat.hashCode();
+                            return hash1 > hash2 ? -1 : 1;
+                        }
+                    }
+                }
+            }
+            return values.length - o.values.length;
         }
     }
 }

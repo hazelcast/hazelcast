@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.primitives.Ints;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 
@@ -30,11 +31,12 @@ class DeleteQueryBuilder extends AbstractQueryBuilder {
 
     DeleteQueryBuilder(
             JdbcTable table,
+            PhysicalRel rel,
             SqlDialect dialect,
             RexNode predicate,
             boolean hasInput
     ) {
-        super(table, dialect);
+        super(table, dialect, rel);
 
         StringBuilder sb = new StringBuilder();
         sb.append("DELETE FROM ");

@@ -133,13 +133,13 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         SqlServiceImpl sql = (SqlServiceImpl) (instance().getSql());
         HepProgram subqueryRewriterProgram = sql.getOptimizer().getSubqueryRewriterProgram();
         OptimizerContext context = OptimizerContext.create(
-                HazelcastSchemaUtils.createCatalog(schema),
-                QueryUtils.prepareSearchPaths(null, null),
-                emptyList(),
-                name -> null,
-                subqueryRewriterProgram,
-                NoOpSqlSecurityContext.INSTANCE
-        );
+            mockEngine(),
+            HazelcastSchemaUtils.createCatalog(schema),
+            QueryUtils.prepareSearchPaths(null, null),
+            emptyList(),
+            name -> null,
+            subqueryRewriterProgram,
+            NoOpSqlSecurityContext.INSTANCE);
 
         ParameterConverter[] parameterConverters = IntStream.range(0, parameterTypes.length)
                 .mapToObj(i -> new StrictParameterConverter(i, SqlParserPos.ZERO, parameterTypes[i]))

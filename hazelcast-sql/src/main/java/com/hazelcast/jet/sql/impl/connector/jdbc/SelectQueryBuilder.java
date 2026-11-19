@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.primitives.Ints;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
@@ -35,8 +36,9 @@ class SelectQueryBuilder extends AbstractQueryBuilder {
     private final List<Integer> dynamicParams = new ArrayList<>();
     private final List<FunctionEx<Object, ?>> converters = new ArrayList<>();
 
-    SelectQueryBuilder(JdbcTable table, SqlDialect dialect, RexNode predicate, List<RexNode> projection) {
-        super(table, dialect);
+    SelectQueryBuilder(JdbcTable table, PhysicalRel rel,
+                       SqlDialect dialect, RexNode predicate, List<RexNode> projection) {
+        super(table, dialect, rel);
 
         StringBuilder sb = new StringBuilder();
         selectClause(sb, projection);

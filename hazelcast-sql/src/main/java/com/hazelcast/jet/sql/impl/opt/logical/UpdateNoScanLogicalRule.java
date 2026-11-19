@@ -149,11 +149,10 @@ class UpdateNoScanLogicalRule extends RelRule<RelRule.Config> {
     public void onMatch(RelOptRuleCall call) {
         TableModify update = call.rel(0);
         RelNode input = call.rel(1);
-
         UpdateLogicalRel rel = new UpdateLogicalRel(
                 update.getCluster(),
                 OptUtils.toLogicalConvention(update.getTraitSet()),
-                update.getTable(),
+                requireNonNull(update.getTable()),
                 update.getCatalogReader(),
                 OptUtils.toLogicalInput(input),
                 requireNonNull(update.getUpdateColumnList()),

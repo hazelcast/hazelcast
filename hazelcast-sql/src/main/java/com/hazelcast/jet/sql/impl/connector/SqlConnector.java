@@ -24,6 +24,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.kafka.impl.AbstractHazelcastAvroSerde;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -609,6 +610,11 @@ public interface SqlConnector {
          */
         @Nonnull
         List<Expression<?>> convertProjection(@Nonnull List<HazelcastRexNode> nodes);
+
+        /**
+         * Returns currently processed {@link PhysicalRel}.
+         */
+        PhysicalRel getRel();
     }
 
     /**

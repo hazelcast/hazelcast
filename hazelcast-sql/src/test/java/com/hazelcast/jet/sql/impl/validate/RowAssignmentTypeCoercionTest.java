@@ -44,7 +44,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
-import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 
@@ -65,7 +64,6 @@ import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIM
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TINYINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static com.hazelcast.sql.impl.type.converter.AbstractTemporalConverter.DEFAULT_ZONE;
-import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
@@ -77,7 +75,6 @@ import static org.junit.Assume.assumeFalse;
 public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
 
     private static final LocalDate TODAY = LocalDate.now();
-    private static final LocalDate TOMORROW = TODAY.plusDays(1);
 
     @Parameter
     public TestParams testParams;
@@ -468,7 +465,8 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedLiteralFailureRegex("Numeric overflow while converting DECIMAL to BIGINT")
                         .withExpectedColumnFailureRegex("Numeric overflow while converting DECIMAL to BIGINT")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DECIMAL was found"),
-                TestParams.passingCase(1712, DECIMAL, DECIMAL, "cast(42 as decimal)", new BigDecimal("42"), BigDecimal.valueOf(42)),
+                TestParams.passingCase(1712, DECIMAL, DECIMAL, "cast(42 as decimal)", new BigDecimal("42"),
+                                       BigDecimal.valueOf(42)),
                 TestParams.passingCase(1713, DECIMAL, REAL, "cast(42 as decimal)", new BigDecimal("42"), 42F),
                 TestParams.passingCase(1714, DECIMAL, DOUBLE, "cast(42 as decimal)", new BigDecimal("42"), 42D),
                 TestParams.failingCase(1715, DECIMAL, TIME, "cast(42 as decimal)", new BigDecimal("42"))
@@ -523,9 +521,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.passingCase(1809, REAL, BIGINT, "cast(42 as real)", 42F, 42L)
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found"),
                 TestParams.passingCase(1810, REAL, BIGINT, "cast(42.1 as real)", 42.1F, 42L)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found")
-                        // the following case fails because of https://issues.apache.org/jira/browse/CALCITE-5228
-                        .withExpectedLiteralFailureRegex("For input string: \"42.1\""),
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found"),
                 TestParams.failingCase(1811, REAL, BIGINT, "cast(18223372036854775808000 as real)", 18223372036854775808000F)
                         .withExpectedLiteralFailureRegex("Numeric overflow while converting REAL to BIGINT")
                         .withExpectedColumnFailureRegex("Numeric overflow while converting REAL to BIGINT")
@@ -594,9 +590,7 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                 TestParams.passingCase(1912, DOUBLE, REAL, "cast(42 as double)", 42D, 42F)
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of REAL type, but DOUBLE was found"),
                 TestParams.passingCase(1913, DOUBLE, BIGINT, "cast(42.1 as double)", 42.1D, 42L)
-                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DOUBLE was found")
-                        // the following case fails because of https://issues.apache.org/jira/browse/CALCITE-5228
-                        .withExpectedLiteralFailureRegex("For input string: \"42.1\""),
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DOUBLE was found"),
                 TestParams.failingCase(1914, DOUBLE, REAL, "cast(42e42 as double)", 42e42D)
                         .withExpectedLiteralFailureRegex("Numeric overflow while converting DOUBLE to REAL")
                         .withExpectedColumnFailureRegex("Numeric overflow while converting DOUBLE to REAL")
@@ -668,11 +662,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedColumnFailureRegex("Cannot assign to target field 'field1' of type DATE from source field '.+' of type TIME")
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DATE type, but TIME was found"),
                 TestParams.passingCase(2012, TIME, TIMESTAMP, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0),
-                        LocalDateTime.of(TODAY, LocalTime.of(1, 42)),
-                        LocalDateTime.of(TOMORROW, LocalTime.of(1, 42))),
+                        LocalDateTime.of(TODAY, LocalTime.of(1, 42))),
                 TestParams.passingCase(2013, TIME, TIMESTAMP_WITH_TIME_ZONE, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0),
-                        ZonedDateTime.of(LocalDateTime.of(TODAY, LocalTime.of(1, 42)), DEFAULT_ZONE).toOffsetDateTime(),
-                        ZonedDateTime.of(LocalDateTime.of(TOMORROW, LocalTime.of(1, 42)), DEFAULT_ZONE).toOffsetDateTime()),
+                        ZonedDateTime.of(LocalDateTime.of(TODAY, LocalTime.of(1, 42)), DEFAULT_ZONE).toOffsetDateTime()),
                 TestParams.passingCase(2014, TIME, OBJECT, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0), LocalTime.of(1, 42)),
                 TestParams.failingCase(2015, TIME, JSON, "cast('01:42:00' as time)", LocalTime.of(1, 42, 0))
                         .withExpectedLiteralFailureRegex("Cannot assign to target field 'field1' of type JSON from source field '.+' of type TIME")
@@ -979,7 +971,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         try {
             execute("SINK INTO m VALUES(0, " + testParams.srcLiteral + ", 0)");
             throwIfFailureWasExpected(testParams.expectedLiteralFailureRegex);
-            assertThat(extractValue("m", "field1")).isIn(testParams.expectedTargetValues);
+            assertThat(extractValue("m", "field1"))
+                .usingComparator(RowAssignmentTypeCoercionTest::valueComparator)
+                .isEqualTo(testParams.expectedTargetValue);
         } catch (Exception e) {
             assertExceptionMatches(e, testParams.expectedLiteralFailureRegex);
         }
@@ -1009,7 +1003,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         try {
             execute("SINK INTO target SELECT 0, v, 0 FROM src");
             throwIfFailureWasExpected(testParams.expectedColumnFailureRegex);
-            assertThat(extractValue("target", "field1")).isIn(testParams.expectedTargetValues);
+            assertThat(extractValue("target", "field1"))
+                .usingComparator(RowAssignmentTypeCoercionTest::valueComparator)
+                .isEqualTo(testParams.expectedTargetValue);
         } catch (Exception e) {
             assertExceptionMatches(e, testParams.expectedColumnFailureRegex);
         }
@@ -1030,10 +1026,20 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         try {
             execute("SINK INTO target SELECT 0, " + testParams.srcLiteral + ", 0 FROM src");
             throwIfFailureWasExpected(testParams.expectedLiteralFailureRegex);
-            assertThat(extractValue("target", "field1")).isIn(testParams.expectedTargetValues);
+            assertThat(extractValue("target", "field1"))
+                .usingComparator(RowAssignmentTypeCoercionTest::valueComparator)
+                .isEqualTo(testParams.expectedTargetValue);
         } catch (Exception e) {
             assertExceptionMatches(e, testParams.expectedLiteralFailureRegex);
         }
+    }
+
+    private static int valueComparator(Object o1, Object o2) {
+        if  (o1 instanceof BigDecimal c1 && o2 instanceof BigDecimal c2) {
+            return c1.compareTo(c2);
+        }
+        // same as AssertJ does
+        return Objects.equals(o1, o2) ? 0 : -1;
     }
 
     @Test
@@ -1050,7 +1056,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         try {
             execute("SINK INTO m VALUES(0, ?, 0)", testParams.srcValue);
             throwIfFailureWasExpected(testParams.expectedDynamicParameterFailureRegex);
-            assertThat(extractValue("m", "field1")).isIn(testParams.expectedTargetValues);
+            assertThat(extractValue("m", "field1"))
+                .usingComparator(RowAssignmentTypeCoercionTest::valueComparator)
+                .isEqualTo(testParams.expectedTargetValue);
         } catch (Exception e) {
             assertExceptionMatches(e, testParams.expectedDynamicParameterFailureRegex);
         }
@@ -1071,7 +1079,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         try {
             execute("UPDATE m SET field1 = " + testParams.srcLiteral);
             throwIfFailureWasExpected(testParams.expectedLiteralFailureRegex);
-            assertThat(extractValue("m", "field1")).isIn(testParams.expectedTargetValues);
+            assertThat(extractValue("m", "field1"))
+                .usingComparator(RowAssignmentTypeCoercionTest::valueComparator)
+                .isEqualTo(testParams.expectedTargetValue);
         } catch (Exception e) {
             assertExceptionMatches(e, testParams.expectedLiteralFailureRegex);
         }
@@ -1094,7 +1104,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         try {
             execute("UPDATE m SET field1 = field2");
             throwIfFailureWasExpected(testParams.expectedColumnFailureRegex);
-            assertThat(extractValue("m", "field1")).isIn(testParams.expectedTargetValues);
+            assertThat(extractValue("m", "field1"))
+                .usingComparator(RowAssignmentTypeCoercionTest::valueComparator)
+                .isEqualTo(testParams.expectedTargetValue);
         } catch (Exception e) {
             assertExceptionMatches(e, testParams.expectedColumnFailureRegex);
         }
@@ -1115,7 +1127,9 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         try {
             execute("UPDATE m SET field1 = ?", testParams.srcValue);
             throwIfFailureWasExpected(testParams.expectedDynamicParameterFailureRegex);
-            assertThat(extractValue("m", "field1")).isIn(testParams.expectedTargetValues);
+            assertThat(extractValue("m", "field1"))
+                .usingComparator(RowAssignmentTypeCoercionTest::valueComparator)
+                .isEqualTo(testParams.expectedTargetValue);
         } catch (Exception e) {
             assertExceptionMatches(e, testParams.expectedDynamicParameterFailureRegex);
         }
@@ -1156,24 +1170,24 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
         private final QueryDataTypeFamily targetType;
         private final String srcLiteral;
         private final Object srcValue;
-        private final List<Object> expectedTargetValues;
+        private final Object expectedTargetValue;
         private Pattern expectedLiteralFailureRegex;
         private Pattern expectedColumnFailureRegex;
         private Pattern expectedDynamicParameterFailureRegex;
 
         private TestParams(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType, String srcLiteral,
-                           Object srcValue, List<Object> expectedTargetValues) {
+                           Object srcValue, Object expectedTargetValue) {
             this.testId = testId;
             this.srcType = srcType;
             this.targetType = targetType;
             this.srcLiteral = srcLiteral;
             this.srcValue = srcValue;
-            this.expectedTargetValues = expectedTargetValues;
+            this.expectedTargetValue = expectedTargetValue;
         }
 
         static TestParams passingCase(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType,
-                                      String valueLiteral, Object value, Object... targetValues) {
-            return new TestParams(testId, srcType, targetType, valueLiteral, value, asList(targetValues));
+                                      String valueLiteral, Object value, Object targetValues) {
+            return new TestParams(testId, srcType, targetType, valueLiteral, value, targetValues);
         }
 
         static TestParams failingCase(int testId, QueryDataTypeFamily srcType, QueryDataTypeFamily targetType,

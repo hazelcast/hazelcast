@@ -20,6 +20,7 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexLocalRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
@@ -48,6 +49,11 @@ public class SupportsRexVisitor extends RexVisitorImpl<Boolean> {
 
     @Override
     public Boolean visitInputRef(RexInputRef inputRef) {
+        return true;
+    }
+
+    @Override
+    public Boolean visitLocalRef(RexLocalRef localRef) {
         return true;
     }
 

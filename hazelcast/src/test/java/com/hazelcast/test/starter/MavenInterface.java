@@ -16,11 +16,8 @@
 
 package com.hazelcast.test.starter;
 
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.Preconditions.checkState;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
-
+import com.hazelcast.internal.tpcengine.util.OS;
+import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
@@ -31,10 +28,6 @@ import org.eclipse.aether.internal.impl.SimpleLocalRepositoryManagerFactory;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.NoLocalRepositoryManagerException;
-
-import org.eclipse.aether.spi.localrepo.LocalRepositoryManagerFactory;
-import com.hazelcast.internal.tpcengine.util.OS;
-import com.hazelcast.internal.util.concurrent.ConcurrentMemoizingSupplier;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,6 +41,11 @@ import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Stream;
+
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.Memoizers.memoizeConcurrent;
+import static com.hazelcast.internal.util.Preconditions.checkState;
+import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
 
 public class MavenInterface {
     /** The path to the {@code mvn} executable */
@@ -75,8 +73,8 @@ public class MavenInterface {
     static {
         try {
             final DefaultLocalRepositoryProvider repositoryProvider = new DefaultLocalRepositoryProvider(
-                    Collections.<String, LocalRepositoryManagerFactory>singletonMap(MavenInterface.class.getName(),
-                            new SimpleLocalRepositoryManagerFactory(new DefaultLocalPathComposer())));
+                Collections.singletonMap(MavenInterface.class.getName(),
+                                         new SimpleLocalRepositoryManagerFactory(new DefaultLocalPathComposer())));
 
             MAVEN_REPOSITORY = Paths.get(evaluateExpression("settings.localRepository"));
 

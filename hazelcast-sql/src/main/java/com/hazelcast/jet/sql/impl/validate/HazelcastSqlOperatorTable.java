@@ -417,9 +417,21 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
                     throw functionDoesNotExist(call);
                 }
 
-                assert resolvedOperators.size() == 1;
-
-                basicCall.setOperator(resolvedOperators.get(0));
+                // + and - (and potentially other operators in the future) have more than one resolved operator
+                // therefore in simple case we just set the only operator we got
+                // if there are more, we check resolved operators - if any expect the same number of operands as we have
+                if (resolvedOperators.size() == 1) {
+                    basicCall.setOperator(resolvedOperators.get(0));
+                } else {
+                    int noOperands = basicCall.getOperandList().size();
+                    for (var candidateOp : resolvedOperators) {
+                        if (noOperands == 1 && candidateOp instanceof HazelcastUnaryOperator) {
+                            basicCall.setOperator(candidateOp);
+                        } else if (noOperands == 2 && candidateOp instanceof HazelcastArithmeticOperator) {
+                            basicCall.setOperator(candidateOp);
+                        }
+                    }
+                }
             } else if (call instanceof SqlCase sqlCase) {
                 return new HazelcastSqlCase(sqlCase.getParserPosition(), sqlCase.getValueOperand(), sqlCase.getWhenOperands(),
                         sqlCase.getThenOperands(), sqlCase.getElseOperand());

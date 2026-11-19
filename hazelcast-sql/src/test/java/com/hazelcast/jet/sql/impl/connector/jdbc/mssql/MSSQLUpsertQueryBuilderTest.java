@@ -49,7 +49,7 @@ class MSSQLUpsertQueryBuilderTest {
 
     @Test
     void appendMergeClause() {
-        MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
+        MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendMergeClause(sb);
         String mergeClause = sb.toString();
@@ -58,7 +58,7 @@ class MSSQLUpsertQueryBuilderTest {
 
     @Test
     void appendValuesClause() {
-        MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
+        MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendValuesClause(sb);
 
@@ -68,7 +68,7 @@ class MSSQLUpsertQueryBuilderTest {
 
     @Test
     void appendMatchedClause() {
-        MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
+        MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendMatchedClause(sb);
 
@@ -80,7 +80,7 @@ class MSSQLUpsertQueryBuilderTest {
 
     @Test
     void query() {
-        MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
+        MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect, null);
         String result = builder.query();
         assertThat(result).isEqualTo(
                 "MERGE [table1] USING (VALUES (?, ?)) AS source ([field1], [field2]) ON [table1].[pk1] = source.[pk1] AND [table1].[pk2] = source.[pk2] "

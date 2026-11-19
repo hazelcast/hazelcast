@@ -126,7 +126,7 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
 
         assertThatThrownBy(() -> assertRowsAnyOrder(client(), "SELECT CAST(this AS JSON) FROM test",
                         rows(1, "a")))
-                .hasMessageEndingWith("Cycle detected in row value")
+                .hasMessageContaining("Cycle detected in row value")
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.DATA_EXCEPTION);
     }
 
@@ -155,7 +155,7 @@ public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
                 .hasMessageContaining("Cannot convert OBJECT to JSON");
 
         assertThatThrownBy(() -> execute("SELECT CAST((2, 'user', null) as JSON)"))
-                .hasMessageContaining("Cannot convert ROW to JSON");
+                .hasMessageContaining("CAST function cannot convert value of type ROW to type JSON");
 
         assertThatThrownBy(() -> execute("SELECT CAST(CAST((2, 'user', null) AS UserType) as JSON)"))
                 .hasMessageContaining("Complex type specifications are not supported");
