@@ -223,9 +223,9 @@ public class ChunkedSnapshotInstaller {
                         + "from leader %s matches the local log",
                 raftNode.state().commitIndex(), snapshotIndex, request.snapshotChunk().term(), request.leader()));
 
+        // run first, so the committed index is unchanged if the cleanup fails
+        cleanupStaleTransferIfNeeded(snapshotIndex);
         raftNode.state().commitIndex(snapshotIndex);
-        // before applyLogEntries, which may terminate the node, close the store and skip the stale transfer cleanup
-        cleanupStaleTransferIfNeeded();
         raftNode.applyLogEntries();
         notifySuccess(request);
     }
@@ -347,15 +347,23 @@ public class ChunkedSnapshotInstaller {
      * <p>An empty transfer or one ahead of the commit index is left unchanged.
      */
     void cleanupStaleTransferIfNeeded() {
+        cleanupStaleTransferIfNeeded(raftNode.state().commitIndex());
+    }
+
+    /**
+     * Cleans up an incomplete snapshot transfer whose snapshot index is less than or equal to the given commit index.
+     * The given index can be ahead of the local commit index, so the cleanup can run before the local commit index
+     * is advanced to it.
+     */
+    private void cleanupStaleTransferIfNeeded(long commitIndex) {
         long transferSnapshotIndex = transferState.snapshotIndex();
-        long commitIndex = raftNode.state().commitIndex();
 
         if (transferSnapshotIndex >= 0 && transferSnapshotIndex <= commitIndex) {
             deleteStaleChunkFile();
             reset();
 
             logger.fine("Cleaned up stale snapshot transfer [index=%d] "
-                            + "because commit index is %d",
+                            + "because commit index reaches %d",
                     transferSnapshotIndex, commitIndex);
         }
     }

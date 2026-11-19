@@ -33,7 +33,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -50,6 +49,7 @@ import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Answers.RETURNS_MOCKS;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -191,7 +191,7 @@ public class ChunkedSnapshotInstallerTest {
         SnapshotChunk chunk = newSnapshotChunk(13L, 1, 0, 1);
         InstallSnapshotRequest request = newRequest(chunk);
 
-        Assert.assertThrows(HazelcastException.class, () -> installer.processChunk(request));
+        assertThrows(HazelcastException.class, () -> installer.processChunk(request));
 
         verify(raftIntegration, never()).resetForChunkedSnapshotRestore();
         verify(raftNode, never()).installSnapshot(any());
@@ -204,7 +204,7 @@ public class ChunkedSnapshotInstallerTest {
         InstallSnapshotRequest request = newRequest(chunk);
         doThrow(new IOException("expected")).doNothing().when(stateStore).persistSnapshotChunk(chunk);
 
-        Assert.assertThrows(HazelcastException.class, () -> installer.processChunk(request));
+        assertThrows(HazelcastException.class, () -> installer.processChunk(request));
 
         assertEquals(0, installer.getReceivedChunks().size());
         verify(raftIntegration, never()).resetForChunkedSnapshotRestore();
@@ -224,7 +224,7 @@ public class ChunkedSnapshotInstallerTest {
         SnapshotChunk inconsistentChunk = newSnapshotChunk(13L, 2, 1, 2);
         installer.processChunk(newRequest(firstChunk));
 
-        Assert.assertThrows(IllegalStateException.class,
+        assertThrows(IllegalStateException.class,
                 () -> installer.processChunk(newRequest(inconsistentChunk)));
 
         assertEquals(1, installer.getReceivedChunks().size());
@@ -320,6 +320,26 @@ public class ChunkedSnapshotInstallerTest {
         node.processSnapshotChunk(newRequest(newSnapshotChunk(1L, 2, 1, 1)));
 
         verify(stateStore).deleteSnapshotChunks(1L);
+    }
+
+    @Test
+    public void keeps_commit_index_on_fast_forward_when_partial_transfer_deletion_fails() throws IOException {
+        // a real node, so the fast-forward advances its commit index and applies the entries from its log
+        RaftNodeImpl node = newRaftNode(new TestRaftGroupId("test"), localEndpoint, List.of(localEndpoint, leader),
+                new RaftAlgorithmConfig(), raftIntegration, stateStore);
+
+        // the first chunk starts a transfer, since the local log has no entry at the snapshot's index yet
+        node.processSnapshotChunk(newRequest(newSnapshotChunk(1L, 2, 0, 1)));
+
+        // an append request adds the entry at the snapshot's index, so the last chunk fast-forwards over it
+        node.state().log().appendEntries(new LogEntry(1, 1, null));
+        // simulate an I/O failure when the fast-forward deletes the stale transfer's chunks
+        doThrow(new IOException("expected")).when(stateStore).deleteSnapshotChunks(1L);
+        assertThrows(HazelcastException.class,
+                () -> node.processSnapshotChunk(newRequest(newSnapshotChunk(1L, 2, 1, 1))));
+
+        // the commit index is not changed when the deletion fails
+        assertEquals(0L, node.state().commitIndex());
     }
 
     @Test
