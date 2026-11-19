@@ -71,6 +71,11 @@ public class WaitSet implements LiveOperationsTracker, Iterable<WaitSetEntry> {
     @Override
     public void populate(LiveOperations liveOperations) {
         for (WaitSetEntry entry : queue) {
+            if (!entry.isValid()) {
+                // invalidated entries (e.g. caller member left, see #invalidateAll) stay in the queue until
+                // a notifier consumes them; nobody is waiting for a heartbeat of such an operation anymore
+                continue;
+            }
             // we need to read out the data from the BlockedOperation; not from the WaitSetEntry
             Operation operation = entry.getOperation();
             liveOperations.add(operation.getCallerAddress(), operation.getCallId());
