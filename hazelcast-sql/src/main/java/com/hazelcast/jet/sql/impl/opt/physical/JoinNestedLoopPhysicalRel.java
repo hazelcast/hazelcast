@@ -98,6 +98,7 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
 
         modifiedJoinInfo = new ModifiedJoinInfo(ImmutableIntList.copyOf(leftKeys),
                 ImmutableIntList.copyOf(rightKeys),
+                ImmutableList.copyOf(joinInfo.nullExclusionFlags),
                 ImmutableList.<RexNode>builder()
                         .addAll(joinInfo.nonEquiConditions)
                         .addAll(additionalNonEquiConditions).build());
@@ -123,8 +124,8 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
 
     protected static class ModifiedJoinInfo extends JoinInfo {
         protected ModifiedJoinInfo(ImmutableIntList leftKeys, ImmutableIntList rightKeys,
-                                   ImmutableList<RexNode> nonEquiConditions) {
-            super(leftKeys, rightKeys, nonEquiConditions);
+                                   ImmutableList<Boolean> nullExclusionFlags, ImmutableList<RexNode> nonEquiConditions) {
+            super(leftKeys, rightKeys, nullExclusionFlags, nonEquiConditions);
         }
     }
 }

@@ -361,6 +361,7 @@
                                     net.openhft.affinity;resolution:=optional,
                                     jakarta.jms;resolution:=optional,
                                     org.osgi.framework;resolution:=optional,
+                                    org.joou;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>

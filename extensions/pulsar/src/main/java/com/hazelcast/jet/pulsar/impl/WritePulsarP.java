@@ -31,6 +31,7 @@ import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility;
 import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
 import com.hazelcast.jet.pulsar.CloseablePulsarClient;
+import com.hazelcast.jet.pulsar.ConnectionSuppliers;
 import com.hazelcast.jet.pulsar.PulsarDataConnection;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -183,9 +184,8 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
                 }
             } else {
                 try {
-                    status = readDeduplicationStatus(() -> PulsarAdmin.builder()
-                                                                      .serviceHttpUrl(pulsarConfig.getHttpServiceUrl())
-                                                                      .build());
+                    status = readDeduplicationStatus(() -> ConnectionSuppliers.createAdmin(pulsarConfig.getHttpServiceUrl(),
+                                                                                           pulsarConfig.getOptions()));
                 } catch (Exception e) {
                     status = false;
                 }

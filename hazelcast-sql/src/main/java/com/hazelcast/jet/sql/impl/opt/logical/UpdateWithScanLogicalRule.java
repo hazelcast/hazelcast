@@ -33,12 +33,14 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.immutables.value.Value;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.internal.util.CollectionUtil.nonNull;
 import static com.hazelcast.jet.sql.impl.connector.HazelcastRexNode.wrap;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static java.util.Objects.requireNonNull;
@@ -78,6 +80,19 @@ class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
         TableModifyLogicalRel update = call.rel(0);
         FullScanLogicalRel scan = call.rel(1);
 
+        final HazelcastTable hzTable = OptUtils.extractHazelcastTable(scan);
+        // Source expressions may contain references to parent nodes
+        // Since we will be replacing whole plan with only top-level node, we need to replace those references to it's values
+        List<RexNode> sourceExpressionList = nonNull(update.getSourceExpressionList())
+            .stream()
+            .map(node -> {
+                if (node instanceof RexInputRef inputRef) {
+                    return nonNull(hzTable.getProjects()).get(inputRef.getIndex());
+                }
+                return node;
+            })
+            .toList();
+
         // IMap optimization to execute IMap operation directly
         boolean isImap = OptUtils.hasTableType(scan, PartitionedMapTable.class);
         if (!OptUtils.requiresJob(update) && isImap) {
@@ -90,14 +105,13 @@ class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
                         table,
                         keyCondition,
                         update.getUpdateColumnList(),
-                        update.getSourceExpressionList()
+                        sourceExpressionList
                 );
                 call.transformTo(rel);
                 return;
             }
         }
 
-        HazelcastTable hzTable = OptUtils.extractHazelcastTable(scan);
         SqlConnector connector = getJetSqlConnector(hzTable.getTarget());
         if (connector.dmlSupportsPredicates()
                 && (hzTable.getFilter() == null || connector.supportsExpression(wrap(hzTable.getFilter())))) {
@@ -109,7 +123,7 @@ class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
                     update.getCatalogReader(),
                     null,
                     requireNonNull(update.getUpdateColumnList()),
-                    requireNonNull(update.getSourceExpressionList()),
+                    requireNonNull(sourceExpressionList),
                     update.isFlattened(),
                     hzTable.getFilter()
             );
@@ -128,7 +142,7 @@ class UpdateWithScanLogicalRule extends RelRule<RelRule.Config> {
                 // TODO: we should project only columns needed in the update
                 isImap ? rewriteScan(scan) : scan,
                 requireNonNull(update.getUpdateColumnList()),
-                requireNonNull(update.getSourceExpressionList()),
+                requireNonNull(sourceExpressionList),
                 update.isFlattened(),
                 null
         );

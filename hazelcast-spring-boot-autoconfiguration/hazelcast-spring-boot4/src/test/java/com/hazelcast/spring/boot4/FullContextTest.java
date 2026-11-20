@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
@@ -30,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = Spring4HazelcastConfiguration.class)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
+@TestPropertySource("classpath:test-params.properties")
 public class FullContextTest extends AppContextTestBase {
 
     @Test
@@ -38,5 +40,7 @@ public class FullContextTest extends AppContextTestBase {
         assertThat((Object) map1).isNotNull();
         map1.set("key1", "value1");
         assertEqualsEventually(() -> map1.get("key1"), "value1");
+        assertThat(instance.getName()).isEqualTo("green-one");
+        assertThat(instance.getConfig().getClusterName()).isEqualTo("rebel-alliance");
     }
 }

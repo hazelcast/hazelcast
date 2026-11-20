@@ -28,10 +28,7 @@ public class HazelcastType extends BasicSqlType {
     }
 
     HazelcastType(SqlTypeName typeName, boolean nullable, int precision) {
-        super(HazelcastTypeSystem.INSTANCE, typeName, precision);
-
-        this.isNullable = nullable;
-
+        super(HazelcastTypeSystem.INSTANCE, typeName, nullable, precision);
         computeDigest();
     }
 

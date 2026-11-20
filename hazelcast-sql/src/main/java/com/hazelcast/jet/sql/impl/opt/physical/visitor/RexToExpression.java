@@ -30,7 +30,6 @@ import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunc
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastUdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
@@ -106,11 +105,12 @@ import org.apache.calcite.util.TimeString;
 import org.apache.calcite.util.TimestampString;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.Arrays;
 
+import static com.hazelcast.jet.sql.impl.opt.physical.visitor.ConversionUtil.convertBooleanLiteral;
+import static com.hazelcast.jet.sql.impl.opt.physical.visitor.ConversionUtil.toLocalDate;
+import static com.hazelcast.jet.sql.impl.opt.physical.visitor.ConversionUtil.toLocalDateTime;
+import static com.hazelcast.jet.sql.impl.opt.physical.visitor.ConversionUtil.toLocalTime;
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHARACTER_LENGTH;
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.CHAR_LENGTH;
 import static com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable.LENGTH;
@@ -207,7 +207,7 @@ public final class RexToExpression {
                 return ConstantExpression.create(null, resultType);
 
             case CAST:
-                if (operands[0].getType().equals(resultType)) {
+                if (operands[0] instanceof SymbolExpression || operands[0].getType().equals(resultType)) {
                     // It might happen that two types Calcite considers different
                     // are mapped to the same Hazelcast type. For instance, to
                     // preserve the row signature, Calcite may insert synthetic
@@ -518,7 +518,7 @@ public final class RexToExpression {
         throw QueryException.error("Unsupported operator: " + operator);
     }
 
-    @SuppressWarnings({"unchecked", "UnstableApiUsage"})
+    @SuppressWarnings("unchecked")
     public static Tuple2<RangeSet<?>, Boolean> extractRangeSetAndNullAsFromSearch(RexLiteral literal) {
         org.apache.calcite.util.Sarg<?> sarg = literal.getValueAs(org.apache.calcite.util.Sarg.class);
         if (sarg == null) {
@@ -530,7 +530,7 @@ public final class RexToExpression {
         return Tuple2.tuple2(RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType)), convertNullAs(sarg));
     }
 
-    @SuppressWarnings({"unchecked", "UnstableApiUsage"})
+    @SuppressWarnings({"unchecked"})
     private static <CI extends Comparable<CI>, CO extends Comparable<CO>> Expression<?> convertSargLiteral(
             RexLiteral literal,
             RelDataType type
@@ -546,42 +546,26 @@ public final class RexToExpression {
 
     @SuppressWarnings({"rawtypes", "checkstyle:ReturnCount"})
     private static <CI extends Comparable<CI>> Comparable convertSargValue(Comparable<CI> value, SqlTypeName typeName) {
-        switch (typeName) {
-            case TINYINT:
-                return ((BigDecimal) value).byteValueExact();
-            case SMALLINT:
-                return ((BigDecimal) value).shortValueExact();
-            case INTEGER:
-                return ((BigDecimal) value).intValueExact();
-            case BIGINT:
-                return ((BigDecimal) value).longValueExact();
-            case REAL:
-            case FLOAT:
-                return ((BigDecimal) value).floatValue();
-            case DOUBLE:
-                return ((BigDecimal) value).doubleValue();
-            case CHAR:
-            case VARCHAR:
-                return ((NlsString) value).getValue();
-            case TIME:
-                return toLocalTime((TimeString) value);
-            case DATE:
-                return toLocalDate((DateString) value);
-            case TIMESTAMP:
-                return toLocalDateTime((TimestampString) value);
-            case INTERVAL_YEAR_MONTH:
-                return new SqlYearMonthInterval(((BigDecimal) value).intValueExact());
-            case INTERVAL_DAY_SECOND:
-                return new SqlDaySecondInterval(((BigDecimal) value).longValueExact());
-            default:
-                return value;
-        }
-    }
+        return switch (typeName) {
+            case TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE -> {
+                // due to earlier coercion we may have various types here...
+                if (value instanceof BigDecimal casted) {
+                    yield ConversionUtil.convertSargValue(casted, typeName);
+                } else if (value instanceof Number casted) {
+                    yield ConversionUtil.convertSargValue(casted, typeName);
+                } else {
+                    yield value;
+                }
+            }
 
-    private static Expression<?> convertBooleanLiteral(RexLiteral literal, RelDataType type) {
-        assert type.getSqlTypeName() == SqlTypeName.BOOLEAN;
-        Boolean value = literal.getValueAs(Boolean.class);
-        return ConstantExpression.create(value, HazelcastTypeUtils.toHazelcastType(type));
+            case CHAR, VARCHAR -> ((NlsString) value).getValue();
+            case TIME -> toLocalTime((TimeString) value);
+            case DATE -> toLocalDate((DateString) value);
+            case TIMESTAMP -> toLocalDateTime((TimestampString) value);
+            case INTERVAL_YEAR_MONTH -> new SqlYearMonthInterval(((BigDecimal) value).intValueExact());
+            case INTERVAL_DAY_SECOND -> new SqlDaySecondInterval(((BigDecimal) value).longValueExact());
+            default -> value;
+        };
     }
 
     private static Expression<?> convertNumericLiteral(RexLiteral literal, RelDataType targetType) {
@@ -649,38 +633,15 @@ public final class RexToExpression {
         return ConstantExpression.create(toLocalTime(string), QueryDataType.TIME);
     }
 
-    private static LocalTime toLocalTime(TimeString string) {
-        try {
-            return LocalTime.parse(string.toString());
-        } catch (Exception e) {
-            throw QueryException.dataException("Cannot convert literal to " + SqlColumnType.TIME + ": " + string);
-        }
-    }
-
     private static Expression<?> convertDateLiteral(RexLiteral literal) {
         DateString string = literal.getValueAs(DateString.class);
         return ConstantExpression.create(toLocalDate(string), QueryDataType.DATE);
     }
 
-    private static LocalDate toLocalDate(DateString string) {
-        try {
-            return LocalDate.parse(string.toString());
-        } catch (Exception e) {
-            throw QueryException.dataException("Cannot convert literal to " + SqlColumnType.DATE + ": " + string);
-        }
-    }
 
     private static Expression<?> convertTimestamp(RexLiteral literal) {
         TimestampString string = literal.getValueAs(TimestampString.class);
         return ConstantExpression.create(toLocalDateTime(string), QueryDataType.TIMESTAMP);
-    }
-
-    private static LocalDateTime toLocalDateTime(TimestampString string) {
-        try {
-            return LocalDateTime.parse(string.toString().replace(' ', 'T'));
-        } catch (Exception e) {
-            throw QueryException.dataException("Cannot convert literal to " + SqlColumnType.TIMESTAMP + ": " + string);
-        }
     }
 
     private static Expression<?> convertIntervalYearMonth(RexLiteral literal) {

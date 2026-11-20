@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
+import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.ValuesPhysicalRel;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
@@ -23,14 +25,19 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexCorrelVariable;
 import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexFieldAccess;
 import org.apache.calcite.rex.RexInputRef;
+import org.apache.calcite.rex.RexLambda;
+import org.apache.calcite.rex.RexLambdaRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexLocalRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexNodeAndFieldIndex;
 import org.apache.calcite.rex.RexOver;
 import org.apache.calcite.rex.RexPatternFieldRef;
 import org.apache.calcite.rex.RexRangeRef;
@@ -49,17 +56,33 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
 
     private final PlanNodeFieldTypeProvider fieldTypeProvider;
     private final QueryParameterMetadata parameterMetadata;
+    private final RelNode inputRel;
 
     public RexToExpressionVisitor(
-            PlanNodeFieldTypeProvider fieldTypeProvider,
-            QueryParameterMetadata parameterMetadata) {
+        PlanNodeFieldTypeProvider fieldTypeProvider,
+        QueryParameterMetadata parameterMetadata,
+        RelNode inputRel) {
         this.fieldTypeProvider = fieldTypeProvider;
         this.parameterMetadata = parameterMetadata;
+        this.inputRel = inputRel;
+    }
+
+    public RexToExpressionVisitor(
+        PlanNodeFieldTypeProvider fieldTypeProvider,
+        QueryParameterMetadata parameterMetadata) {
+        this(fieldTypeProvider, parameterMetadata, null);
     }
 
     @Override
     public Expression<?> visitInputRef(RexInputRef inputRef) {
         int index = inputRef.getIndex();
+        if (index >= parameterMetadata.getParameterCount()) {
+            // Missing columns might have been calculated / provided via Calc or Values inputs
+            if (inputRel instanceof CalcPhysicalRel || inputRel instanceof ValuesPhysicalRel) {
+                RelDataType type = inputRel.getRowType().getFieldList().get(index).getType();
+                return ColumnExpression.create(index, HazelcastTypeUtils.toHazelcastType(type));
+            }
+        }
         return ColumnExpression.create(index, fieldTypeProvider.getType(index));
     }
 
@@ -138,5 +161,23 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
     @Override
     public Expression<?> visitPatternFieldRef(RexPatternFieldRef fieldRef) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Expression<?> visitLambda(RexLambda lambda) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Expression<?> visitLambdaRef(RexLambdaRef lambdaRef) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Expression<?> visitNodeAndFieldIndex(RexNodeAndFieldIndex nodeAndFieldIndex) {
+        int nodeIndex = nodeAndFieldIndex.getNodeIndex();
+        int fieldIndex = nodeAndFieldIndex.getFieldIndex();
+        int index = (nodeIndex + 1) * fieldIndex;
+        return ColumnExpression.create(index, fieldTypeProvider.getType(index));
     }
 }

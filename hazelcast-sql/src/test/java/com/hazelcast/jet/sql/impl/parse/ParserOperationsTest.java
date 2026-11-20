@@ -207,12 +207,13 @@ public class ParserOperationsTest extends SqlTestSupport {
         List<List<String>> searchPaths = QueryUtils.prepareSearchPaths(emptyList(), tableResolvers);
 
         return OptimizerContext.create(
-                new SqlCatalog(tableResolvers),
-                searchPaths,
-                emptyList(),
-                name -> null,
-                null,
-                NoOpSqlSecurityContext.INSTANCE);
+            mockEngine(),
+            new SqlCatalog(tableResolvers),
+            searchPaths,
+            emptyList(),
+            name -> null,
+            null,
+            NoOpSqlSecurityContext.INSTANCE);
     }
 
     private static TableField field(String name) {

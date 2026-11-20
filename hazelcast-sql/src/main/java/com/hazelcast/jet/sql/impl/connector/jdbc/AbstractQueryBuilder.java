@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlIdentifier;
@@ -24,6 +26,8 @@ import org.apache.calcite.sql.parser.SqlParserPos;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.IntFunction;
 
 public class AbstractQueryBuilder {
 
@@ -32,13 +36,22 @@ public class AbstractQueryBuilder {
     protected final NodeToSqlTranslationContext context;
     protected String query;
 
-    public AbstractQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
+    public AbstractQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect, final PhysicalRel physicalRel) {
         this.jdbcTable = jdbcTable;
         this.dialect = dialect;
-        context = new NodeToSqlTranslationContext(dialect, value -> {
+        // postpone assignment of real value after the function is declared
+        AtomicReference<NodeToSqlTranslationContext> translationContext = new AtomicReference<>();
+        IntFunction<SqlNode> function = value -> {
+            if (value >= jdbcTable.getFieldCount()) {
+                return translationContext.get()
+                    .toSql(null, ((CalcPhysicalRel) physicalRel.getInput(0)).projection().get(value));
+            }
             JdbcTableField field = jdbcTable.getField(value);
             return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
-        });
+        };
+
+        translationContext.set(new NodeToSqlTranslationContext(dialect, function));
+        context = translationContext.get();
     }
 
     protected void appendFieldNames(StringBuilder sb, List<String> fieldNames) {

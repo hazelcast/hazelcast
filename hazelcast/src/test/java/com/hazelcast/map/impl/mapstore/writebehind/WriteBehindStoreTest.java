@@ -18,7 +18,6 @@ package com.hazelcast.map.impl.mapstore.writebehind;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.map.impl.mapstore.MapStoreContext;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries;
 import com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntry;
@@ -52,7 +51,7 @@ public class WriteBehindStoreTest {
         WriteBehindStore store = new WriteBehindStore(mapStoreContext, 1, writeBehindProcessor);
         DummyQueue queue = mock(DummyQueue.class, CALLS_REAL_METHODS);
         ReflectionUtils.setFieldValueReflectively(store, "writeBehindQueue", queue);
-        DelayedEntry<Data, Object> delayedEntry = DelayedEntries.newAddedDelayedEntry(mock(HeapData.class), new Entry(1, 1), 0, 0, 1, null);
+        DelayedEntry<Data, Object> delayedEntry = DelayedEntries.newAddedDelayedEntry(mock(Data.class), new Entry(1, 1), 0, 0, 1, null);
         assertEquals(0L, delayedEntry.getSequence());
 
         // when

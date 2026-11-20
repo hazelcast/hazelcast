@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.jdbc.mssql.MSSQLUpsertQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.mysql.MySQLUpsertQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.oracle.OracleUpsertQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.postgres.PostgresUpsertQueryBuilder;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.dialect.H2SqlDialect;
 import org.apache.calcite.sql.dialect.MssqlSqlDialect;
@@ -33,25 +34,25 @@ final class UpsertBuilder {
     private UpsertBuilder() {
     }
 
-    static String getUpsertStatement(JdbcTable jdbcTable, SqlDialect dialect) {
+    static String getUpsertStatement(JdbcTable jdbcTable, SqlDialect dialect, PhysicalRel rel) {
 
         String query = null;
         if (dialect instanceof MysqlSqlDialect) {
-            MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
+            MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect, rel);
             query = builder.query();
 
         } else if (dialect instanceof PostgresqlSqlDialect) {
-            PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect);
+            PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect, rel);
             query = builder.query();
 
         } else if (dialect instanceof H2SqlDialect) {
-            H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable, dialect);
+            H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable, dialect, rel);
             query = builder.query();
         } else if (dialect instanceof MssqlSqlDialect) {
-            MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect);
+            MSSQLUpsertQueryBuilder builder = new MSSQLUpsertQueryBuilder(jdbcTable, dialect, rel);
             query = builder.query();
         } else if (dialect instanceof OracleSqlDialect) {
-            OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect);
+            OracleUpsertQueryBuilder builder = new OracleUpsertQueryBuilder(jdbcTable, dialect, rel);
             query = builder.query();
         }
         return query;

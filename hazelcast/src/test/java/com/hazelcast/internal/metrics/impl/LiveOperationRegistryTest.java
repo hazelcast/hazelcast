@@ -35,7 +35,6 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.spy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -102,7 +101,7 @@ public class LiveOperationRegistryTest {
     }
 
     private Operation createOperation(String host, int port, long callId) throws UnknownHostException {
-        Operation op = spy(Operation.class);
+        Operation op = new Operation() { };
         Address address = new Address(host, port);
 
         OperationAccessor.setCallerAddress(op, address);

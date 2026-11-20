@@ -259,6 +259,7 @@ public class CalciteSqlOptimizerImpl implements CalciteSqlOptimizer {
     public SqlPlan prepare(OptimizationTask task) {
         // 1. Prepare context.
         OptimizerContext context = OptimizerContext.create(
+                nodeEngine,
                 task.getSchema(),
                 task.getSearchPaths(),
                 task.getArguments(),

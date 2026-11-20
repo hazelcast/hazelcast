@@ -48,7 +48,7 @@ class H2UpsertQueryBuilderTest {
 
     @Test
     void appendMergeClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendMergeClause(sb);
 
@@ -58,7 +58,7 @@ class H2UpsertQueryBuilderTest {
 
     @Test
     void appendKeyClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendKeyClause(sb);
 
@@ -68,7 +68,7 @@ class H2UpsertQueryBuilderTest {
 
     @Test
     void appendValuesClause() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendValuesClause(sb);
 
@@ -78,7 +78,7 @@ class H2UpsertQueryBuilderTest {
 
     @Test
     void testQuery() {
-        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect);
+        H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(table, dialect, null);
 
         String query = builder.query();
         assertThat(query).isEqualTo("MERGE INTO \"table1\" (\"field1\",\"field2\") KEY (\"pk1\",\"pk2\") VALUES (?,?)");

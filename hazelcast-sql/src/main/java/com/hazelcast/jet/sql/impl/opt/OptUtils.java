@@ -22,6 +22,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.metadata.Boundedness;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -325,6 +326,16 @@ public final class OptUtils {
     public static RexVisitor<Expression<?>> createRexToExpressionVisitor(
             PlanNodeFieldTypeProvider schema,
             QueryParameterMetadata parameterMetadata) {
+        return new RexToExpressionVisitor(schema, parameterMetadata);
+    }
+
+    public static RexVisitor<Expression<?>> createRexToExpressionVisitor(
+            PlanNodeFieldTypeProvider schema,
+            QueryParameterMetadata parameterMetadata,
+            PhysicalRel rel) {
+        if (!rel.getInputs().isEmpty()) {
+            return new RexToExpressionVisitor(schema, parameterMetadata, rel.getInput(0));
+        }
         return new RexToExpressionVisitor(schema, parameterMetadata);
     }
 

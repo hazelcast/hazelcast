@@ -125,9 +125,8 @@ public final class HazelcastIntegerType extends BasicSqlType {
     private final int bitWidth;
 
     private HazelcastIntegerType(SqlTypeName typeName, boolean nullable, int bitWidth) {
-        super(HazelcastTypeSystem.INSTANCE, typeName);
+        super(HazelcastTypeSystem.INSTANCE, typeName, nullable);
 
-        this.isNullable = nullable;
         this.bitWidth = bitWidth;
 
         // recompute the digest to reflect the nullability of the type

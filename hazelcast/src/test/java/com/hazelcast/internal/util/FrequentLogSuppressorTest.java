@@ -19,7 +19,6 @@ package com.hazelcast.internal.util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -27,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
 class FrequentLogSuppressorTest {
@@ -61,15 +61,15 @@ class FrequentLogSuppressorTest {
 
     @Test
     void shouldPrintSuppressedMessage() {
-        ILogger spy = Mockito.spy(logger);
-        FrequentLogSuppressor suppressor = new FrequentLogSuppressor(10, 3, spy, new HashMap<>());
+        ILogger mockLogger = mock(ILogger.class);
+        FrequentLogSuppressor suppressor = new FrequentLogSuppressor(10, 3, mockLogger, new HashMap<>());
         RuntimeException e = new RuntimeException("exception");
 
         for (int i = 0; i < 3; i++) {
             suppressor.runSuppressed(e, () -> { /* no-op */});
         }
-        verify(spy).warning(eq("Frequent log operation detected, "
-                               + "future occurrences will be suppressed and only logged every 10 seconds"));
+        verify(mockLogger).warning(eq("Frequent log operation detected, "
+                                      + "future occurrences will be suppressed and only logged every 10 seconds"));
     }
 
     @Test
@@ -88,8 +88,8 @@ class FrequentLogSuppressorTest {
 
     @Test
     void shouldLogAndRunActionAfterLogPeriod() throws Exception {
-        ILogger spy = Mockito.spy(logger);
-        FrequentLogSuppressor suppressor = new FrequentLogSuppressor(1, 3, spy, new HashMap<>());
+        ILogger mockLogger = mock(ILogger.class);
+        FrequentLogSuppressor suppressor = new FrequentLogSuppressor(1, 3, mockLogger, new HashMap<>());
         RuntimeException e = new RuntimeException("exception");
 
         AtomicInteger counter = new AtomicInteger();
@@ -106,6 +106,6 @@ class FrequentLogSuppressorTest {
                 .describedAs("expected the action to run 4 times")
                 .isEqualTo(4);
 
-        verify(spy).warning(eq("The following suppressed log had 3 occurrences since last log, 6 in total"));
+        verify(mockLogger).warning(eq("The following suppressed log had 3 occurrences since last log, 6 in total"));
     }
 }

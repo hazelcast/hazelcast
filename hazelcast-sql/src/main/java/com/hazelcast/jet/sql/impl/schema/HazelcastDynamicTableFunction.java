@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.Table;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeComparability;
+import org.apache.calcite.rel.type.RelDataTypeDigest;
 import org.apache.calcite.rel.type.RelDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rel.type.RelDataTypePrecedenceList;
@@ -39,6 +40,7 @@ import org.apache.calcite.sql.SqlOperatorBinding;
 import org.apache.calcite.sql.SqlUtil;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.NlsString;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.nio.charset.Charset;
 import java.security.Permission;
@@ -361,6 +363,21 @@ public abstract class HazelcastDynamicTableFunction extends HazelcastTableSource
         @Override
         public boolean isDynamicStruct() {
             return delegate.isDynamicStruct();
+        }
+
+        @Override
+        public RelDataTypeDigest getDigest() {
+            return delegate.getDigest();
+        }
+
+        @Override
+        public boolean deepEquals(@Nullable Object obj) {
+            return delegate.deepEquals(obj);
+        }
+
+        @Override
+        public int deepHashCode() {
+            return delegate.deepHashCode();
         }
     }
 }

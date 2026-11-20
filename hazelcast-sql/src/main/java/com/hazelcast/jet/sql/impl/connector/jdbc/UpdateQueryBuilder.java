@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.google.common.primitives.Ints;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlNode;
@@ -31,14 +32,15 @@ class UpdateQueryBuilder extends AbstractQueryBuilder {
     private final List<Integer> inputRefs = new ArrayList<>();
 
     UpdateQueryBuilder(
-            JdbcTable table,
-            SqlDialect dialect,
-            List<String> fieldNames,
-            List<RexNode> expressions,
-            RexNode predicate,
-            boolean hasInput
+        JdbcTable table,
+        PhysicalRel physicalRel,
+        SqlDialect dialect,
+        List<String> fieldNames,
+        List<RexNode> expressions,
+        RexNode predicate,
+        boolean hasInput
     ) {
-        super(table, dialect);
+        super(table, dialect, physicalRel);
 
         assert fieldNames.size() == expressions.size();
 

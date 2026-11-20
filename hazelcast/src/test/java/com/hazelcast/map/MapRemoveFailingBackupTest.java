@@ -26,7 +26,6 @@ import com.hazelcast.map.impl.operation.KeyBasedMapOperation;
 import com.hazelcast.map.impl.operation.steps.RemoveOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -53,9 +52,6 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertNull;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -84,30 +80,27 @@ public class MapRemoveFailingBackupTest extends HazelcastTestSupport {
         final NodeEngine nodeEngine = getNodeEngineImpl(hz1);
         final IMap<Object, Object> map1 = hz1.getMap(mapName);
         final IMap<Object, Object> map2 = hz2.getMap(mapName);
-        MapProxyImpl<Object, Object> mock1 = (MapProxyImpl<Object, Object>) spy(map1);
-        when(mock1.remove(anyString())).then(invocation -> {
-            Object object = invocation.getArguments()[0];
-            final Data key1 = nodeEngine.toData(object);
-            RemoveOperation operation = new RemoveOperation(mapName, key1);
-            int partitionId = nodeEngine.getPartitionService().getPartitionId(key1);
-            operation.setThreadId(ThreadUtil.getThreadId());
-            OperationService operationService = nodeEngine.getOperationService();
-            InternalCompletableFuture<Data> f
-                    = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                    .setResultDeserialized(false).invoke();
-            Data result = f.get();
-            return nodeEngine.toObject(result);
-        });
 
         final String key = "2";
         final String value = "value2";
 
-        mock1.put(key, value);
-        mock1.remove(key);
+        map1.put(key, value);
+        removeWithFailingBackup(nodeEngine, mapName, key);
         assertTrueEventually(() -> {
             assertNull(map1.get(key));
             assertNull(map2.get(key));
         }, 30);
+    }
+
+    private static void removeWithFailingBackup(NodeEngine nodeEngine, String mapName, Object key) {
+        Data keyData = nodeEngine.toData(key);
+        RemoveOperation operation = new RemoveOperation(mapName, keyData);
+        int partitionId = nodeEngine.getPartitionService().getPartitionId(keyData);
+        operation.setThreadId(ThreadUtil.getThreadId());
+        OperationService operationService = nodeEngine.getOperationService();
+        InternalCompletableFuture<Data> future = operationService.createInvocationBuilder(SERVICE_NAME, operation, partitionId)
+                .setResultDeserialized(false).invoke();
+        future.join();
     }
 
     @Nonnull

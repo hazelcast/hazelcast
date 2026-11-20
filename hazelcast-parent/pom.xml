@@ -91,7 +91,7 @@
         <!-- When upgrading, check also if https://github.com/aws/aws-sdk-java-v2/issues/6863 was fixed
           and if yes, then revert changes in KinesisSourcePSupplier from CTT-661. -->
         <aws.sdk2.version>2.59.1</aws.sdk2.version>
-        <calcite.version>1.35.0</calcite.version>
+        <calcite.version>1.42.0</calcite.version>
         <!--
         Calcite 1.35 dependency that has CVE
         Explicitly upgrade to a version not vulnerable to CVE - https://github.com/advisories/GHSA-gcg6-xv4f-f749
@@ -122,7 +122,7 @@
             When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.github.luben:zstd-jni` should be upgraded
         -->
         <parquet.version>1.18.2</parquet.version>
-        <httpcore5.version>5.4.4</httpcore5.version>
+        <httpcore5.version>5.5</httpcore5.version>
 
         <spring.boot3.version>3.5.16</spring.boot3.version>
         <org.springframework6.version>6.2.19</org.springframework6.version>
@@ -433,7 +433,7 @@
                 <artifactId>commons-math3</artifactId>
                 <version>3.6.1</version>
             </dependency>
-            <!-- 
+            <!--
                 Addresses convergence between:
                 - `org.apache.hadoop:hadoop-client-api`
                 - `org.apache.hadoop:hadoop-client-runtime`
@@ -564,16 +564,6 @@
                 <groupId>ch.qos.reload4j</groupId>
                 <artifactId>reload4j</artifactId>
                 <version>1.2.27</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.janino</groupId>
-                <artifactId>commons-compiler</artifactId>
-                <version>${janino.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.codehaus.janino</groupId>
-                <artifactId>janino</artifactId>
-                <version>${janino.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.xml.bind</groupId>
@@ -1119,7 +1109,7 @@
                 <plugin>
                     <groupId>io.github.download-maven-plugin</groupId>
                     <artifactId>download-maven-plugin</artifactId>
-                    <version>2.1.0</version>
+                    <version>2.1.1</version>
                 </plugin>
                 <plugin>
                     <groupId>org.xolstice.maven.plugins</groupId>

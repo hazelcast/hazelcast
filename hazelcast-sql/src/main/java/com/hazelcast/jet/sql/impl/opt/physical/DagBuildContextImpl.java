@@ -72,6 +72,7 @@ public class DagBuildContextImpl implements DagBuildContext {
         return table;
     }
 
+    @Override
     public PhysicalRel getRel() {
         return rel;
     }
@@ -111,7 +112,7 @@ public class DagBuildContextImpl implements DagBuildContext {
         } else {
             schema = ((PhysicalRel) rel.getInput(0)).schema(parameterMetadata);
         }
-        return OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
+        return OptUtils.createRexToExpressionVisitor(schema, parameterMetadata, rel);
     }
 
     public QueryParameterMetadata getParameterMetadata() {

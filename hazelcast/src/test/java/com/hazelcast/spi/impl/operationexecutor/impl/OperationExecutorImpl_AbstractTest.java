@@ -19,8 +19,7 @@ package com.hazelcast.spi.impl.operationexecutor.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
 import com.hazelcast.instance.BuildInfo;
-import com.hazelcast.instance.impl.DefaultNodeExtension;
-import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
@@ -36,10 +35,8 @@ import com.hazelcast.spi.impl.operationservice.UrgentSystemOperation;
 import com.hazelcast.spi.impl.operationservice.impl.responses.Response;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Before;
-import org.mockito.Mockito;
 
 import java.io.IOException;
 import java.util.LinkedList;
@@ -64,8 +61,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
     LoggingServiceImpl loggingService;
     HazelcastProperties props;
     Address thisAddress;
-    Node node;
-    DefaultNodeExtension nodeExtension;
+    NodeExtension nodeExtension;
     OperationRunnerFactory handlerFactory;
     InternalSerializationService serializationService;
     Consumer<Packet> responsePacketConsumer;
@@ -80,11 +76,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
         serializationService = new DefaultSerializationServiceBuilder().build();
         config = smallInstanceConfig();
         thisAddress = new Address("localhost", 5701);
-        node = Mockito.mock(Node.class);
-        when(node.getConfig()).thenReturn(config);
-        when(node.getProperties()).thenReturn(new HazelcastProperties(config));
-        when(node.getVersion()).thenReturn(new MemberVersion(0, 0, 0));
-        nodeExtension = new DefaultNodeExtension(node);
+        nodeExtension = mock(NodeExtension.class);
         handlerFactory = new DummyOperationRunnerFactory();
 
         responsePacketConsumer = new DummyResponsePacketConsumer();
@@ -97,7 +89,7 @@ public abstract class OperationExecutorImpl_AbstractTest extends HazelcastTestSu
 
         props = new HazelcastProperties(config);
         executor = new OperationExecutorImpl(
-                props, loggingService, thisAddress, handlerFactory, node.nodeEngine, nodeExtension,
+                props, loggingService, thisAddress, handlerFactory, null, nodeExtension,
                 "hzName", Thread.currentThread().getContextClassLoader(), bootstrap);
         executor.start();
         return executor;

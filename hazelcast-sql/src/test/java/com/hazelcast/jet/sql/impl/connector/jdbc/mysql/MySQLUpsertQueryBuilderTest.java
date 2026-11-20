@@ -48,7 +48,7 @@ class MySQLUpsertQueryBuilderTest {
 
     @Test
     void appendInsertClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendInsertClause(sb);
 
@@ -58,7 +58,7 @@ class MySQLUpsertQueryBuilderTest {
 
     @Test
     void appendValuesClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendValuesClause(sb);
 
@@ -68,7 +68,7 @@ class MySQLUpsertQueryBuilderTest {
 
     @Test
     void appendOnDuplicateClause() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendOnDuplicateClause(sb);
 
@@ -81,7 +81,7 @@ class MySQLUpsertQueryBuilderTest {
 
     @Test
     void query() {
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, dialect, null);
         String result = builder.query();
         assertThat(result).isEqualTo(
                 "INSERT INTO `table1` (`field1`,`field2`) VALUES (?,?)" +

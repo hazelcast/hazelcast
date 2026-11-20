@@ -72,7 +72,7 @@ public abstract class ConfigMessageTaskTest<V extends AbstractMessageTask<?>> {
         mockNodeEngine = mock(NodeEngine.class, RETURNS_DEEP_STUBS);
         mockNodeExtension = mock(NodeExtension.class);
         ClusterWideConfigurationService mockConfigurationService = mock(ClusterWideConfigurationService.class);
-        InternalCompletableFuture<Object> mockFuture = mock(InternalCompletableFuture.class);
+        InternalCompletableFuture<Object> pendingFuture = new InternalCompletableFuture<>();
 
         when(mockClientEngine.getEndpointManager()).thenReturn(mockClientEndpointManager);
         ClientExceptionFactory clientExceptionFactory = new ClientExceptionFactory(false,
@@ -89,7 +89,7 @@ public abstract class ConfigMessageTaskTest<V extends AbstractMessageTask<?>> {
         when(mockNodeEngine.getService(ConfigurationService.SERVICE_NAME)).thenReturn(mockConfigurationService);
 
         when(mockConfigurationService.broadcastConfigAsync(any(IdentifiedDataSerializable.class)))
-                .thenReturn(mockFuture);
+                .thenReturn(pendingFuture);
         when(mockNodeExtension.isStartCompleted()).thenReturn(true);
         when(mockConnection.getRemoteAddress()).thenReturn(createUnresolvedAddress("127.0.0.1", 5701));
     }

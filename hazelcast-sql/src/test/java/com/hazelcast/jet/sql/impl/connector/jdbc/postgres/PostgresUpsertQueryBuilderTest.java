@@ -49,7 +49,7 @@ class PostgresUpsertQueryBuilderTest {
 
     @Test
     void testAppendInsertClause() {
-        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect);
+        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendInsertClause(sb);
 
@@ -59,7 +59,7 @@ class PostgresUpsertQueryBuilderTest {
 
     @Test
     void testAppendValuesClause() {
-        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect);
+        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendValuesClause(sb);
 
@@ -69,7 +69,7 @@ class PostgresUpsertQueryBuilderTest {
 
     @Test
     void testAppendOnConflictClause() {
-        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect);
+        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect, null);
         StringBuilder sb = new StringBuilder();
         builder.appendOnConflictClause(sb);
 
@@ -84,7 +84,7 @@ class PostgresUpsertQueryBuilderTest {
 
     @Test
     void testQuery() {
-        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect);
+        PostgresUpsertQueryBuilder builder = new PostgresUpsertQueryBuilder(jdbcTable, dialect, null);
         String result = builder.query();
         String expected = "INSERT INTO \"table1\" (\"field1\",\"field2\") VALUES (?,?) ON CONFLICT (\"pk1\",\"pk2\") " +
                 "DO UPDATE SET \"field1\" = EXCLUDED.\"field1\",\"field2\" = EXCLUDED.\"field2\"";

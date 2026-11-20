@@ -16,7 +16,10 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.map.IMap;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.core.type.AnnotationMetadata;
 
 import javax.annotation.Nonnull;
@@ -50,6 +53,11 @@ import java.util.Set;
  * </ul>
  *
  * If there is already a bean named the same as some Hazelcast object, the bean with Hazelcast object will not be registered.
+ * <p>
+ * <strong>Please note, that beans exported by this annotation should be marked
+ * as {@link Lazy}</strong>. You can also use {@link AutowireHz} for combined {@link Autowired} and {@link Lazy}.
+ * <p>Every exported object is annotated with {@link Qualifier qualifier with object's name as value (e.g. IMap name as value)}
+ * to make autowiring easier (no need for {@link Qualifier} on user side if field name is the same as distributed object's name).
  * @since 5.6
  */
 @Target(ElementType.TYPE)

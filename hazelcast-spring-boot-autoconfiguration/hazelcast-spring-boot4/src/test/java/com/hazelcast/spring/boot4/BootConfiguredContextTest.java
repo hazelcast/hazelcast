@@ -46,7 +46,7 @@ public class BootConfiguredContextTest extends AppContextTestBase {
         assertEqualsEventually(() -> testMap.get("key1"), "value1");
     }
 
-    @SpringBootApplication(scanBasePackages = "com.hazelcast.non.existing")
+    @SpringBootApplication(scanBasePackages = "com.hazelcast.spring.boot.fortest")
     public static class SpringHazelcastBootConfiguration {
 
         public static void main(String[] args) {

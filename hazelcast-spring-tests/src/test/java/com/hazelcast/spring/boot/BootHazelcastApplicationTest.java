@@ -15,63 +15,42 @@
  */
 package com.hazelcast.spring.boot;
 
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.JetService;
-import com.hazelcast.map.IMap;
+import com.hazelcast.config.Config;
+import com.hazelcast.spring.ConfigCreator;
 import com.hazelcast.spring.CustomSpringExtension;
-import com.hazelcast.sql.SqlService;
-import org.junit.jupiter.api.Test;
+import com.hazelcast.spring.ExposeHazelcastObjects;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static org.assertj.core.api.Assertions.assertThat;
-
-@SpringBootTest(classes = BootHazelcastApplication.class)
+@SpringBootTest(classes = BootHazelcastApplicationTest.BootHazelcastApplication.class)
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
-class BootHazelcastApplicationTest {
+class BootHazelcastApplicationTest extends BaseBootTest {
 
-    @Autowired
-    private HazelcastInstance instance;
+    @SpringBootApplication(scanBasePackages = "com.hazelcast.spring.boot.fortest")
+    @ExposeHazelcastObjects
+    public static class BootHazelcastApplication {
 
-    @Autowired
-    private JetService jet;
+        public static void main(String[] args) {
+            SpringApplication.run(BootHazelcastApplication.class, args);
+        }
 
-    @Autowired
-    private SqlService sqlService;
+        @Bean
+        public PropertySourcesPlaceholderConfigurer propertyPlaceholderConfigurer() {
+            var propertyPlaceholderConfigurer = new PropertySourcesPlaceholderConfigurer();
+            propertyPlaceholderConfigurer.setLocation(new ClassPathResource("hazelcast-default.properties"));
+            return propertyPlaceholderConfigurer;
+        }
 
-    @Autowired
-    @Qualifier(value = "map1")
-    private IMap<String, String> map1;
-
-    @Autowired
-    private ApplicationContext applicationContext;
-
-    @Test
-    void testServices() {
-        assertThat(jet).isNotNull();
-        assertThat(sqlService).isNotNull();
+        @Bean
+        public Config config() {
+            return ConfigCreator.createConfigWithStructures();
+        }
     }
 
-    @Test
-    void testMap() {
-        assertThat((Object) map1).isNotNull();
-        map1.set("key1", "value1");
-        assertTrueEventually(() -> assertThat(map1.get("key1")).isEqualTo("value1"));
-
-        instance.getConfig().addMapConfig(new MapConfig("dynamicMap"));
-
-        String dynamicMapName = "dynamicMap";
-        IMap<Integer, Integer> dynamicMap = instance.getMap(dynamicMapName);
-        dynamicMap.put(1, 2);
-        assertTrueEventually(() -> assertThat(dynamicMap.get(1)).isEqualTo(2));
-        assertThat(instance.getConfig().getMapConfigs().values())
-                .extracting(MapConfig::getName)
-                .contains("map1", dynamicMapName);
-    }
 }

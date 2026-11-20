@@ -23,14 +23,12 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.SpringBootVersion;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
 /**
  * Auto Configuration for {@link HazelcastObjectExtractionConfiguration}, compatible with Spring Boot 4.
  * @since 5.7
  */
-@Configuration(proxyBeanMethods = false)
 @AutoConfiguration
 @AutoConfigureAfter({
         org.springframework.boot.hazelcast.autoconfigure.HazelcastAutoConfiguration.class,

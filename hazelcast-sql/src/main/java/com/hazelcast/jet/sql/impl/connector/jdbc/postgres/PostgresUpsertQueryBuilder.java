@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.AbstractQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import org.apache.calcite.sql.SqlDialect;
 
 import java.util.Iterator;
@@ -27,8 +28,8 @@ import java.util.Iterator;
  */
 public class PostgresUpsertQueryBuilder extends AbstractQueryBuilder {
 
-    public PostgresUpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
-        super(jdbcTable, dialect);
+    public PostgresUpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect, PhysicalRel rel) {
+        super(jdbcTable, dialect, rel);
 
         StringBuilder sb = new StringBuilder();
 

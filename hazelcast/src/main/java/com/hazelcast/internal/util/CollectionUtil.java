@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -174,5 +175,14 @@ public final class CollectionUtil {
         return Arrays.stream(items)
                      .filter(Objects::nonNull)
                      .collect(toUnmodifiableSet());
+    }
+
+    /**
+     * Returns it's parameter if the parameter is not null; otherwise returns
+     * {@link Collections#emptyList()}.
+     */
+    @Nonnull
+    public static <T> List<T> nonNull(@Nullable List<T> list) {
+        return list == null ? Collections.emptyList() : list;
     }
 }

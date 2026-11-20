@@ -506,22 +506,12 @@ public class SqlOrderByTest extends HazelcastTestSupport {
         assertSqlResultCount(sql, 2);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST 1.2E2 ROWS ONLY";
-
-        assertSqlResultCount(sql, 120);
-
-        sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 1.2E2";
-
-        assertSqlResultCount(sql, 120);
-
-        sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST 1.2E-2 ROWS ONLY";
+                + " FETCH FIRST 0.12 ROWS ONLY";
 
         assertSqlResultCount(sql, 0);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 1.2E-2";
+                + " LIMIT .12";
 
         assertSqlResultCount(sql, 0);
     }

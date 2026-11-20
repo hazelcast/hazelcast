@@ -32,6 +32,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.IMapResolver;
@@ -52,12 +53,16 @@ import org.apache.calcite.rel.metadata.ChainedRelMetadataProvider;
 import org.apache.calcite.rel.metadata.DefaultRelMetadataProvider;
 import org.apache.calcite.rel.metadata.JaninoRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.tools.RuleSet;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
@@ -108,35 +113,38 @@ public final class OptimizerContext {
      * @return Context.
      */
     public static OptimizerContext create(
-            SqlCatalog schema,
-            List<List<String>> searchPaths,
-            List<Object> arguments,
-            IMapResolver iMapResolver,
-            HepProgram subqueryRewriterProgram,
-            SqlSecurityContext securityContext
+        NodeEngine nodeEngine,
+        SqlCatalog schema,
+        List<List<String>> searchPaths,
+        List<Object> arguments,
+        IMapResolver iMapResolver,
+        HepProgram subqueryRewriterProgram,
+        SqlSecurityContext securityContext
     ) {
         // Resolve tables.
         HazelcastSchema rootSchema = HazelcastSchemaUtils.createRootSchema(schema);
 
         return create(
-                rootSchema,
-                searchPaths,
-                arguments,
-                iMapResolver,
-                subqueryRewriterProgram,
-                securityContext);
+            nodeEngine,
+            rootSchema,
+            searchPaths,
+            arguments,
+            iMapResolver,
+            subqueryRewriterProgram,
+            securityContext);
     }
 
     public static OptimizerContext create(
-            HazelcastSchema rootSchema,
-            List<List<String>> schemaPaths,
-            List<Object> arguments,
-            IMapResolver iMapResolver,
-            HepProgram subqueryRewriterProgram,
-            SqlSecurityContext ssc
-    ) {
+        NodeEngine nodeEngine,
+        HazelcastSchema rootSchema,
+        List<List<String>> schemaPaths,
+        List<Object> arguments,
+        IMapResolver iMapResolver,
+        HepProgram subqueryRewriterProgram,
+        SqlSecurityContext ssc
+                                         ) {
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
-        HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver, ssc);
+        HazelcastSqlValidator validator = new HazelcastSqlValidator(nodeEngine, catalogReader, arguments, iMapResolver, ssc);
         VolcanoPlanner volcanoPlanner = createPlanner();
 
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, ssc);
@@ -216,6 +224,19 @@ public final class OptimizerContext {
                 Contexts.of(CONNECTION_CONFIG)
         );
 
+        // Avoid Calcite's internal representation escaping through ANY, see CTT-1218
+        // and https://issues.apache.org/jira/browse/CALCITE-7829.
+        planner.setExecutor((rexBuilder, constExps, reducedValues) -> {
+            for (RexNode expression : constExps) {
+                if (expression.getType().getSqlTypeName() == SqlTypeName.ANY) {
+                    reducedValues.add(expression);
+                } else {
+                    List<RexNode> result = new ArrayList<>();
+                    RexUtil.EXECUTOR.reduce(rexBuilder, List.of(expression), result);
+                    reducedValues.addAll(result);
+                }
+            }
+        });
         planner.clearRelTraitDefs();
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
         planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);

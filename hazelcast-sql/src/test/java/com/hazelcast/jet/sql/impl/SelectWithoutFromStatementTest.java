@@ -32,6 +32,8 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.InstanceOfAssertFactories.BIG_DECIMAL;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -89,11 +91,19 @@ public class SelectWithoutFromStatementTest extends SqlTestSupport {
         final SqlRow row = execute(sql);
         assertEquals(1, row.getMetadata().getColumnCount());
         assertEquals(type, row.getMetadata().getColumn(0).getType());
-        assertEquals(expected, row.getObject(0));
+        if (expected instanceof BigDecimal bd) {
+            Object element = row.getObject(0);
+            assertThat(element).isInstanceOf(BigDecimal.class)
+                         .asInstanceOf(BIG_DECIMAL)
+                         .isEqualByComparingTo(bd);
+        } else {
+            assertEquals(expected, row.getObject(0));
+        }
     }
 
     private SqlRow execute(String sql) {
-        final SqlResult result = sqlService.execute(sql);
-        return result.iterator().next();
+        try (SqlResult result = sqlService.execute(sql)) {
+            return result.iterator().next();
+        }
     }
 }

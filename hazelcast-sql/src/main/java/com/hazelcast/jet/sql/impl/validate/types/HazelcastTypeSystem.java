@@ -57,13 +57,13 @@ public final class HazelcastTypeSystem extends RelDataTypeSystemImpl {
     }
 
     @Override
-    public int getMaxNumericPrecision() {
-        return MAX_DECIMAL_PRECISION;
+    public int getMaxPrecision(SqlTypeName typeName) {
+        return typeName == DECIMAL ? MAX_DECIMAL_PRECISION : super.getMaxPrecision(typeName);
     }
 
     @Override
-    public int getMaxNumericScale() {
-        return MAX_DECIMAL_SCALE;
+    public int getMaxScale(SqlTypeName typeName) {
+        return typeName == DECIMAL ? MAX_DECIMAL_SCALE : super.getMaxScale(typeName);
     }
 
     @Override

@@ -279,7 +279,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         sql = "EXPLAIN PLAN FOR UPDATE map SET this = 2 WHERE __key = 1 AND __key = 2";
         assertRowsOrdered(sql, asList(
                 new Row("UpdatePhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
-                        "updateColumnList=[[this]], sourceExpressionList=[[2]], flattened=[false])"),
+                        "updateColumnList=[[this]], sourceExpressionList=[[$2]], flattened=[false])"),
                 new Row("  ValuesPhysicalRel(values=[{expressions=[]}])")
         ));
     }
@@ -334,11 +334,11 @@ public class ExplainStatementTest extends SqlTestSupport {
         createMapping("test", Long.class, String.class);
         // non-prunable
         assertRowsOrdered("EXPLAIN PLAN FOR SELECT this FROM test WHERE this = '1'", rows(1,
-                "FullScanPhysicalRel(table=[[hazelcast, public, test[projects=[$1], filter==($1, _UTF-16LE'1')]]], discriminator=[0])"
+                "FullScanPhysicalRel(table=[[hazelcast, public, test[projects=[$1], filter==($1, '1')]]], discriminator=[0])"
         ));
         // prunable
         assertRowsOrdered("EXPLAIN PLAN FOR SELECT this FROM test WHERE __key = 1 AND this = '1'", rows(1,
-                "FullScanPhysicalRel(table=[[hazelcast, public, test[projects=[$1], filter=AND(=($0, 1), =($1, _UTF-16LE'1'))]]], discriminator=[0], partitioningKey=[$0], partitioningKeyValues=[(1:BIGINT(63))])"
+                "FullScanPhysicalRel(table=[[hazelcast, public, test[projects=[$1], filter=AND(=($0, 1), =($1, '1'))]]], discriminator=[0], partitioningKey=[$0], partitioningKeyValues=[(1:BIGINT(63))])"
         ));
     }
 

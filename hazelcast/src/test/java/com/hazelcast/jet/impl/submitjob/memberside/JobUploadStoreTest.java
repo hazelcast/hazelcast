@@ -17,17 +17,13 @@
 package com.hazelcast.jet.impl.submitjob.memberside;
 
 import com.hazelcast.internal.util.Sha256Util;
-import com.hazelcast.mock.MockUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
-import org.mockito.Spy;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -40,6 +36,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.test.starter.ReflectionUtils.setFieldValueReflectively;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -47,26 +44,16 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
-import static org.mockito.MockitoAnnotations.openMocks;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobUploadStoreTest {
-    @Spy
-    ConcurrentHashMap<UUID, JobUploadStatus> jobMap;
-    @InjectMocks
-    JobUploadStore jobUploadStore;
-
-    private AutoCloseable openMocks;
+    private final ConcurrentHashMap<UUID, JobUploadStatus> jobMap = new ConcurrentHashMap<>();
+    private final JobUploadStore jobUploadStore = new JobUploadStore();
 
     @Before
-    public void setUp() {
-        openMocks = openMocks(this);
-    }
-
-    @After
-    public void cleanUp() {
-        MockUtil.closeMocks(openMocks);
+    public void setUp() throws IllegalAccessException {
+        setFieldValueReflectively(jobUploadStore, "jobMap", jobMap);
     }
 
     @Test

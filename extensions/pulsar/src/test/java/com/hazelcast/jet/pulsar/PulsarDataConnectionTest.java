@@ -38,10 +38,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.jet.pulsar.PulsarDataConnection.Properties.BROKER_URL;
-import static com.hazelcast.jet.pulsar.PulsarDataConnection.Properties.CLOSE_TIMEOUT_SECONDS;
-import static com.hazelcast.jet.pulsar.PulsarDataConnection.Properties.ENABLE_TRANSACTIONS;
-import static com.hazelcast.jet.pulsar.PulsarDataConnection.Properties.HTTP_SERVICE_URL;
+import static com.hazelcast.jet.pulsar.PulsarProperties.BROKER_URL;
+import static com.hazelcast.jet.pulsar.PulsarProperties.CLOSE_TIMEOUT_SECONDS;
+import static com.hazelcast.jet.pulsar.PulsarProperties.ENABLE_TRANSACTIONS;
+import static com.hazelcast.jet.pulsar.PulsarProperties.HTTP_SERVICE_URL;
 import static com.hazelcast.jet.pulsar.PulsarDataConnection.pulsarDataConnectionConf;
 import static com.hazelcast.jet.pulsar.PulsarSchema.bytes;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -428,6 +428,26 @@ public class PulsarDataConnectionTest extends PulsarTestSupport {
         assertThatCode(() -> PulsarSources.pulsarConsumerBuilder(bytes())).doesNotThrowAnyException();
         assertThatCode(() -> PulsarSources.pulsarReaderBuilder(bytes())).doesNotThrowAnyException();
         assertThatCode(() -> PulsarSinks.builder(bytes())).doesNotThrowAnyException();
+    }
+
+    @Test
+    public void should_not_throw_on_custom_options() {
+        DataConnectionConfig config = newConnection()
+                                          .setProperty("numIoThreads", "10")
+                                          .setShared(false);
+        dataConnection = new PulsarDataConnection(config);
+
+        assertThatCode(() -> dataConnection.getClient()).doesNotThrowAnyException();
+    }
+
+    @Test
+    public void should_throw_on_custom_options_wrong_type() {
+        DataConnectionConfig config = newConnection()
+                                          .setProperty("numIoThreads", "MORE THAN ZERO")
+                                          .setShared(false);
+        dataConnection = new PulsarDataConnection(config);
+
+        assertThatCode(() -> dataConnection.getClient()).isInstanceOf(RuntimeException.class);
     }
 
     private DataConnectionConfig newConnection() {

@@ -28,6 +28,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.net.InetAddress;
+
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.deactivate;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallId;
 import static com.hazelcast.spi.impl.operationservice.OperationAccessor.setCallTimeout;
@@ -43,8 +45,7 @@ public class OperationAccessorTest {
 
     @Mock
     private ServerConnection serverConnection;
-    @Mock
-    private Address address;
+    private final Address address = new Address(InetAddress.getLoopbackAddress(), 5701);
 
     @Test
     public void testCloneAndResetOperation() {

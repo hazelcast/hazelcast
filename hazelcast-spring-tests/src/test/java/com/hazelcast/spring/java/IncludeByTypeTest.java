@@ -25,6 +25,7 @@ import com.hazelcast.spring.ExposeHazelcastObjects;
 import com.hazelcast.sql.SqlService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -33,6 +34,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 @ExtendWith({SpringExtension.class, CustomSpringExtension.class})
 @ContextConfiguration(classes = IncludeByTypeTest.UsingIncludeByType.class)
@@ -43,7 +45,7 @@ public class IncludeByTypeTest extends AppContextTestBase {
     public void testMap() {
         assertThat((Object) map1).isNotNull();
         assertThat((Object) testMap).isNotNull();
-        assertThat((Object) ringbuffer).isNull();
+        assertThatCode(() -> ringbuffer.add("1")).isInstanceOf(NoSuchBeanDefinitionException.class);
         testMap.set("key1", "value1");
         assertEqualsEventually(() -> testMap.get("key1"), "value1");
     }

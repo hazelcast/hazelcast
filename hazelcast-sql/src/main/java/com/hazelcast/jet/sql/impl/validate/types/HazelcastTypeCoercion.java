@@ -43,6 +43,7 @@ import org.apache.calcite.sql.validate.SqlValidatorScope;
 import org.apache.calcite.sql.validate.implicit.TypeCoercionImpl;
 
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
@@ -157,39 +158,120 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
      */
     @Override
     public boolean rowTypeCoercion(SqlValidatorScope scope, SqlNode query, int columnIndex, RelDataType targetType) {
-        switch (query.getKind()) {
-            case SELECT:
+        return switch (query.getKind()) {
+            case SELECT -> {
                 SqlSelect selectNode = (SqlSelect) query;
                 SqlValidatorScope selectScope = validator.getSelectScope(selectNode);
                 if (!rowTypeElementCoercion(selectScope, selectNode.getSelectList().get(columnIndex), targetType,
                         newNode -> selectNode.getSelectList().set(columnIndex, newNode))) {
-                    return false;
+                    yield false;
                 }
                 updateInferredColumnType(selectScope, query, columnIndex, targetType);
-                return true;
-            case VALUES:
+                yield  true;
+            }
+            case VALUES -> {
                 for (SqlNode rowConstructor : ((SqlCall) query).getOperandList()) {
                     if (!rowTypeElementCoercion(scope, ((SqlCall) rowConstructor).operand(columnIndex), targetType,
-                            newNode -> ((SqlCall) rowConstructor).setOperand(columnIndex, newNode))) {
-                        return false;
+                                                newNode -> ((SqlCall) rowConstructor).setOperand(columnIndex, newNode))) {
+                        yield false;
                     }
                 }
                 updateInferredColumnType(scope, query, columnIndex, targetType);
-                return true;
-            default:
+                yield true;
+            }
+            case UNION -> {
+                SqlBasicCall unionNode = (SqlBasicCall) query;
+                List<SqlNode> nodeList = unionNode.getOperandList();
+                if (!multiRowTypeElementCoercion(scope, nodeList, targetType,
+                                                 (newNode, n) -> n.setOperand(columnIndex, newNode))) {
+                    yield false;
+                }
+                for (SqlNode sqlNode : nodeList) {
+                    SqlSelect selectNode = (SqlSelect) sqlNode;
+                    SqlValidatorScope selectScope = validator.getSelectScope(selectNode);
+                    updateInferredColumnType(selectScope, selectNode, columnIndex, targetType);
+                }
+                yield true;
+            }
+            default ->
                 throw new UnsupportedOperationException("unexpected: " + query.getKind());
-        }
+        };
     }
 
-    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     public boolean rowTypeElementCoercion(
             SqlValidatorScope scope,
             SqlNode rowElement,
             RelDataType targetType,
-            Consumer<SqlNode> replaceFn
-    ) {
+            Consumer<SqlNode> replaceFn) {
+        var result = rowTypeElementCoercion(scope, rowElement, targetType);
+        if (result.type == CoercionResultType.PROCEED) {
+            // Types are in the same group, cast source to target.
+            coerceNode(scope, rowElement, targetType, replaceFn);
+            return true;
+        }
+
+        return result.earlyResult;
+    }
+
+    public boolean multiRowTypeElementCoercion(
+        SqlValidatorScope scope,
+        List<SqlNode> rowElements,
+        RelDataType targetType,
+        BiConsumer<SqlNode, SqlSelect> replaceFn) {
         if (targetType.equals(scope.getValidator().getUnknownType())) {
             return false;
+        }
+        QueryDataType targetHzType = HazelcastTypeUtils.toHazelcastType(targetType);
+        if (targetHzType == OBJECT) {
+            return true;
+        }
+        var results = rowElements.stream()
+                                 .map(rowElement -> rowTypeElementCoercion(scope, rowElement, targetType))
+                                 .toList();
+
+        List<CoercionResultType> resultTypes = results.stream().map(CoercionResult::type).distinct().toList();
+        if (resultTypes.size() != 1) {
+            return false;
+        }
+
+        var type = resultTypes.get(0);
+        if (type == CoercionResultType.PROCEED) {
+            // Types are in the same group, cast source to target.
+            for (SqlNode rowElement : rowElements) {
+                Consumer<SqlNode> boundedReplaceFn = newNode -> replaceFn.accept(newNode, (SqlSelect) rowElement);
+                coerceNode(scope, rowElement, targetType, boundedReplaceFn);
+            }
+            return true;
+        }
+
+        return results.get(0).earlyResult;
+    }
+
+    enum CoercionResultType {
+        FALSE, DO_NOTHING, EARLY_RESULT, PROCEED
+    }
+
+    record CoercionResult (CoercionResultType type, Boolean earlyResult) {
+        static final CoercionResult FALSE = new CoercionResult(CoercionResultType.FALSE, false);
+        static final CoercionResult DO_NOTHING = new CoercionResult(CoercionResultType.DO_NOTHING, true);
+        static final CoercionResult PROCEED = new CoercionResult(CoercionResultType.PROCEED, null);
+    }
+
+    /**
+     * Checks is types can be coerced.
+     * Results mean:
+     * <ul>
+     *     <li>{@link CoercionResultType#FALSE} - coercion cannot be performed
+     *     <li>{@link CoercionResultType#DO_NOTHING} - no need to perform type conversion
+     *     <li>{@link CoercionResultType#PROCEED} - go ahead with conversion. All nodes must agree on this type to proceed
+     *     (e.g. for UNION type, all UNION's sub-selects must coerce to the same type).
+     *     <li>{@link CoercionResultType#EARLY_RESULT} - there is custom type coercion involved.
+     * </ul>
+     */
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private CoercionResult rowTypeElementCoercion(SqlValidatorScope scope, SqlNode rowElement, RelDataType targetType) {
+        if (targetType.equals(scope.getValidator().getUnknownType())) {
+            return CoercionResult.FALSE;
         }
         RelDataType sourceType = validator.deriveType(scope, rowElement);
 
@@ -198,31 +280,29 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
 
         if (sourceHzType.getTypeFamily() == targetHzType.getTypeFamily() || targetHzType == OBJECT) {
             // Do nothing.
-            return true;
+            return CoercionResult.DO_NOTHING;
         }
 
         if (targetHzType.isCustomType() && (sourceHzType.getTypeFamily() == QueryDataTypeFamily.ROW ||
-                sourceHzType.isCustomType())) {
-            return customTypesCoercion(sourceType, targetType, rowElement, scope);
+            sourceHzType.isCustomType())) {
+            boolean result = customTypesCoercion(sourceType, targetType, rowElement, scope);
+            return new CoercionResult(CoercionResultType.EARLY_RESULT, result);
         }
 
         boolean valid = sourceAndTargetAreNumeric(targetHzType, sourceHzType)
-                || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
-                || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement)
-                || sourceHzType.getTypeFamily() == QueryDataTypeFamily.NULL
-                || (sourceHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
-                        && targetHzType.getTypeFamily() == QueryDataTypeFamily.JSON)
-                || (sourceHzType.getTypeFamily() == QueryDataTypeFamily.JSON
-                        && targetHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR);
+            || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
+            || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement)
+            || sourceHzType.getTypeFamily() == QueryDataTypeFamily.NULL
+            || (sourceHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
+            && targetHzType.getTypeFamily() == QueryDataTypeFamily.JSON)
+            || (sourceHzType.getTypeFamily() == QueryDataTypeFamily.JSON
+            && targetHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR);
 
         if (!valid) {
             // Types cannot be converted to each other, fail to coerce
-            return false;
+            return CoercionResult.FALSE;
         }
-
-        // Types are in the same group, cast source to target.
-        coerceNode(scope, rowElement, targetType, replaceFn);
-        return true;
+        return CoercionResult.PROCEED;
     }
 
     private boolean customTypesCoercion(
@@ -256,7 +336,7 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
             final SqlNode elementNode = sourceCall.getOperandList().get(i);
 
             if (!rowTypeElementCoercion(scope, elementNode, targetField.getType(),
-                    (node) -> sourceCall.setOperand(currentIndex, node))) {
+                                        (node) -> sourceCall.setOperand(currentIndex, node))) {
                 return false;
             }
         }

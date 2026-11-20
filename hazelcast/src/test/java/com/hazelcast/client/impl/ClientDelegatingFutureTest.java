@@ -18,7 +18,6 @@ package com.hazelcast.client.impl;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
-import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -73,7 +72,7 @@ public class ClientDelegatingFutureTest {
         request = MapGetCodec.encodeRequest("test", key, 1L);
         response = MapGetCodec.encodeResponse(value);
         callIdSequence = mock(CallIdSequence.class);
-        invocationFuture = new ClientInvocationFuture(mock(ClientInvocation.class),
+        invocationFuture = new ClientInvocationFuture(null,
                 request,
                 logger,
                 callIdSequence);

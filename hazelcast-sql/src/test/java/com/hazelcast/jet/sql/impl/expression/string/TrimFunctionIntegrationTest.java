@@ -57,50 +57,50 @@ public class TrimFunctionIntegrationTest extends ExpressionTestSupport {
     @Test
     public void test2Arg() {
         // Columns
-        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(LEADING field1) FROM map", VARCHAR, null);
-        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(TRAILING field1) FROM map", VARCHAR, null);
-        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(BOTH field1) FROM map", VARCHAR, null);
+        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(LEADING FROM field1) FROM map", VARCHAR, null);
+        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(TRAILING FROM field1) FROM map", VARCHAR, null);
+        putAndCheckValue(new ExpressionValue.StringVal(), "SELECT TRIM(BOTH FROM field1) FROM map", VARCHAR, null);
 
-        putAndCheckValue(" abc ", "SELECT TRIM(LEADING this) FROM map", VARCHAR, "abc ");
-        putAndCheckValue(" abc ", "SELECT TRIM(TRAILING this) FROM map", VARCHAR, " abc");
-        putAndCheckValue(" abc ", "SELECT TRIM(BOTH this) FROM map", VARCHAR, "abc");
+        putAndCheckValue(" abc ", "SELECT TRIM(LEADING FROM this) FROM map", VARCHAR, "abc ");
+        putAndCheckValue(" abc ", "SELECT TRIM(TRAILING FROM this) FROM map", VARCHAR, " abc");
+        putAndCheckValue(" abc ", "SELECT TRIM(BOTH FROM this) FROM map", VARCHAR, "abc");
 
-        putAndCheckFailure(true, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", BOOLEAN));
-        putAndCheckFailure((byte) 1, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TINYINT));
-        putAndCheckFailure((short) 1, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", SMALLINT));
-        putAndCheckFailure(1, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", INTEGER));
-        putAndCheckFailure(1L, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", BIGINT));
-        putAndCheckFailure(BigInteger.ONE, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DECIMAL));
-        putAndCheckFailure(BigDecimal.ONE, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DECIMAL));
-        putAndCheckFailure(1f, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", REAL));
-        putAndCheckFailure(1d, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DOUBLE));
-        putAndCheckFailure(LOCAL_DATE_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DATE));
-        putAndCheckFailure(LOCAL_TIME_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIME));
-        putAndCheckFailure(LOCAL_DATE_TIME_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP));
-        putAndCheckFailure(OFFSET_DATE_TIME_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP_WITH_TIME_ZONE));
-        putAndCheckFailure(OBJECT_VAL, "SELECT TRIM(LEADING this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", OBJECT));
+        putAndCheckFailure(true, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", BOOLEAN));
+        putAndCheckFailure((byte) 1, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TINYINT));
+        putAndCheckFailure((short) 1, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", SMALLINT));
+        putAndCheckFailure(1, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", INTEGER));
+        putAndCheckFailure(1L, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", BIGINT));
+        putAndCheckFailure(BigInteger.ONE, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DECIMAL));
+        putAndCheckFailure(BigDecimal.ONE, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DECIMAL));
+        putAndCheckFailure(1f, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", REAL));
+        putAndCheckFailure(1d, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DOUBLE));
+        putAndCheckFailure(LOCAL_DATE_VAL, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", DATE));
+        putAndCheckFailure(LOCAL_TIME_VAL, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIME));
+        putAndCheckFailure(LOCAL_DATE_TIME_VAL, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP));
+        putAndCheckFailure(OFFSET_DATE_TIME_VAL, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TIMESTAMP_WITH_TIME_ZONE));
+        putAndCheckFailure(OBJECT_VAL, "SELECT TRIM(LEADING FROM this) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", OBJECT));
 
         // Literals
-        checkValue0("SELECT TRIM(LEADING null) FROM map", VARCHAR, null);
-        checkValue0("SELECT TRIM(TRAILING null) FROM map", VARCHAR, null);
-        checkValue0("SELECT TRIM(BOTH null) FROM map", VARCHAR, null);
+        checkValue0("SELECT TRIM(LEADING FROM null) FROM map", VARCHAR, null);
+        checkValue0("SELECT TRIM(TRAILING FROM null) FROM map", VARCHAR, null);
+        checkValue0("SELECT TRIM(BOTH FROM null) FROM map", VARCHAR, null);
 
-        checkValue0("SELECT TRIM(LEADING ' abc ') FROM map", VARCHAR, "abc ");
-        checkValue0("SELECT TRIM(TRAILING ' abc ') FROM map", VARCHAR, " abc");
-        checkValue0("SELECT TRIM(BOTH ' abc ') FROM map", VARCHAR, "abc");
+        checkValue0("SELECT TRIM(LEADING FROM ' abc ') FROM map", VARCHAR, "abc ");
+        checkValue0("SELECT TRIM(TRAILING FROM ' abc ') FROM map", VARCHAR, " abc");
+        checkValue0("SELECT TRIM(BOTH FROM ' abc ') FROM map", VARCHAR, "abc");
 
-        checkFailure0("SELECT TRIM(LEADING 1) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TINYINT));
+        checkFailure0("SELECT TRIM(LEADING FROM 1) FROM map", SqlErrorCode.PARSING, signatureErrorFunction("TRIM", TINYINT));
 
         // Parameters
-        checkValue0("SELECT TRIM(LEADING ?) FROM map", VARCHAR, null, new Object[]{null});
-        checkValue0("SELECT TRIM(TRAILING ?) FROM map", VARCHAR, null, new Object[]{null});
-        checkValue0("SELECT TRIM(BOTH ?) FROM map", VARCHAR, null, new Object[]{null});
+        checkValue0("SELECT TRIM(LEADING FROM ?) FROM map", VARCHAR, null, new Object[]{null});
+        checkValue0("SELECT TRIM(TRAILING FROM ?) FROM map", VARCHAR, null, new Object[]{null});
+        checkValue0("SELECT TRIM(BOTH FROM ?) FROM map", VARCHAR, null, new Object[]{null});
 
-        checkValue0("SELECT TRIM(LEADING ?) FROM map", VARCHAR, "abc ", " abc ");
-        checkValue0("SELECT TRIM(TRAILING ?) FROM map", VARCHAR, " abc", " abc ");
-        checkValue0("SELECT TRIM(BOTH ?) FROM map", VARCHAR, "abc", " abc ");
+        checkValue0("SELECT TRIM(LEADING FROM ?) FROM map", VARCHAR, "abc ", " abc ");
+        checkValue0("SELECT TRIM(TRAILING FROM ?) FROM map", VARCHAR, " abc", " abc ");
+        checkValue0("SELECT TRIM(BOTH FROM ?) FROM map", VARCHAR, "abc", " abc ");
 
-        checkFailure0("SELECT TRIM(LEADING ?) FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, INTEGER), 1);
+        checkFailure0("SELECT TRIM(LEADING FROM ?) FROM map", SqlErrorCode.DATA_EXCEPTION, parameterError(0, VARCHAR, INTEGER), 1);
     }
 
     @Test

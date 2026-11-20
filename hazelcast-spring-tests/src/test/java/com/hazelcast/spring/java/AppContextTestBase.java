@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.annotation.Lazy;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,27 +33,34 @@ import static org.assertj.core.api.Assertions.assertThat;
 public abstract class AppContextTestBase {
 
     @Autowired
-    private HazelcastInstance instance;
+    @Lazy
+    protected HazelcastInstance instance;
 
     @Autowired
+    @Lazy
     protected JetService jet;
 
     @Autowired
+    @Lazy
     private SqlService sqlService;
 
     @Autowired(required = false)
     @Qualifier(value = "map1")
+    @Lazy
     protected IMap<String, String> map1;
 
     @Autowired(required = false)
     @Qualifier(value = "testMap")
+    @Lazy
     protected IMap<String, String> testMap;
 
     @Autowired(required = false)
     @Qualifier(value = "ringbuffer")
+    @Lazy
     protected Ringbuffer<String> ringbuffer;
 
     @Autowired
+    @Lazy
     protected ApplicationContext applicationContext;
 
     @Test

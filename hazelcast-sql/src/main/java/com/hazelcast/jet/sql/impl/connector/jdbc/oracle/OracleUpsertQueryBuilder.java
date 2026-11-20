@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.oracle;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.AbstractQueryBuilder;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcTable;
+import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import org.apache.calcite.sql.SqlDialect;
 
 import java.util.Iterator;
@@ -28,8 +29,8 @@ import java.util.List;
  */
 public class OracleUpsertQueryBuilder extends AbstractQueryBuilder {
 
-    public OracleUpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
-        super(jdbcTable, dialect);
+    public OracleUpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect, PhysicalRel rel) {
+        super(jdbcTable, dialect, rel);
 
         StringBuilder sb = new StringBuilder();
 

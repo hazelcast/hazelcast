@@ -15,101 +15,73 @@
  */
 package com.hazelcast.spring;
 
-import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.logging.Logger;
-import org.springframework.beans.factory.support.BeanDefinitionRegistry;
-import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.beans.factory.support.RootBeanDefinition;
-import org.springframework.context.ApplicationContext;
+import com.hazelcast.spi.annotation.PrivateApi;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Role;
 
 import javax.annotation.Nonnull;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
+
+import static org.springframework.beans.factory.config.BeanDefinition.ROLE_SUPPORT;
 
 /**
  * Configuration used by {@link ExposeHazelcastObjects} to dynamically register all Hazelcast objects as Spring beans.
+ *
+ * <p>Initialization proceeds in three stages:
+ * <ol>
+ *     <li>The static factory post-processor installs {@link HazelcastLazyDependencyResolver}, without obtaining any
+ *     configuration or member beans. Bean post-processors, including property binding, are not yet installed.</li>
+ *     <li>During normal bean initialization, {@link BeanExporterPostProcessor} reads an initialized configuration or
+ *     member and registers lazy object definitions. This allows configuration properties to be bound first.</li>
+ *     <li>On first use, an exported definition invokes {@link BeanCreator} to select a member and retrieve the object.
+ *     If a consumer uses its lazy dependency before stage two has run, the resolver initializes configuration/member
+ *     beans through Spring's normal lifecycle and retries the lookup.</li>
+ * </ol>
+ *
  * @since 5.6
  */
-@Configuration(proxyBeanMethods = false)
+@Import(HazelcastExposeObjectRegistrar.class)
+@Configuration
+@PrivateApi
 public class HazelcastObjectExtractionConfiguration {
 
-    private static final ILogger LOGGER = Logger.getLogger(HazelcastObjectExtractionConfiguration.class);
-
     private static final Set<Class<?>> REGISTERED_CONFIG_CLASSES = ConcurrentHashMap.newKeySet();
+    @Bean
+    @Role(ROLE_SUPPORT)
+    static BeanExporterPostProcessor hzInternalBeanExporter(
+        ObjectProvider<ExposeHazelcastObjects.Configuration> exposeHazelcastObjectConfiguration) {
+        return new BeanExporterPostProcessor(REGISTERED_CONFIG_CLASSES, exposeHazelcastObjectConfiguration);
+    }
 
     @Bean
-    @Nonnull
-    @SuppressWarnings("SpringJavaInjectionPointsAutowiringInspection")
-    public static BeanDefinitionRegistryPostProcessor hzInternalBeanExposer(@Nonnull HazelcastInstance hazelcastInstance,
-                                                                            ApplicationContext applicationContext) {
-        LOGGER.fine("Initializing Hazelcast object extraction configuration");
-        ExposeHazelcastObjects.Configuration hzBeanExportConf = ExposeHazelcastObjects.Configuration.empty();
-        if (applicationContext.containsBean("hzBeanExportConf")) {
-            hzBeanExportConf = applicationContext.getBean("hzBeanExportConf", ExposeHazelcastObjects.Configuration.class);
-        }
-        return new BeanExporter(hazelcastInstance, hzBeanExportConf);
+    @Role(ROLE_SUPPORT)
+    static BeanFactoryPostProcessor hzInternalLazyDependencyResolver() {
+        return beanFactory -> {
+            if (beanFactory instanceof DefaultListableBeanFactory factory) {
+                factory.setAutowireCandidateResolver(new HazelcastLazyDependencyResolver(factory.getAutowireCandidateResolver()));
+            }
+        };
+    }
+
+    /**
+     * The exported definitions refer to this bean by name. If the bean name changes, update
+     * {@link BeanExporterPostProcessor.RegistrationChain#register} as well.
+     */
+    @Bean
+    @Role(ROLE_SUPPORT)
+    static BeanCreator hzInternalBeanCreator(ConfigurableListableBeanFactory beanFactory) {
+        return new BeanCreator(beanFactory);
     }
 
     @Nonnull
     public Set<Class<?>> registeredTypesOfBeans() {
         return Set.copyOf(REGISTERED_CONFIG_CLASSES);
-    }
-
-    record RegistrationChain(HazelcastInstance hazelcastInstance,
-                             BeanDefinitionRegistry registry,
-                             ExposeHazelcastObjects.Configuration configuration) {
-
-        RegistrationChain register(final Map<String, ?> conf,
-                                   final Class<?> clazz,
-                                   final BiFunction<HazelcastInstance, String, Object> supplierProvider) {
-            for (Map.Entry<String, ?> entry : conf.entrySet()) {
-                register(registry, entry.getKey(), clazz, supplierProvider);
-            }
-            REGISTERED_CONFIG_CLASSES.add(clazz);
-            return this;
-        }
-
-        RegistrationChain register(final BeanDefinitionRegistry registry,
-                                   final String name,
-                                   final Class<?> clazz,
-                                   final BiFunction<HazelcastInstance, String, Object> supplierProvider) {
-            boolean containsBeanDefinition = registry.containsBeanDefinition(name);
-            boolean canIncludeByName = configuration.canInclude(name);
-            boolean canIncludeByType = configuration.canInclude(clazz);
-            if (LOGGER.isFineEnabled()) {
-                if (containsBeanDefinition) {
-                    LOGGER.fine("Not registering bean %s of type %s, there is already bean with this name",
-                                name, clazz.getSimpleName());
-                }
-                if (!canIncludeByName) {
-                    LOGGER.fine("Not registering bean %s of type %s, this name was excluded in the configuration",
-                                name, clazz.getSimpleName());
-                }
-                if (!canIncludeByType) {
-                    LOGGER.fine("Not registering bean %s of type %s, this type of objects was excluded in the configuration",
-                                name, clazz.getSimpleName());
-                }
-            }
-            if (!containsBeanDefinition && canIncludeByName && canIncludeByType) {
-                final Supplier<Object> supplier = () -> supplierProvider.apply(hazelcastInstance, name);
-                RootBeanDefinition beanDefinition = new RootBeanDefinition();
-                beanDefinition.setTargetType(clazz);
-                beanDefinition.setInstanceSupplier(supplier);
-                beanDefinition.setLazyInit(true);
-                if (DistributedObject.class.isAssignableFrom(clazz)) {
-                    beanDefinition.setDestroyMethodName("destroy");
-                }
-                registry.registerBeanDefinition(name, beanDefinition);
-            }
-            REGISTERED_CONFIG_CLASSES.add(clazz);
-            return this;
-        }
     }
 }

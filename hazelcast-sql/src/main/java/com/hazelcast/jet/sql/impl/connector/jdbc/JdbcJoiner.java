@@ -52,6 +52,7 @@ public final class JdbcJoiner {
             // Indices are not given.
             SelectQueryBuilder queryBuilder = new SelectQueryBuilder(
                     jdbcTable,
+                    context.getRel(),
                     dialect,
                     rexNodePredicate,
                     rexNodeProjection
@@ -68,6 +69,7 @@ public final class JdbcJoiner {
             // Indices are given.
             IndexScanSelectQueryBuilder queryBuilder = new IndexScanSelectQueryBuilder(
                     jdbcTable,
+                    context.getRel(),
                     dialect,
                     rexNodePredicate,
                     rexNodeProjection,
