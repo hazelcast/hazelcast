@@ -16,20 +16,26 @@
 
 package com.hazelcast.cp.internal.raft.impl;
 
+import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.internal.RaftEndpointImpl;
+import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
+import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshotRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshotResponse;
+import com.hazelcast.cp.internal.raft.impl.handler.AppendRequestHandlerTask;
+import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotChunk;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.persistence.RaftStateStore;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
+import com.hazelcast.cp.internal.raft.impl.testing.InMemoryRaftStateStore;
+import com.hazelcast.cp.internal.raft.impl.testing.TestRaftGroupId;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,11 +47,17 @@ import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.ACTIVE;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATING;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Answers.RETURNS_MOCKS;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.inOrder;
@@ -80,6 +92,7 @@ public class ChunkedSnapshotInstallerTest {
         when(raftNode.state()).thenReturn(raftState);
         when(raftNode.getLogger(any())).thenReturn(logger);
         when(raftNode.getRaftIntegration()).thenReturn(raftIntegration);
+        when(raftIntegration.getLogger(any())).thenReturn(logger);
         when(raftState.stateStore()).thenReturn(stateStore);
         when(raftState.commitIndex()).thenReturn(10L);
         when(raftState.localEndpoint()).thenReturn(localEndpoint);
@@ -183,7 +196,7 @@ public class ChunkedSnapshotInstallerTest {
         SnapshotChunk chunk = newSnapshotChunk(13L, 1, 0, 1);
         InstallSnapshotRequest request = newRequest(chunk);
 
-        Assert.assertThrows(HazelcastException.class, () -> installer.processChunk(request));
+        assertThrows(HazelcastException.class, () -> installer.processChunk(request));
 
         verify(raftIntegration, never()).resetForChunkedSnapshotRestore();
         verify(raftNode, never()).installSnapshot(any());
@@ -196,7 +209,7 @@ public class ChunkedSnapshotInstallerTest {
         InstallSnapshotRequest request = newRequest(chunk);
         doThrow(new IOException("expected")).doNothing().when(stateStore).persistSnapshotChunk(chunk);
 
-        Assert.assertThrows(HazelcastException.class, () -> installer.processChunk(request));
+        assertThrows(HazelcastException.class, () -> installer.processChunk(request));
 
         assertEquals(0, installer.getReceivedChunks().size());
         verify(raftIntegration, never()).resetForChunkedSnapshotRestore();
@@ -216,7 +229,7 @@ public class ChunkedSnapshotInstallerTest {
         SnapshotChunk inconsistentChunk = newSnapshotChunk(13L, 2, 1, 2);
         installer.processChunk(newRequest(firstChunk));
 
-        Assert.assertThrows(IllegalStateException.class,
+        assertThrows(IllegalStateException.class,
                 () -> installer.processChunk(newRequest(inconsistentChunk)));
 
         assertEquals(1, installer.getReceivedChunks().size());
@@ -256,5 +269,156 @@ public class ChunkedSnapshotInstallerTest {
 
         verify(stateStore).deleteSnapshotChunks(transferIndex);
         assertEquals(0, installer.getReceivedChunks().size());
+    }
+
+    @Test
+    public void fast_forwards_commit_index_when_snapshot_matches_local_log() {
+        when(raftNode.isSnapshotMatchingLog(any())).thenReturn(true);
+
+        installer.processChunk(newRequest(newMetadataChunk(13L, 3, 0, 1)));
+
+        InOrder order = inOrder(raftState, raftNode);
+        order.verify(raftState).commitIndex(13L);
+        order.verify(raftNode).applyLogEntries();
+        ArgumentCaptor<AppendSuccessResponse> responseCaptor = ArgumentCaptor.forClass(AppendSuccessResponse.class);
+        order.verify(raftNode).send(responseCaptor.capture(), eq(leader));
+        assertEquals(13L, responseCaptor.getValue().lastLogIndex());
+
+        verify(raftIntegration, never()).send(any(InstallSnapshotResponse.class), any(RaftEndpoint.class));
+        verify(raftNode, never()).installSnapshot(any());
+    }
+
+    @Test
+    public void fast_forwards_commit_index_when_local_log_matches_snapshot_before_last_chunk() {
+        // the local log does not match the snapshot when the transfer starts
+        SnapshotChunk chunk0 = newSnapshotChunk(13L, 3, 0, 1);
+        SnapshotChunk chunk1 = newSnapshotChunk(13L, 3, 1, 1);
+        SnapshotChunk chunk2 = newSnapshotChunk(13L, 3, 2, 1);
+        installer.processChunk(newRequest(chunk0));
+        installer.processChunk(newRequest(chunk1));
+
+        // Assume that after chunk 1 an append request arrives and appends the entry at the snapshot's index
+        // with the snapshot's term, so the local log now matches the snapshot. The match is checked on every chunk,
+        // so chunk 2 fast-forwards the commit index instead of completing the transfer and installing the snapshot.
+        when(raftNode.isSnapshotMatchingLog(any())).thenReturn(true);
+        installer.processChunk(newRequest(chunk2));
+
+        verify(raftState).commitIndex(13L);
+        verify(raftIntegration, never()).resetForChunkedSnapshotRestore();
+        verify(raftNode, never()).installSnapshot(any());
+    }
+
+    @Test
+    public void deletes_partial_transfer_on_fast_forward_when_node_is_terminated() throws IOException {
+        // a real node, so the fast-forward applies the entries from its log
+        RaftNodeImpl node = newRaftNode(new TestRaftGroupId("test"), localEndpoint, List.of(localEndpoint, leader),
+                new RaftAlgorithmConfig(), raftIntegration, stateStore);
+
+        // the local log has no entry at the snapshot's index when the transfer starts
+        node.processSnapshotChunk(newRequest(newSnapshotChunk(1L, 2, 0, 1)));
+
+        // An append request adds the entry at the snapshot's index, so the last chunk fast-forwards over it.
+        node.state().log().appendEntries(new LogEntry(1, 1, null));
+        // On a terminated node, takeSnapshotIfCommitIndexAdvanced(), which cleans up a stale transfer
+        // after the entries are applied, is skipped.
+        node.setStatus(TERMINATED);
+        node.processSnapshotChunk(newRequest(newSnapshotChunk(1L, 2, 1, 1)));
+
+        verify(stateStore).deleteSnapshotChunks(1L);
+    }
+
+    @Test
+    public void keeps_commit_index_on_fast_forward_when_partial_transfer_deletion_fails() throws IOException {
+        // a real node, so the fast-forward advances its commit index and applies the entries from its log
+        RaftNodeImpl node = newRaftNode(new TestRaftGroupId("test"), localEndpoint, List.of(localEndpoint, leader),
+                new RaftAlgorithmConfig(), raftIntegration, stateStore);
+
+        // the first chunk starts a transfer, since the local log has no entry at the snapshot's index yet
+        node.processSnapshotChunk(newRequest(newSnapshotChunk(1L, 2, 0, 1)));
+
+        // an append request adds the entry at the snapshot's index, so the last chunk fast-forwards over it
+        node.state().log().appendEntries(new LogEntry(1, 1, null));
+        // simulate an I/O failure when the fast-forward deletes the stale transfer's chunks
+        doThrow(new IOException("expected")).when(stateStore).deleteSnapshotChunks(1L);
+        assertThrows(HazelcastException.class,
+                () -> node.processSnapshotChunk(newRequest(newSnapshotChunk(1L, 2, 1, 1))));
+
+        // the commit index is not changed when the deletion fails
+        assertEquals(0L, node.state().commitIndex());
+    }
+
+    @Test
+    public void truncates_and_reverts_conflicting_entries_when_append_follows_fast_forward() throws IOException {
+        RaftNodeImpl node = newRaftNode(new TestRaftGroupId("test"), localEndpoint, List.of(localEndpoint, leader),
+                new RaftAlgorithmConfig(), raftIntegration, stateStore);
+        node.setStatus(ACTIVE);
+
+        // the leader of term 1 sends entries 1 to 3, which stay uncommitted; the node pre-applies the destroy group command at 3
+        LogEntry[] logEntries = {
+                new LogEntry(1, 1, null),
+                new LogEntry(1, 2, null),
+                new LogEntry(1, 3, new DestroyRaftGroupCmd())};
+        AppendRequest appendRequest = new AppendRequest(leader, 1, 0, 0, 0, logEntries, 0, 0);
+        new AppendRequestHandlerTask(node, appendRequest).run();
+        assertEquals(TERMINATING, node.getStatus());
+
+        // the leader of term 2 sends a snapshot at 1, which matches the local log, so the node fast-forwards
+        node.processSnapshotChunk(new InstallSnapshotRequest(leader, 2, newSnapshotChunk(1L, 1, 0, 1), 0, 0));
+        assertEquals(1L, node.state().commitIndex());
+
+        // the leader's next append matches entry 2 and has its own entry at 3, which conflicts with the local one
+        AppendRequest newAppendRequest = new AppendRequest(leader, 2, 1, 2, 1,
+                new LogEntry[]{new LogEntry(2, 3, null)}, 0, 0);
+        new AppendRequestHandlerTask(node, newAppendRequest).run();
+
+        // only the conflicting entry is deleted from the store, and the destroy group command is reverted
+        verify(stateStore).deleteEntriesFrom(3);
+        assertEquals(ACTIVE, node.getStatus());
+    }
+
+    @Test
+    public void installs_snapshot_over_uncommitted_entries_and_truncates_store() {
+        // a store that, like the on-disk one, sets the snapshot in its log when its chunks are flushed
+        InMemoryRaftStateStore store = new InMemoryRaftStateStore(100);
+        RaftNodeImpl node = newRaftNode(new TestRaftGroupId("test"), localEndpoint, List.of(localEndpoint, leader),
+                new RaftAlgorithmConfig(), raftIntegration, store);
+
+        // add uncommitted entries from an older term, so the one at the snapshot's index conflicts and the last is past it
+        node.state().log().appendEntries(
+                new LogEntry(1, 1, null), new LogEntry(1, 2, null),
+                new LogEntry(1, 3, null), new LogEntry(1, 4, null));
+
+        // Flushing the last chunk sets the snapshot in the store first, so the store keeps only the entries past its index.
+        // After this, installing the snapshot deletes all uncommitted entries from the RaftLog and the store.
+        node.processSnapshotChunk(new InstallSnapshotRequest(leader, 2, newSnapshotChunk(3L, 1, 0, 2), 0, 0));
+
+        assertEquals(3L, node.state().log().snapshotIndex());
+        assertEquals(3L, node.state().log().lastLogOrSnapshotIndex());
+        // the entry past the snapshot's index is deleted from the store too
+        assertEquals(0, store.toRestoredRaftState().entries().length);
+    }
+
+    @Test
+    public void transfers_snapshot_when_snapshot_does_not_match_local_log() {
+        when(raftNode.isSnapshotMatchingLog(any())).thenReturn(false);
+
+        installer.processChunk(newRequest(newMetadataChunk(13L, 3, 0, 1)));
+
+        // the commit index is not fast-forwarded
+        verify(raftState, never()).commitIndex(13L);
+        verify(raftNode, never()).applyLogEntries();
+        verify(raftIntegration).send(any(InstallSnapshotResponse.class), eq(leader));
+    }
+
+    @Test
+    public void does_not_fast_forward_stale_snapshot_matching_local_log() {
+        // the snapshot is behind the commit index, so fast-forwarding to it would move the commit index backwards
+        when(raftState.commitIndex()).thenReturn(15L);
+        when(raftNode.isSnapshotMatchingLog(any())).thenReturn(true);
+
+        installer.processChunk(newRequest(newMetadataChunk(12L, 3, 0, 1)));
+
+        verify(raftState, never()).commitIndex(anyLong());
+        verify(raftNode, never()).applyLogEntries();
     }
 }
