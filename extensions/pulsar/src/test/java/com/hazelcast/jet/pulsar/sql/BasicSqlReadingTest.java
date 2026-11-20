@@ -15,6 +15,7 @@
  */
 package com.hazelcast.jet.pulsar.sql;
 
+import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.pulsar.PulsarDataConnection;
 import com.hazelcast.jet.pulsar.PulsarTestSupport;
@@ -46,10 +47,15 @@ public class BasicSqlReadingTest extends PulsarTestSupport {
     @BeforeEach
     public void setup() {
         var conf = smallInstanceConfig();
-        conf.addDataConnectionConfig(PulsarDataConnection.pulsarDataConnectionConf("testPulsar",
-                                                                                   pulsarContainer.getPulsarBrokerUrl(),
-                                                                                   pulsarContainer.getHttpServiceUrl(),
-                                                                                   true));
+        DataConnectionConfig connectionConf =
+            PulsarDataConnection.pulsarDataConnectionConf("testPulsar", pulsarContainer.getPulsarBrokerUrl(),
+                                                          pulsarContainer.getHttpServiceUrl(), true);
+
+        // additional options provided to test if options are filtered out
+        connectionConf.setProperty("pulsar.client.numIoThreads", "2");
+        connectionConf.setProperty("pulsar.producer.maxPendingMessages", "144");
+        connectionConf.setProperty("pulsar.reader.receiverQueueSize", "4096");
+        conf.addDataConnectionConfig(connectionConf);
         instances = createHazelcastInstances(conf, 2);
     }
 
@@ -185,7 +191,7 @@ public class BasicSqlReadingTest extends PulsarTestSupport {
         new SqlMapping("testPulsarMapping", "testPulsar").externalName(testName)
             .fields("__key VARCHAR", "this VARCHAR")
             .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar",
-                     "pulsar.receiverQueueSize", "not-a-number")
+                     "pulsar.reader.receiverQueueSize", "not-a-number")
             .createOrReplace(instances[0]);
 
         assertThatThrownBy(() -> {
@@ -195,7 +201,7 @@ public class BasicSqlReadingTest extends PulsarTestSupport {
                     // during StreamPulsarViaReaderP's reader creation, not at CREATE/SELECT parse
                 }
             }
-        }).as("the malformed pulsar.receiverQueueSize value must reach and fail Pulsar's own "
+        }).as("the malformed pulsar.reader.receiverQueueSize value must reach and fail Pulsar's own "
                 + "loadConf() binding on the ReaderBuilder")
           .isInstanceOf(HazelcastSqlException.class)
           .hasMessageContaining("Failed to load config into existing configuration data")

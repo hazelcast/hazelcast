@@ -443,7 +443,7 @@ public class PulsarDataConnectionTest extends PulsarTestSupport {
     @Test
     public void should_throw_on_custom_options_wrong_type() {
         DataConnectionConfig config = newConnection()
-                                          .setProperty("numIoThreads", "MORE THAN ZERO")
+                                          .setProperty("pulsar.client.numIoThreads", "MORE THAN ZERO")
                                           .setShared(false);
         dataConnection = new PulsarDataConnection(config);
 

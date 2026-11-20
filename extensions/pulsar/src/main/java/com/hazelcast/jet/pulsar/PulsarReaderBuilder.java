@@ -156,7 +156,8 @@ public final class PulsarReaderBuilder<M, T> {
     }
 
     /**
-     * @param readerConfig Pulsar reader configurations that must contain reader name
+     * @param readerConfig Pulsar reader configurations that must contain reader name. All properties should start with
+     *                     correct prefix, e.g. pulsar.client for PulsarClient-related property.
      */
     @Nonnull
     public PulsarReaderBuilder<M, T> readerConfig(@Nonnull Map<String, Object> readerConfig) {

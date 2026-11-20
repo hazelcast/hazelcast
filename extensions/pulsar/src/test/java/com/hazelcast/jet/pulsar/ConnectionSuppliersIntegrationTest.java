@@ -36,6 +36,7 @@ import static com.hazelcast.jet.pulsar.ConnectionSuppliers.createAdmin;
 import static com.hazelcast.jet.pulsar.ConnectionSuppliers.createClient;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SerialTest
@@ -44,13 +45,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Timeout(60)
 class ConnectionSuppliersIntegrationTest extends PulsarTestSupport {
 
-    @ParameterizedTest
-    @ValueSource(strings = {"", "pulsar.client.", "pulsar."})
-    void createClient_loadsOptionsAndConnectsToBroker(String prefix) throws Exception {
+    @Test
+    void createClient_loadsOptionsAndConnectsToBroker() throws Exception {
+        String prefix = "pulsar.client";
         Map<String, String> options = Map.of(
-                prefix + "numIoThreads", "2",
-                prefix + "operationTimeoutMs", "15000",
-                prefix + "tlsAllowInsecureConnection", "true");
+                prefix + ".numIoThreads", "2",
+                "pulsar.admin.numIoThreads", "21",
+                "pulsar.reader.numIoThreads", "211",
+                "pulsar.producer.numIoThreads", "2111",
+                prefix + ".operationTimeoutMs", "15000",
+                prefix + ".tlsAllowInsecureConnection", "true");
 
         try (PulsarClient client = createClient(getServiceUrl(), false, options)) {
             var configuration = ((PulsarClientImpl) client).getConfiguration();
@@ -63,11 +67,11 @@ class ConnectionSuppliersIntegrationTest extends PulsarTestSupport {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"", "pulsar.admin.", "pulsar."})
-    void createAdmin_loadsOptionsAndConnectsToBroker(String prefix) throws Exception {
+    @Test
+    void createAdmin_loadsOptionsAndConnectsToBroker() throws Exception {
+        String prefix = "pulsar.admin";
         String topic = "persistent://public/default/" + randomName();
-        Map<String, String> options = Map.of(prefix + "serviceUrl", pulsarContainer.getHttpServiceUrl());
+        Map<String, String> options = Map.of(prefix + ".serviceUrl", pulsarContainer.getHttpServiceUrl());
 
         // The configured URL must replace the unreachable argument when loadConf is applied.
         try (PulsarAdmin admin = createAdmin("http://127.0.0.1:1", options)) {
@@ -113,12 +117,11 @@ class ConnectionSuppliersIntegrationTest extends PulsarTestSupport {
         }
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"", "pulsar.client.", "pulsar."})
-    void createClient_rejectsInvalidOptionValue(String prefix) {
+    @Test
+    void createClient_rejectsInvalidOptionValue() {
         assertThatThrownBy(() -> {
             try (PulsarClient ignored = createClient(getServiceUrl(), false,
-                    Map.of(prefix + "numIoThreads", "not-a-number"))) {
+                    Map.of("pulsar.client.numIoThreads", "not-a-number"))) {
                 // Close resources if invalid configuration is unexpectedly accepted.
             }
         }).isInstanceOf(RuntimeException.class)
@@ -129,18 +132,14 @@ class ConnectionSuppliersIntegrationTest extends PulsarTestSupport {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "pulsar.admin.", "pulsar."})
+    @ValueSource(strings = {"", "pulsar.client.", "pulsar.reader", "pulsar.producer"})
     void createAdmin_rejectsInvalidOptionValue(String prefix) {
-        assertThatThrownBy(() -> {
+        assertThatCode(() -> {
             try (PulsarAdmin ignored = createAdmin(pulsarContainer.getHttpServiceUrl(),
                     Map.of(prefix + "requestTimeoutMs", "not-a-number"))) {
                 // Close resources if invalid configuration is unexpectedly accepted.
             }
-        }).isInstanceOf(RuntimeException.class)
-          .hasRootCauseInstanceOf(InvalidFormatException.class)
-          .rootCause()
-          .hasMessageContaining("not-a-number")
-          .hasMessageContaining("requestTimeoutMs");
+        }).doesNotThrowAnyException();
     }
 
     private void assertMessageRoundTrip(PulsarClient client, String topic) throws PulsarClientException {

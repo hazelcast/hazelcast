@@ -24,7 +24,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.pulsar.PulsarProperties.stripPrefix;
+import static com.hazelcast.jet.pulsar.PulsarProperties.filterOptions;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @QuickTest
@@ -33,33 +33,31 @@ class ConnectionSuppliersTest {
 
     @ParameterizedTest
     @ValueSource(strings = {"pulsar.client.", "pulsar.admin."})
-    void stripPrefix_handlesEmptyOptions(String prefix) {
-        assertThat(stripPrefix(Map.of(), prefix)).isEmpty();
+    void filterOptions_handlesEmptyOptions(String prefix) {
+        assertThat(filterOptions(Map.of(), prefix)).isEmpty();
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"pulsar.client.", "pulsar.admin."})
-    void stripPrefix_normalizesMixedOptions(String prefix) {
+    @ValueSource(strings = {"pulsar.client", "pulsar.admin"})
+    void filterOptions_normalizesMixedOptions(String prefix) {
         Map<String, String> options = Map.of(
-                prefix + "connectionTimeoutMs", "1234",
+                prefix + ".connectionTimeoutMs", "1234",
                 "pulsar.operationTimeoutMs", "5678",
                 "numIoThreads", "2");
 
-        assertThat(stripPrefix(options, prefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
-                "connectionTimeoutMs", "1234",
-                "operationTimeoutMs", "5678",
-                "numIoThreads", "2"));
+        assertThat(filterOptions(options, prefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "connectionTimeoutMs", "1234"));
     }
 
     @Test
-    void stripPrefix_order() {
+    void filterOptions_order() {
         Map<String, String> options = Map.of(
                 "pulsar.client.connectionTimeoutMs", "1234",
                 "pulsar.connectionTimeoutMs", "5678",
                 "connectionTimeoutMs", "2");
 
-        String additionalPrefix = "pulsar.client.";
-        assertThat(stripPrefix(options, additionalPrefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
+        String additionalPrefix = "pulsar.client";
+        assertThat(filterOptions(options, additionalPrefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
             "connectionTimeoutMs", "1234"));
 
         options = Map.of(
@@ -67,7 +65,7 @@ class ConnectionSuppliersTest {
             "pulsar.client.connectionTimeoutMs", "1234",
             "connectionTimeoutMs", "2");
 
-        assertThat(stripPrefix(options, additionalPrefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
+        assertThat(filterOptions(options, additionalPrefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
             "connectionTimeoutMs", "1234"));
 
         options = Map.of(
@@ -75,64 +73,57 @@ class ConnectionSuppliersTest {
             "pulsar.connectionTimeoutMs", "5678",
             "pulsar.client.connectionTimeoutMs", "1234"
         );
-        assertThat(stripPrefix(options, additionalPrefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
+        assertThat(filterOptions(options, additionalPrefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
             "connectionTimeoutMs", "1234"));
 
         options = Map.of(
             "connectionTimeoutMs", "2",
             "pulsar.connectionTimeoutMs", "5678"
         );
-        assertThat(stripPrefix(options, additionalPrefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
-            "connectionTimeoutMs", "5678"));
+        assertThat(filterOptions(options, additionalPrefix)).isEmpty();
 
         options = Map.of(
-            "pulsar.connectionTimeoutMs", "5678",
+            "pulsar.client.connectionTimeoutMs", "5678",
             "connectionTimeoutMs", "2"
         );
-        assertThat(stripPrefix(options, additionalPrefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
+        assertThat(filterOptions(options, additionalPrefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
             "connectionTimeoutMs", "5678"));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"pulsar.client.", "pulsar.admin."})
-    void stripPrefix_removesOnlyTheLeadingPrefix(String prefix) {
+    @ValueSource(strings = {"pulsar.client", "pulsar.admin"})
+    void filterOptions_removesOnlyTheLeadingPrefix(String prefix) {
         Map<String, String> options = Map.of(
-                prefix + prefix + "option", "first",
+                prefix + "." + prefix + ".option", "first",
                 "pulsar.pulsar.option", "second",
-                prefix + "pulsar.other", "third",
-                "pulsar." + prefix + "other", "fourth",
-                "custom." + prefix + "option", "fifth",
+                prefix + ".pulsar.other", "third",
+                "pulsar." + prefix + ".other", "fourth",
+                "custom." + prefix + ".option", "fifth",
                 "custom.pulsar.option", "sixth");
 
-        assertThat(stripPrefix(options, prefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
-                prefix + "option", "first",
-                "pulsar.option", "second",
-                "pulsar.other", "third",
-                prefix + "other", "fourth",
-                "custom." + prefix + "option", "fifth",
-                "custom.pulsar.option", "sixth"));
+        assertThat(filterOptions(options, prefix)).containsExactlyInAnyOrderEntriesOf(Map.of(
+                prefix + ".option", "first",
+                "pulsar.other", "third"));
     }
 
     @Test
-    void stripPrefix_preservesOtherConnectionPrefixes() {
-        assertThat(stripPrefix(Map.of("admin.requestTimeoutMs", "1000"), "client"))
-                .containsExactlyInAnyOrderEntriesOf(Map.of("admin.requestTimeoutMs", "1000"));
-        assertThat(stripPrefix(Map.of("client.numIoThreads", "2"), "admin"))
-                .containsExactlyInAnyOrderEntriesOf(Map.of("client.numIoThreads", "2"));
+    void filterOptions_preservesOtherConnectionPrefixes() {
+        assertThat(filterOptions(Map.of("pulsar.client.requestTimeoutMs", "1000"), "pulsar.client"))
+                .containsExactlyInAnyOrderEntriesOf(Map.of("requestTimeoutMs", "1000"));
+        assertThat(filterOptions(Map.of("pulsar.admin.numIoThreads", "2"), "pulsar.admin"))
+                .containsExactlyInAnyOrderEntriesOf(Map.of("numIoThreads", "2"));
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"pulsar.client.", "pulsar.admin."})
-    void stripPrefix_returnsIndependentCopyWithoutMutatingOptions(String prefix) {
+    @ValueSource(strings = {"pulsar.client", "pulsar.admin"})
+    void filterOptions_returnsIndependentCopyWithoutMutatingOptions(String prefix) {
         Map<String, String> original = Map.of(prefix + ".numIoThreads", "2", "pulsar.useTls", "true");
         Map<String, String> options = new HashMap<>(original);
 
-        Map<String, String> stripped = stripPrefix(options, prefix);
+        Map<String, String> filtered = filterOptions(options, prefix);
 
         assertThat(options).containsExactlyInAnyOrderEntriesOf(original);
-        stripped.put("numIoThreads", "3");
+        filtered.put("numIoThreads", "3");
         assertThat(options).containsExactlyInAnyOrderEntriesOf(original);
-        options.put("pulsar.useTls", "false");
-        assertThat(stripped).containsEntry("useTls", "true");
     }
 }

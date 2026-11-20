@@ -33,6 +33,7 @@ import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
 import com.hazelcast.jet.pulsar.CloseablePulsarClient;
 import com.hazelcast.jet.pulsar.ConnectionSuppliers;
 import com.hazelcast.jet.pulsar.PulsarDataConnection;
+import com.hazelcast.jet.pulsar.PulsarProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -127,10 +128,11 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
 
         checkDeduplicationStatus(context, guarantee);
 
+        //noinspection unchecked
         ProducerBuilder<M> builder =
             client.newProducer(pulsarConfig.getSchemaSupplier().get())
                   .topic(pulsarConfig.getTopic())
-                  .loadConf(pulsarConfig.getOptions());
+                  .loadConf(pulsarConfig.getOptions(PulsarProperties.Prefixes.PRODUCER));
         pulsarConfig.getProducerCustomizer().accept(builder);
         producer = builder.autoUpdatePartitions(true)
                           .blockIfQueueFull(true)
@@ -185,7 +187,8 @@ public class WritePulsarP<E, M> extends AbstractProcessor {
             } else {
                 try {
                     status = readDeduplicationStatus(() -> ConnectionSuppliers.createAdmin(pulsarConfig.getHttpServiceUrl(),
-                                                                                           pulsarConfig.getOptions()));
+                                                                                           pulsarConfig.getOptions(
+                                                                                               PulsarProperties.Prefixes.ADMIN)));
                 } catch (Exception e) {
                     status = false;
                 }

@@ -27,6 +27,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.pulsar.PulsarProperties;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -173,9 +174,10 @@ public class StreamPulsarViaReaderP<M, T> extends AbstractProcessor {
                 continue;
             }
             try {
+                //noinspection unchecked
                 ReaderBuilder<M> builder =
                     client.newReader(pulsarConfig.getSchemaSupplier().get())
-                          .loadConf(pulsarConfig.getOptions());
+                          .loadConf(pulsarConfig.getOptions(PulsarProperties.Prefixes.READER));
                 pulsarConfig.getReaderCustomizer().accept(builder);
                 boolean enableMessagePooling = pulsarConfig.isEnableMessagePooling();
                 // Set the restored position before the reader can prefetch. Creating a multi-topic reader

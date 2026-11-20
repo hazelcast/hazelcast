@@ -22,12 +22,11 @@ import org.apache.pulsar.client.api.PulsarClientException;
 
 import java.util.Map;
 
-@SuppressWarnings({"unchecked", "rawtypes"})
+import static com.hazelcast.jet.pulsar.PulsarProperties.filterOptions;
+
+@SuppressWarnings({"rawtypes"})
 @PrivateApi
 public final class ConnectionSuppliers {
-
-    static final String CLIENT_PREFIX = "pulsar.client.";
-    static final String ADMIN_PREFIX = "pulsar.admin.";
 
     private ConnectionSuppliers() {
     }
@@ -37,7 +36,8 @@ public final class ConnectionSuppliers {
         return PulsarClient.builder()
                            .serviceUrl(brokerUrl)
                            .enableTransaction(enableTransactions)
-                           .loadConf(PulsarProperties.stripPrefix(options, CLIENT_PREFIX))
+                           .loadConf(filterOptions(options,
+                                                   PulsarProperties.Prefixes.CLIENT))
                            .build();
     }
 
@@ -45,7 +45,7 @@ public final class ConnectionSuppliers {
                                           Map options) throws PulsarClientException {
         return PulsarAdmin.builder()
                           .serviceHttpUrl(httpServiceUrl)
-                          .loadConf(PulsarProperties.stripPrefix(options, ADMIN_PREFIX))
+                          .loadConf(filterOptions(options, PulsarProperties.Prefixes.ADMIN))
                           .build();
     }
 

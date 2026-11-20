@@ -80,10 +80,15 @@ public class BasicSqlWritingTest extends PulsarTestSupport {
         String topicName = "types_" + randomName().replace('-', '_');
         String mappingName = "pulsarTypes";
         String key = "test-key";
+        // additional options provided to test if options are filtered out
         new SqlMapping(mappingName, "testPulsar").externalName(topicName)
                 .fields("__key VARCHAR", "this " + type.sqlType())
                 .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT,
-                         javaFormat ? JAVA_FORMAT : type.sqlType().toLowerCase(ROOT))
+                         javaFormat ? JAVA_FORMAT : type.sqlType().toLowerCase(ROOT),
+                         "pulsar.client.numIoThreads", "2",
+                         "pulsar.producer.maxPendingMessages", "144",
+                         "pulsar.reader.receiverQueueSize", "4096"
+                         )
                 .optionsIf(javaFormat, OPTION_VALUE_CLASS, type.sqlValue().getClass().getName())
                 .create(instances[0]);
 
@@ -285,12 +290,12 @@ public class BasicSqlWritingTest extends PulsarTestSupport {
         new SqlMapping("twoWayPulsar", "testPulsar").externalName(testName)
                 .fields("__key VARCHAR", "this VARCHAR")
                 .options(OPTION_KEY_FORMAT, "varchar", OPTION_VALUE_FORMAT, "varchar",
-                         "pulsar.sendTimeoutMs", "not-a-number")
+                         "pulsar.producer.sendTimeoutMs", "not-a-number")
                 .createOrReplace(instances[0]);
 
         assertThatThrownBy(() -> sql.executeUpdate("INSERT INTO twoWayPulsar (__key, this) VALUES ('1', 'value-1')"))
-                .as("the malformed pulsar.sendTimeoutMs value must reach and fail Pulsar's own "
-                        + "loadConf() binding, proving the pulsar.* option passthrough is wired up")
+                .as("the malformed pulsar.producer.sendTimeoutMs value must reach and fail Pulsar's own "
+                        + "loadConf() binding, proving the pulsar.producer.* option passthrough is wired up")
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Failed to load config into existing configuration data")
                 .rootCause()

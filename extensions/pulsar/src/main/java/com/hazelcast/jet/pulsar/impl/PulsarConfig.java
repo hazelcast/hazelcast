@@ -19,6 +19,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.util.Validation;
 import com.hazelcast.jet.pipeline.DataConnectionRef;
+import com.hazelcast.jet.pulsar.PulsarProperties;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -88,6 +89,11 @@ public class PulsarConfig<M> implements DataSerializable, Serializable {
 
     public Map<String, Object> getOptions() {
         return options;
+    }
+
+    @SuppressWarnings("rawtypes")
+    public Map getOptions(String prefix) {
+        return PulsarProperties.filterOptions(options, prefix);
     }
 
     public void setConnectionSupplier(SupplierEx<PulsarClient> connectionSupplier) {

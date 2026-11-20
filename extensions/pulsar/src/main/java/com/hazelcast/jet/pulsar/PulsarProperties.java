@@ -20,14 +20,25 @@ import org.apache.pulsar.client.api.PulsarClient;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import static com.hazelcast.jet.pulsar.ConnectionSuppliers.ADMIN_PREFIX;
-import static com.hazelcast.jet.pulsar.ConnectionSuppliers.CLIENT_PREFIX;
 
 /**
  * Properties that are possible to use with {@link PulsarDataConnection}.
  */
 @SuppressWarnings("checkstyle:LineLength")
 public final class PulsarProperties {
+    /**
+     * Prefixes of various properties, like client-dedicated,
+     * reader-dedicated etc.
+     */
+    @SuppressWarnings("checkstyle:JavadocVariable")
+    public static final class Prefixes {
+        public static final String CLIENT = "pulsar.client";
+        public static final String ADMIN = "pulsar.admin";
+        public static final String READER = "pulsar.reader";
+        public static final String PRODUCER = "pulsar.producer";
+        private Prefixes() {
+        }
+    }
     /**
      * Pulsar Broker URL. Always mandatory.
      */
@@ -68,37 +79,28 @@ public final class PulsarProperties {
     private PulsarProperties() {
     }
 
-    public static Map<String, String> stripPrefix(Map<String, String> options, String additionalPrefix) {
-        var map = new LinkedHashMap<String, String>(options.size());
+    public static <V> Map<String, V> filterOptions(Map<String, V> options, String prefix) {
+        if (options == null) {
+            return Map.of();
+        }
+        var map = new LinkedHashMap<String, V>(options.size());
 
-        for (Map.Entry<String, String> entry : options.entrySet()) {
+        for (Map.Entry<String, V> entry : options.entrySet()) {
             String key = entry.getKey();
-            if (!key.startsWith(additionalPrefix) && !key.startsWith("pulsar.")) {
-                map.put(key, entry.getValue());
-            }
-        }
-        for (Map.Entry<String, String> entry : options.entrySet()) {
-            String key = entry.getKey();
-            if (key.startsWith("pulsar.")  && !(key.startsWith(ADMIN_PREFIX) || key.startsWith(CLIENT_PREFIX))) {
-                map.put(key.replaceFirst("pulsar.", ""), entry.getValue());
-            }
-        }
-        for (Map.Entry<String, String> entry : options.entrySet()) {
-            String key = entry.getKey();
-            if (key.startsWith(additionalPrefix)) {
-                map.put(key.replaceFirst(additionalPrefix, ""), entry.getValue());
+            if (key.startsWith(prefix + ".")) {
+                map.put(key.replaceFirst(prefix + ".", ""), entry.getValue());
             }
         }
         return map;
     }
 
     public static String clientOption(String optionName, Map<String, String> options) {
-        return getOption(optionName, options, CLIENT_PREFIX);
+        return getOption(optionName, options, Prefixes.CLIENT);
     }
 
     public static String getOption(String optionName, Map<String, String> options, String additionalPrefix) {
-       if (options.containsKey(additionalPrefix + optionName)) {
-           return options.get(additionalPrefix + optionName);
+       if (options.containsKey(additionalPrefix + "." + optionName)) {
+           return options.get(additionalPrefix + "." + optionName);
        } else if (options.containsKey("pulsar." + optionName)) {
            return options.get("pulsar." + optionName);
        } else if (options.containsKey(optionName)) {

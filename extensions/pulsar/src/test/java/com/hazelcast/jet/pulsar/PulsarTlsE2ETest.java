@@ -198,10 +198,14 @@ class PulsarTlsE2ETest extends JetTestSupport {
         return pulsarDataConnectionConf(DATA_CONNECTION,
                 "pulsar+ssl://" + container.getHost() + ":" + container.getMappedPort(BROKER_TLS_PORT),
                 "https://" + container.getHost() + ":" + container.getMappedPort(HTTPS_PORT))
-                .setProperty("pulsar.tlsTrustCertsFilePath", certificatePath)
-                .setProperty("pulsar.tlsAllowInsecureConnection", "false")
-                .setProperty("pulsar.tlsHostnameVerificationEnable", "true")
-                .setProperty("client.listenerName", "external");
+                .setProperty("pulsar.admin.tlsTrustCertsFilePath", certificatePath)
+                .setProperty("pulsar.admin.tlsAllowInsecureConnection", "false")
+                .setProperty("pulsar.admin.tlsHostnameVerificationEnable", "true")
+                .setProperty("pulsar.admin.listenerName", "external")
+                .setProperty("pulsar.client.tlsTrustCertsFilePath", certificatePath)
+                .setProperty("pulsar.client.tlsAllowInsecureConnection", "false")
+                .setProperty("pulsar.client.tlsHostnameVerificationEnable", "true")
+                .setProperty("pulsar.client.listenerName", "external");
     }
 
     private static final class TlsPulsarContainer extends PulsarContainer {

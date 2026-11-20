@@ -37,7 +37,6 @@ import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.pulsar.shade.org.apache.pulsar.common.naming.TopicName;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -62,7 +61,6 @@ class PulsarTable extends JetTable {
     private final String topicName;
     private final String dataConnectionName;
     private final Map<String, String> options;
-    private transient Map<String, String> pulsarOptions;
 
     private final QueryTargetDescriptor keyQueryDescriptor;
     private final UpsertTargetDescriptor keyUpsertDescriptor;
@@ -106,12 +104,13 @@ class PulsarTable extends JetTable {
             sc.setTopic(topicName());
         }
         conf.setSchemaSupplier(resolveSchema());
-        conf.setOptions(pulsarOptions());
+        conf.setOptions(options);
 
         if (dataConnectionName() != null) {
             conf.setDataConnectionRef(DataConnectionRef.dataConnectionRef(dataConnectionName()));
         } else {
-            var optionsCopy = Map.copyOf(options);
+            // copy so PulsarTable won't get serialized in supplier
+            var optionsLocal = options;
             final String brokerUrl = getOption(OPTION_BROKER_URL, CLIENT_PREFIX);
             if (brokerUrl != null) {
                 final boolean enableTransactions = parseBoolean(requireNonNullElse(
@@ -119,7 +118,7 @@ class PulsarTable extends JetTable {
                     "false"));
 
                 conf.setConnectionSupplier(
-                    () -> createClient(brokerUrl, enableTransactions, optionsCopy));
+                    () -> createClient(brokerUrl, enableTransactions, optionsLocal));
             }
 
             String httpServiceUrl = getOption(OPTION_HTTP_SERVICE_URL, ADMIN_PREFIX);
@@ -132,23 +131,6 @@ class PulsarTable extends JetTable {
 
     private String getOption(String optionName, String additionalPrefix) {
         return PulsarProperties.getOption(optionName, options, additionalPrefix);
-    }
-
-    /**
-     * SQL connector options starting with {@code pulsar.} will be translated into Pulsar options for source/sink.
-     */
-    Map<String, String> pulsarOptions() {
-        if (pulsarOptions == null) {
-            pulsarOptions = new HashMap<>();
-            for (var entry : options.entrySet()) {
-                String key = entry.getKey();
-                if (key.startsWith(PULSAR_OPTION_PREFIX)) {
-                    pulsarOptions.put(key, entry.getValue());
-                }
-            }
-            pulsarOptions = PulsarProperties.stripPrefix(pulsarOptions, CLIENT_PREFIX);
-        }
-        return pulsarOptions;
     }
 
     @SuppressWarnings("rawtypes")
