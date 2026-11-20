@@ -19,9 +19,12 @@ package com.hazelcast.cp.internal.raft.impl;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.cp.internal.RaftEndpointImpl;
+import com.hazelcast.cp.internal.raft.command.DestroyRaftGroupCmd;
+import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshotRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshotResponse;
+import com.hazelcast.cp.internal.raft.impl.handler.AppendRequestHandlerTask;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotChunk;
 import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
@@ -45,7 +48,9 @@ import java.util.List;
 import java.util.UUID;
 
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeImpl.newRaftNode;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.ACTIVE;
 import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATED;
+import static com.hazelcast.cp.internal.raft.impl.RaftNodeStatus.TERMINATING;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
@@ -340,6 +345,35 @@ public class ChunkedSnapshotInstallerTest {
 
         // the commit index is not changed when the deletion fails
         assertEquals(0L, node.state().commitIndex());
+    }
+
+    @Test
+    public void truncates_and_reverts_conflicting_entries_when_append_follows_fast_forward() throws IOException {
+        RaftNodeImpl node = newRaftNode(new TestRaftGroupId("test"), localEndpoint, List.of(localEndpoint, leader),
+                new RaftAlgorithmConfig(), raftIntegration, stateStore);
+        node.setStatus(ACTIVE);
+
+        // the leader of term 1 sends entries 1 to 3, which stay uncommitted; the node pre-applies the destroy group command at 3
+        LogEntry[] logEntries = {
+                new LogEntry(1, 1, null),
+                new LogEntry(1, 2, null),
+                new LogEntry(1, 3, new DestroyRaftGroupCmd())};
+        AppendRequest appendRequest = new AppendRequest(leader, 1, 0, 0, 0, logEntries, 0, 0);
+        new AppendRequestHandlerTask(node, appendRequest).run();
+        assertEquals(TERMINATING, node.getStatus());
+
+        // the leader of term 2 sends a snapshot at 1, which matches the local log, so the node fast-forwards
+        node.processSnapshotChunk(new InstallSnapshotRequest(leader, 2, newSnapshotChunk(1L, 1, 0, 1), 0, 0));
+        assertEquals(1L, node.state().commitIndex());
+
+        // the leader's next append matches entry 2 and has its own entry at 3, which conflicts with the local one
+        AppendRequest newAppendRequest = new AppendRequest(leader, 2, 1, 2, 1,
+                new LogEntry[]{new LogEntry(2, 3, null)}, 0, 0);
+        new AppendRequestHandlerTask(node, newAppendRequest).run();
+
+        // only the conflicting entry is deleted from the store, and the destroy group command is reverted
+        verify(stateStore).deleteEntriesFrom(3);
+        assertEquals(ACTIVE, node.getStatus());
     }
 
     @Test
