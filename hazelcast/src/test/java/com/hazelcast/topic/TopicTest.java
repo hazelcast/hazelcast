@@ -178,6 +178,41 @@ public class TopicTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testGlobalOrderedTopicPublishAsync() throws ExecutionException, InterruptedException {
+        final String randomName = "testGlobalOrderedTopicPublishAsync" + generateRandomString(5);
+        final List<String> received = new CopyOnWriteArrayList<>();
+
+        Config config = new Config();
+        config.getTopicConfig(randomName).setGlobalOrderingEnabled(true);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        ITopic<String> topic = instance.getTopic(randomName);
+        topic.addMessageListener(message -> received.add(message.getMessageObject()));
+
+        topic.publishAsync("TestMessage").toCompletableFuture().get();
+        assertTrueEventually(() -> assertEquals(List.of("TestMessage"), received));
+    }
+
+    @Test
+    public void testGlobalOrderedTopicPublishAllAsync() throws ExecutionException, InterruptedException {
+        final String randomName = "testGlobalOrderedTopicPublishAllAsync" + generateRandomString(5);
+        final List<String> messages = Arrays.asList("message 1", "message 2", "message 3");
+        final List<String> received = new CopyOnWriteArrayList<>();
+
+        Config config = new Config();
+        config.getTopicConfig(randomName).setGlobalOrderingEnabled(true);
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(1);
+        HazelcastInstance instance = factory.newHazelcastInstance(config);
+        ITopic<String> topic = instance.getTopic(randomName);
+        topic.addMessageListener(message -> received.add(message.getMessageObject()));
+
+        topic.publishAllAsync(messages).toCompletableFuture().get();
+        assertTrueEventually(() -> assertEquals(messages, received));
+    }
+
+    @Test
     public void testBlockingAsync() {
         AtomicInteger count = new AtomicInteger();
         final String randomName = "testTopicPublishingAllAsync" + generateRandomString(5);
