@@ -672,11 +672,15 @@
 
             <!-- All of this is needed to upgrade GCS -->
             <!-- see https://hazelcast.atlassian.net/browse/HZOLD-4706 -->
-            <!-- When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependency `com.google.errorprone:error_prone_annotations` should be upgraded -->
+            <!--
+                When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
+                - `com.google.errorprone:error_prone_annotations`
+                - `org.jspecify:jspecify`
+            -->
             <dependency>
                 <groupId>com.google.cloud</groupId>
                 <artifactId>libraries-bom</artifactId>
-                <version>26.93.0</version>
+                <version>26.94.0</version>
                 <type>pom</type>
                 <scope>import</scope>
                 <!-- we specify explicit versions of these packages elsewhere, avoid conflicts -->
@@ -790,6 +794,18 @@
                 <groupId>net.openhft</groupId>
                 <artifactId>affinity</artifactId>
                 <version>2026.2</version>
+            </dependency>
+            <!--
+                Addresses convergence between:
+                - `com.google.cloud.bigdataoss:gcs-connector`
+                - `com.google.cloud.bigdataoss:gcsio`
+                - `com.google.guava:guava`
+                - `org.apache.pulsar:pulsar-client-v5-shaded`
+            -->
+            <dependency>
+                <groupId>org.jspecify</groupId>
+                <artifactId>jspecify</artifactId>
+                <version>1.0.1</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
