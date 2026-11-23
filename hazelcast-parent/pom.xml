@@ -141,7 +141,7 @@
         <python.protobuf.version.3.14>7.35.1</python.protobuf.version.3.14>
 
         <scala.version>2.13</scala.version>
-        <mongodb.version>5.6.5</mongodb.version>
+        <mongodb.version>5.15.0</mongodb.version>
 
         <!-- test dependencies -->
         <artemis.version>2.57.0</artemis.version>
