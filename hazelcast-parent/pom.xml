@@ -153,9 +153,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <!--
-        License plugin is not thread-safe, leads to flaky failures when checking licenses, so it is skipped by default.
-        to run the build with license plugin run with `-T1 -Dlicense.skipAddThirdParty=false`.
-        The `-T1` parameter disables the parallel build.
+        License plugin leads to flaky failures when checking licenses, so it is skipped by default.
+        to run the build with license plugin run with `-Dlicense.skipAddThirdParty=false`.
         -->
         <license.skipAddThirdParty>true</license.skipAddThirdParty>
 
