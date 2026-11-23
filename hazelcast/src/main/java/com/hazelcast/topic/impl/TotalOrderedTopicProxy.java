@@ -79,7 +79,7 @@ public class TotalOrderedTopicProxy<E> extends TopicProxy<E> {
 
     private InternalCompletableFuture<Void> publishInternalAsync(Operation operation) {
         try {
-            return operationService.invokeOnPartition(OperationService.SERVICE_NAME, operation, partitionId);
+            return operationService.invokeOnPartition(getServiceName(), operation, partitionId);
         } catch (Throwable t) {
             throw rethrow(t);
         }
