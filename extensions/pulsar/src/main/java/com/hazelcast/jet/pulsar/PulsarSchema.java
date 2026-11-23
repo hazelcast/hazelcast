@@ -20,6 +20,13 @@ import org.apache.pulsar.client.api.Schema;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.Date;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
@@ -115,6 +122,70 @@ public class PulsarSchema<E> {
     @Nonnull
     public static PulsarSchema<ByteBuffer> byteBuffer() {
         return new PulsarSchema<>(() -> Schema.BYTEBUFFER);
+    }
+
+    /**
+     * Returns the equivalent of {@link Schema#BOOL}.
+     */
+    @Nonnull
+    public static PulsarSchema<Boolean> bool() {
+        return new PulsarSchema<>(() -> Schema.BOOL);
+    }
+
+    /**
+     * Returns the equivalent of {@link Schema#DATE}.
+     */
+    @Nonnull
+    public static PulsarSchema<Date> date() {
+        return new PulsarSchema<>(() -> Schema.DATE);
+    }
+
+    /**
+     * Returns the equivalent of {@link Schema#TIME}.
+     */
+    @Nonnull
+    public static PulsarSchema<Time> time() {
+        return new PulsarSchema<>(() -> Schema.TIME);
+    }
+
+    /**
+     * Returns the equivalent of {@link Schema#TIMESTAMP}.
+     */
+    @Nonnull
+    public static PulsarSchema<Timestamp> timestamp() {
+        return new PulsarSchema<>(() -> Schema.TIMESTAMP);
+    }
+
+    /**
+     * Returns the equivalent of {@link Schema#INSTANT}.
+     */
+    @Nonnull
+    public static PulsarSchema<Instant> instant() {
+        return new PulsarSchema<>(() -> Schema.INSTANT);
+    }
+
+    /**
+     * Returns the equivalent of {@link Schema#LOCAL_DATE}.
+     */
+    @Nonnull
+    public static PulsarSchema<LocalDate> localDate() {
+        return new PulsarSchema<>(() -> Schema.LOCAL_DATE);
+    }
+
+    /**
+     * Returns the equivalent of {@link Schema#LOCAL_TIME}.
+     */
+    @Nonnull
+    public static PulsarSchema<LocalTime> localTime() {
+        return new PulsarSchema<>(() -> Schema.LOCAL_TIME);
+    }
+
+    /**
+     * Returns the equivalent of {@link Schema#LOCAL_DATE_TIME}.
+     */
+    @Nonnull
+    public static PulsarSchema<LocalDateTime> localDateTime() {
+        return new PulsarSchema<>(() -> Schema.LOCAL_DATE_TIME);
     }
 
     /**
