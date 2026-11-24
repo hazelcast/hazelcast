@@ -94,34 +94,48 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
         }
 
         RaftLog raftLog = state.log();
+        long oldCommitIndex = state.commitIndex();
 
-        // Verify the last log entry
-        if (req.prevLogIndex() > 0) {
-            long lastLogIndex = raftLog.lastLogOrSnapshotIndex();
-            int lastLogTerm = raftLog.lastLogOrSnapshotTerm();
-
-            int prevLogTerm;
-            if (req.prevLogIndex() == lastLogIndex) {
-                prevLogTerm = lastLogTerm;
-            } else if (req.prevLogIndex() <= raftLog.snapshotIndex()) {
-                prevLogTerm = raftLog.snapshot().term();
-            } else {
-                // Reply false if log does not contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3)
-                LogEntry prevLog = raftLog.getLogEntry(req.prevLogIndex());
-                if (prevLog == null) {
-                    if (logger.isFineEnabled()) {
-                        logger.warning("Failed to get previous log index for " + req + ", last log index: " + lastLogIndex);
-                    }
-
-                    raftNode.send(createFailureResponse(req.term(), lastLogIndex + 1), req.leader());
-                    return;
-                }
-                prevLogTerm = prevLog.term();
+        // All entries of the request are committed, so they match the leader's log, and
+        // there is nothing to append. We respond with the commit index, so the leader
+        // moves our next index forward to the first entry after it.
+        if (req.prevLogIndex() + req.entryCount() <= oldCommitIndex) {
+            if (logger.isFineEnabled()) {
+                logger.fine("Entries of %s up to commit index %s are committed", req, oldCommitIndex);
             }
 
-            if (req.prevLogTerm() != prevLogTerm) {
+            raftNode.updateLastAppendEntriesTimestamp();
+            AppendSuccessResponse resp = new AppendSuccessResponse(localMember(), state.term(), oldCommitIndex,
+                    req.queryRound(), req.flowControlSequenceNumber());
+            raftNode.send(resp, req.leader());
+            return;
+        }
+
+        // The number of the request's entries that are already committed
+        int committedEntryCount = 0;
+
+        // The previous entry and the request's entries up to our commit index are committed,
+        // so they match the log of any leader of the current term or later. We can skip
+        // the previous entry check and those entries, and append the rest.
+        if (req.prevLogIndex() <= oldCommitIndex) {
+            committedEntryCount = (int) (oldCommitIndex - req.prevLogIndex());
+        } else {
+            // Reply false if log does not contain an entry at prevLogIndex whose term matches prevLogTerm (§5.3).
+            // The previous entry is after our commit index, so it is not in our snapshot.
+            LogEntry prevLog = raftLog.getLogEntry(req.prevLogIndex());
+            if (prevLog == null) {
+                long lastLogIndex = raftLog.lastLogOrSnapshotIndex();
                 if (logger.isFineEnabled()) {
-                    logger.warning("Previous log term of " + req + " is different than ours: " + prevLogTerm);
+                    logger.warning("Failed to get previous log index for " + req + ", last log index: " + lastLogIndex);
+                }
+
+                raftNode.send(createFailureResponse(req.term(), lastLogIndex + 1), req.leader());
+                return;
+            }
+
+            if (req.prevLogTerm() != prevLog.term()) {
+                if (logger.isFineEnabled()) {
+                    logger.warning("Previous log term of " + req + " is different than ours: " + prevLog.term());
                 }
 
                 raftNode.send(createFailureResponse(req.term(), SKIPPED_FOLLOWER_NEXT_INDEX), req.leader());
@@ -136,7 +150,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             // Delete any conflicting entries, skip any duplicates
             long lastLogIndex = raftLog.lastLogOrSnapshotIndex();
 
-            for (int i = 0; i < req.entryCount(); i++) {
+            for (int i = committedEntryCount; i < req.entryCount(); i++) {
                 LogEntry reqEntry = req.entries()[i];
 
                 if (reqEntry.index() > lastLogIndex) {
@@ -193,7 +207,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
         // some uncommitted entries from the previous leader and those entries will be truncated soon
         // I can only send a response based on how many entries I have appended from this append request
         long lastLogIndex = req.prevLogIndex() + req.entryCount() - truncatedAppendRequestEntryCount;
-        long oldCommitIndex = state.commitIndex();
+        assert lastLogIndex >= oldCommitIndex : "Last log index: " + lastLogIndex + " is below commit index: " + oldCommitIndex;
 
         // Update the commit index
         if (req.leaderCommitIndex() > oldCommitIndex) {

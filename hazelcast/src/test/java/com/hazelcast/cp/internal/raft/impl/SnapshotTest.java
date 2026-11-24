@@ -27,6 +27,7 @@ import com.hazelcast.cp.internal.raft.impl.dto.AppendRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.AppendSuccessResponse;
 import com.hazelcast.cp.internal.raft.impl.dto.InstallSnapshotRequest;
 import com.hazelcast.cp.internal.raft.impl.log.LogEntry;
+import com.hazelcast.cp.internal.raft.impl.log.SnapshotEntry;
 import com.hazelcast.cp.internal.raft.impl.testing.LocalRaftGroup;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
@@ -570,6 +571,165 @@ public class SnapshotTest extends HazelcastTestSupport {
         assertTrueEventually(() -> {
             assertEquals(getCommittedGroupMembers(leader).index(), getCommittedGroupMembers(slowFollower).index());
             assertEquals(ACTIVE, getStatus(slowFollower));
+        });
+    }
+
+    @Test
+    public void when_prevLogEntryIsTruncatedByFollowersSnapshot_then_followerCatchesUpWithoutLivelock()
+            throws ExecutionException, InterruptedException {
+        // Build a state where the prevLogIndex of the leader's append requests is compacted
+        // into the follower's snapshot, and the snapshot's term is newer than prevLogTerm,
+        // so the follower should not reject the appends.
+        int commitIndexAdvanceCount = 100;
+        long lastOldTermIndex = 95;
+        long followerSnapshotIndex = 105;
+        group = newGroup(3, new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCount));
+        group.start();
+
+        RaftNodeImpl oldLeader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(oldLeader.getLocalMember());
+        RaftNodeImpl newLeader = followers[0];
+        RaftNodeImpl follower = followers[1];
+
+        for (int i = 0; i < lastOldTermIndex; i++) {
+            oldLeader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        // Change the term, so the entries after 95 are in a newer term than entry 95
+        oldLeader.transferLeadership(newLeader.getLocalMember()).get();
+
+        assertTrueEventually(() -> {
+            assertEquals(newLeader.getLocalMember(), getLeaderMember(newLeader));
+            assertEquals(lastOldTermIndex, getMatchIndex(newLeader, follower.getLocalMember()));
+        });
+
+        group.dropMessagesToMember(follower.getLocalMember(), newLeader.getLocalMember(), AppendSuccessResponse.class);
+        group.dropMessagesToMember(newLeader.getLocalMember(), follower.getLocalMember(), AppendRequest.class);
+
+        for (long i = lastOldTermIndex; i < followerSnapshotIndex; i++) {
+            newLeader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        // The new leader has snapshotted at 100, while the follower still has 95 entries
+        assertEquals(commitIndexAdvanceCount, getSnapshotEntry(newLeader).index());
+
+        // Allow traffic, so the follower receives entries 96-105 with commit index 105 in one append
+        group.allowMessagesToMember(newLeader.getLocalMember(), follower.getLocalMember(), AppendRequest.class);
+        // Check that the follower snapshotted at 105, while its ack is lost
+        assertTrueEventually(() -> assertEquals(followerSnapshotIndex, getSnapshotEntry(follower).index()));
+
+        // Allow the follower's acks, so the leader learns its match index
+        group.allowMessagesToMember(follower.getLocalMember(), newLeader.getLocalMember(), AppendSuccessResponse.class);
+
+        // Trigger a new append to the follower, which contains entries 96-106
+        newLeader.replicate(new ApplyRaftRunnable("val" + followerSnapshotIndex)).get();
+
+        // the follower accepts the appends with prevLogIndex 95 and catches up with the new entry
+        assertTrueEventually(() -> {
+            assertEquals(followerSnapshotIndex + 1, getCommitIndex(follower));
+            assertEquals(followerSnapshotIndex + 1, getMatchIndex(newLeader, follower.getLocalMember()));
+        }, 30);
+    }
+
+    @Test
+    public void when_committedEntriesOfAppendRequestAreTruncatedByFollowersSnapshot_then_followerSkipsThem()
+            throws ExecutionException, InterruptedException {
+        // Build a state where the first entries of the leader's append requests are compacted
+        // by the follower's snapshot, so they are not in its log, and the follower should skip
+        // them and append the new one.
+        int commitIndexAdvanceCount = 100;
+        long followerMatchIndex = 92;
+        long followerSnapshotIndex = 105;
+        group = newGroup(3, new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCount));
+        group.start();
+
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl follower = group.getAnyFollowerNode();
+
+        for (int i = 0; i < followerMatchIndex; i++) {
+            leader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        assertTrueEventually(() -> assertEquals(followerMatchIndex, getMatchIndex(leader, follower.getLocalMember())));
+
+        group.dropMessagesToMember(follower.getLocalMember(), leader.getLocalMember(), AppendSuccessResponse.class);
+        group.dropMessagesToMember(leader.getLocalMember(), follower.getLocalMember(), AppendRequest.class);
+
+        for (long i = followerMatchIndex; i < followerSnapshotIndex; i++) {
+            leader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        // The leader has snapshotted at 100, while the follower still has 92 entries
+        assertEquals(commitIndexAdvanceCount, getSnapshotEntry(leader).index());
+
+        // Allow traffic, so the follower receives entries 93-105 with commit index 105 in one append
+        group.allowMessagesToMember(leader.getLocalMember(), follower.getLocalMember(), AppendRequest.class);
+        // Check that the follower snapshotted at 105
+        assertTrueEventually(() -> assertEquals(followerSnapshotIndex, getSnapshotEntry(follower).index()));
+
+        // Trigger a new append to the follower, which contains entries 93-106
+        leader.replicate(new ApplyRaftRunnable("val" + followerSnapshotIndex)).get();
+
+        // the follower appends entry 106
+        assertTrueEventually(() -> assertEquals(followerSnapshotIndex + 1, getCommitIndex(follower)));
+    }
+
+    @Test
+    public void when_leaderWithSnapshotAndUncommittedEntryRejoinsAsFollower_then_itSyncsItsLog()
+            throws ExecutionException, InterruptedException {
+        // Build a state where the prevLogIndex of the new leader's append requests is
+        // compacted into the old leader's snapshot, and the old leader has an uncommitted
+        // conflicting entry after it, so the old leader should replace it.
+        int commitIndexAdvanceCount = 50;
+        group = newGroup(3, new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(commitIndexAdvanceCount));
+        group.start();
+
+        RaftNodeImpl oldLeader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(oldLeader.getLocalMember());
+        RaftNodeImpl upToDateFollower = followers[0];
+        RaftNodeImpl laggingFollower = followers[1];
+
+        oldLeader.replicate(new ApplyRaftRunnable("val0")).get();
+
+        assertTrueEventually(() -> assertEquals(1, getMatchIndex(oldLeader, laggingFollower.getLocalMember())));
+
+        // By keeping the lagging follower far behind the old leader, the old leader's snapshot does not
+        // keep the last 10% of entries, so after the snapshot the old leader's log is empty
+        group.dropMessagesToMember(oldLeader.getLocalMember(), laggingFollower.getLocalMember(), AppendRequest.class);
+
+        for (int i = 1; i < commitIndexAdvanceCount; i++) {
+            oldLeader.replicate(new ApplyRaftRunnable("val" + i)).get();
+        }
+
+        // The old leader has snapshotted at 50 and truncated all entries up to it
+        assertEquals(commitIndexAdvanceCount, getSnapshotEntry(oldLeader).index());
+        // Verify that the old leader has no entries in its log after the snapshot
+        assertThat(getLastLogOrSnapshotEntry(oldLeader)).isInstanceOf(SnapshotEntry.class);
+
+        // Isolate the old leader, so its entry 51 is never committed
+        group.split(oldLeader.getLocalMember());
+        oldLeader.replicate(new ApplyRaftRunnable("valNonCommitted"));
+
+        // Check that the other nodes elected a new leader
+        assertTrueEventually(() -> {
+            RaftEndpoint leaderEndpoint = getLeaderMember(upToDateFollower);
+            assertNotNull(leaderEndpoint);
+            assertNotEquals(oldLeader.getLocalMember(), leaderEndpoint);
+        });
+
+        RaftNodeImpl newLeader = group.getNode(getLeaderMember(upToDateFollower));
+
+        // Commit a different entry 51 in the new term
+        newLeader.replicate(new ApplyRaftRunnable("valNewCommitted")).get();
+
+        // Allow traffic, so the old leader receives appends with prevLogIndex 50
+        group.merge();
+
+        // the old leader replaces its entry 51 with the new leader's and commits it
+        assertTrueEventually(() -> {
+            assertEquals(getCommitIndex(newLeader), getCommitIndex(oldLeader));
+            RaftDataService service = group.getService(oldLeader);
+            assertThat(service.values()).contains("valNewCommitted").doesNotContain("valNonCommitted");
         });
     }
 
