@@ -50,7 +50,9 @@ public class PreVoteResponseHandlerTask extends AbstractResponseHandlerTask {
             return;
         }
 
-        if (resp.term() < state.term()) {
+        // A granted pre-vote response always carries the requested next term (state.term() + 1).
+        // A response for any other term belongs to another pre-vote round and should not be counted.
+        if (resp.term() != state.term() + 1) {
             logger.warning("Stale " + resp + " is received, current term: " + state.term());
             return;
         }
