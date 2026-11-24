@@ -43,11 +43,9 @@
         <maven.javadoc.skip>true</maven.javadoc.skip>
     	<!--
 			When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
-			- `io.opentelemetry:opentelemetry-api`
-			- `io.opentelemetry:opentelemetry-context`
 			- `org.jspecify:jspecify`
 		-->
-        <bigdataoss.version>4.0.10</bigdataoss.version>
+        <bigdataoss.version>4.0.11</bigdataoss.version>
     </properties>
 
     <build>

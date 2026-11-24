@@ -130,7 +130,6 @@
         <dependencies>
         	<!--
 				When upgrading, consider if manually specified (to address dependency convergence) version of transitive dependencies should be upgraded:
-				- `io.opentelemetry:opentelemetry-context`
 				- `org.bouncycastle:bcprov-jdk18on`
 				- `org.jspecify:org.jspecify`
 			-->
