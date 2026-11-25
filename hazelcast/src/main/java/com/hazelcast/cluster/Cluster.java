@@ -138,6 +138,15 @@ public interface Cluster {
     long getClusterTime();
 
     /**
+     * Returns the unique identifier of the cluster.
+     *
+     * @return the cluster identity as a UUID, or null if not yet connected to any cluster
+     * @since 6.0
+     */
+    @Nullable
+    UUID getClusterId();
+
+    /**
      * Returns the state of the cluster.
      * <p>
      * If cluster state change is in process, {@link ClusterState#IN_TRANSITION} will be returned.
