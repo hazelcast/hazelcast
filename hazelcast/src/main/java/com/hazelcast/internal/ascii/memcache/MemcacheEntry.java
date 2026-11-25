@@ -124,11 +124,7 @@ public class MemcacheEntry implements IdentifiedDataSerializable {
         if (!Arrays.equals(bytes, that.bytes)) {
             return false;
         }
-        if (!Arrays.equals(value, that.value)) {
-            return false;
-        }
-
-        return true;
+        return Arrays.equals(value, that.value);
     }
 
     @Override

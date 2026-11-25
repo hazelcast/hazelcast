@@ -123,10 +123,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
             }
 
             Id id1 = (Id) o;
-            if (id != null ? !id.equals(id1.id) : id1.id != null) {
-                return false;
-            }
-            return true;
+            return id != null ? id.equals(id1.id) : id1.id == null;
         }
 
         @Override
@@ -153,10 +150,7 @@ public class PredicateBuilderTest extends HazelcastTestSupport {
             }
 
             Value value = (Value) o;
-            if (name != null ? !name.equals(value.name) : value.name != null) {
-                return false;
-            }
-            return true;
+            return name != null ? name.equals(value.name) : value.name == null;
         }
 
         @Override

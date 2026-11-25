@@ -52,11 +52,7 @@ public class DistributedObjectInfo {
         if (name != null ? !name.equals(that.name) : that.name != null) {
             return false;
         }
-        if (serviceName != null ? !serviceName.equals(that.serviceName) : that.serviceName != null) {
-            return false;
-        }
-
-        return true;
+        return serviceName != null ? serviceName.equals(that.serviceName) : that.serviceName == null;
     }
 
     @Override

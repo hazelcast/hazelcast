@@ -100,11 +100,7 @@ class RawDataPortable implements Portable {
         if (s != null ? !s.equals(that.s) : that.s != null) {
             return false;
         }
-        if (sds != null ? !sds.equals(that.sds) : that.sds != null) {
-            return false;
-        }
-
-        return true;
+        return sds != null ? sds.equals(that.sds) : that.sds == null;
     }
 
     @Override

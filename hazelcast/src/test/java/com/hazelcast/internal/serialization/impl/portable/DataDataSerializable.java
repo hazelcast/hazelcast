@@ -56,10 +56,7 @@ class DataDataSerializable implements DataSerializable {
         }
 
         DataDataSerializable that = (DataDataSerializable) o;
-        if (data != null ? !data.equals(that.data) : that.data != null) {
-            return false;
-        }
-        return true;
+        return data != null ? data.equals(that.data) : that.data == null;
     }
 
     @Override

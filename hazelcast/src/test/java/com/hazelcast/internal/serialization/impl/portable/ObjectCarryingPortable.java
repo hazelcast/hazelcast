@@ -69,11 +69,7 @@ public class ObjectCarryingPortable implements Portable {
 
         ObjectCarryingPortable that = (ObjectCarryingPortable) o;
 
-        if (object != null ? !object.equals(that.object) : that.object != null) {
-            return false;
-        }
-
-        return true;
+        return object != null ? object.equals(that.object) : that.object == null;
     }
 
     @Override

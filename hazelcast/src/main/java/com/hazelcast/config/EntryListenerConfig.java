@@ -116,11 +116,7 @@ public class EntryListenerConfig extends ListenerConfig {
         if (includeValue != that.includeValue) {
             return false;
         }
-        if (local != that.local) {
-            return false;
-        }
-
-        return true;
+        return local == that.local;
     }
 
     @Override

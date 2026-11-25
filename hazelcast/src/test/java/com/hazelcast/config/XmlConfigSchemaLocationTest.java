@@ -151,10 +151,7 @@ public class XmlConfigSchemaLocationTest extends HazelcastTestSupport {
         if (WHITELIST.contains(nameSpaceUrl)) {
             return true;
         }
-        if (validUrlsCache.contains(nameSpaceUrl)) {
-            return true;
-        }
-        return false;
+        return validUrlsCache.contains(nameSpaceUrl);
     }
 
     private int getResponseCode(String url) throws Exception {
