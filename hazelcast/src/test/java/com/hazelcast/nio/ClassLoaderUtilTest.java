@@ -16,29 +16,53 @@
 
 package com.hazelcast.nio;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import org.junit.Assert;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.io.InputStream;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.mock;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClassLoaderUtilTest extends HazelcastTestSupport {
+
+    @Test
+    public void testCheckStackForClassNotFound() {
+
+        assertThat(ClassLoaderUtil.checkStackForClassNotFound(null)).isEqualTo("");
+
+        String missingClass = "the.class.everyone.told.you.would.definitely.be.present.on.the.ClassPath";
+
+        assertThat(ClassLoaderUtil.checkStackForClassNotFound(
+                new ClassNotFoundException(missingClass))).isEqualTo(missingClass);
+
+        assertThat(ClassLoaderUtil.checkStackForClassNotFound(
+                new Throwable("",
+                        new Exception(
+                                new ReflectiveOperationException(
+                                        new ClassNotFoundException(missingClass)))))).isEqualTo(missingClass);
+
+    }
+
+    @Test
+    public void testRetrieveClassLoaderID() {
+
+        assertThat(ClassLoaderUtil.retrieveClassLoaderID(null)).isEqualTo("bootstrap");
+
+        assertThat(ClassLoaderUtil.retrieveClassLoaderID(mock(ClassLoader.class))).matches("([\\w.$]+)(@\\w+)");
+
+    }
 
     @Test
     public void testConstructor() {
