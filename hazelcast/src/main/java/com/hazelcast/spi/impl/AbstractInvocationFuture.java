@@ -685,6 +685,10 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
     }
 
     private void manageParking(long timeoutNanos) {
+        // onInterruptDetected() may park, for example to log, and consume a completion's unpark permit
+        if (isDone()) {
+            return;
+        }
         try {
             // if the caller thread is a ForkJoinWorkerThread
             if (ForkJoinTask.inForkJoinPool()) {
