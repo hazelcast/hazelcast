@@ -17,6 +17,8 @@
 package com.hazelcast.jet.pulsar;
 
 import com.github.dockerjava.api.command.InspectContainerResponse;
+import com.google.common.net.HostAndPort;
+import com.google.common.net.InetAddresses;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DataConnectionConfig;
 import com.hazelcast.jet.Job;
@@ -32,6 +34,7 @@ import org.apache.pulsar.client.api.PulsarClientException;
 import org.apache.pulsar.client.api.Schema;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.Timeout;
+import org.junit.jupiter.api.io.TempDir;
 import org.junit.jupiter.params.AfterParameterizedClassInvocation;
 import org.junit.jupiter.params.BeforeParameterizedClassInvocation;
 import org.junit.jupiter.params.Parameter;
@@ -42,9 +45,10 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.testcontainers.containers.PulsarContainer;
 import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
-import org.testcontainers.utility.MountableFile;
 
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.cert.CertPathBuilderException;
 import java.util.ArrayList;
@@ -71,26 +75,33 @@ class PulsarTlsE2ETest extends JetTestSupport {
     private static final String DATA_CONNECTION = "pulsar-tls";
     private static final int BROKER_TLS_PORT = 6651;
     private static final int HTTPS_PORT = 8443;
+    private static final String CONTAINER_CERTIFICATE = "/tmp/pulsar-broker-cert.pem";
     private static PulsarContainer container;
+    private static Path brokerCertificate;
+
+    @TempDir
+    static Path tlsDirectory;
 
     @Parameter
     static DockerImageName imageName;
 
     @BeforeParameterizedClassInvocation
-    static void startContainer(DockerImageName image) {
-        container = new TlsPulsarContainer(image)
+    static void startContainer(DockerImageName image) throws Exception {
+        container = new TlsPulsarContainer(image);
+        String host = HostAndPort.fromHost(container.getHost()).getHost();
+        container
                 .withExposedPorts(BROKER_PORT, BROKER_HTTP_PORT, BROKER_TLS_PORT, HTTPS_PORT)
-                .withCopyFileToContainer(MountableFile.forClasspathResource("tls/broker-cert.pem"), "/pulsar/tls/cert.pem")
-                .withCopyFileToContainer(MountableFile.forClasspathResource("tls/broker-key.pem",
-                        Transferable.DEFAULT_FILE_MODE), "/pulsar/tls/key.pem")
+                .withEnv("PULSAR_TLS_TEST_SAN", brokerSubjectAlternativeNames(host))
                 .withEnv("PULSAR_PREFIX_brokerServicePortTls", Integer.toString(BROKER_TLS_PORT))
                 .withEnv("PULSAR_PREFIX_webServicePortTls", Integer.toString(HTTPS_PORT))
-                .withEnv("PULSAR_PREFIX_tlsCertificateFilePath", "/pulsar/tls/cert.pem")
-                .withEnv("PULSAR_PREFIX_tlsKeyFilePath", "/pulsar/tls/key.pem")
-                .withEnv("PULSAR_PREFIX_tlsTrustCertsFilePath", "/pulsar/tls/cert.pem")
+                .withEnv("PULSAR_PREFIX_tlsCertificateFilePath", CONTAINER_CERTIFICATE)
+                .withEnv("PULSAR_PREFIX_tlsKeyFilePath", "/tmp/pulsar-broker-key.pem")
+                .withEnv("PULSAR_PREFIX_tlsTrustCertsFilePath", CONTAINER_CERTIFICATE)
                 .withEnv("PULSAR_PREFIX_internalListenerName", "internal")
                 .withEnv("PULSAR_LOG_LEVEL", "ERROR");
         container.start();
+        brokerCertificate = Files.createTempFile(tlsDirectory, "broker-", ".pem");
+        container.copyFileFromContainer(CONTAINER_CERTIFICATE, brokerCertificate.toString());
     }
 
     @AfterParameterizedClassInvocation
@@ -103,7 +114,7 @@ class PulsarTlsE2ETest extends JetTestSupport {
     @ParameterizedTest
     @ValueSource(booleans = {false, true})
     void sourceAndSinkTransferMessagesOverTls(boolean useConsumer) throws Exception {
-        DataConnectionConfig connectionConfig = connectionConfig("tls/broker-cert.pem");
+        DataConnectionConfig connectionConfig = connectionConfig(brokerCertificate);
         Config config = smallInstanceConfig().addDataConnectionConfig(connectionConfig);
         var member = createHazelcastInstances(config, 2)[0];
         String inputTopic = "persistent://public/default/" + randomName();
@@ -164,7 +175,7 @@ class PulsarTlsE2ETest extends JetTestSupport {
 
     @Test
     void clientRejectsUntrustedBrokerCertificate() throws Exception {
-        DataConnectionConfig config = connectionConfig("tls/untrusted-cert.pem")
+        DataConnectionConfig config = connectionConfig(untrustedCertificate())
                 .setProperty("pulsar.client.lookupTimeoutMs", "3000")
                 .setProperty("pulsar.client.operationTimeoutMs", "3000");
         PulsarDataConnection connection = new PulsarDataConnection(config);
@@ -182,7 +193,7 @@ class PulsarTlsE2ETest extends JetTestSupport {
 
     @Test
     void adminRejectsUntrustedBrokerCertificate() throws Exception {
-        PulsarDataConnection connection = new PulsarDataConnection(connectionConfig("tls/untrusted-cert.pem"));
+        PulsarDataConnection connection = new PulsarDataConnection(connectionConfig(untrustedCertificate()));
         try (var admin = connection.getAdmin()) {
             assertThatThrownBy(() -> admin.tenants().getTenants())
                     .isInstanceOf(PulsarAdminException.class)
@@ -192,12 +203,27 @@ class PulsarTlsE2ETest extends JetTestSupport {
         }
     }
 
-    private static DataConnectionConfig connectionConfig(String trustCertificate) throws Exception {
-        String certificatePath = Path.of(PulsarTlsE2ETest.class.getClassLoader()
-                .getResource(trustCertificate).toURI()).toString();
+    private static String brokerSubjectAlternativeNames(String host) {
+        if (!InetAddresses.isInetAddress(host)) {
+            return "DNS:" + host;
+        }
+
+        // With only IP:127.0.0.1 in the SAN, the binary client's handshake failed with
+        // "No name matching localhost found". Resolve in the test JVM to include the name Pulsar verifies.
+        String reverseName = InetAddresses.forString(host).getHostName();
+        return InetAddresses.isInetAddress(reverseName) ? "IP:" + host : "IP:" + host + ",DNS:" + reverseName;
+    }
+
+    private static Path untrustedCertificate() throws URISyntaxException {
+        return Path.of(PulsarTlsE2ETest.class.getClassLoader().getResource("tls/untrusted-cert.pem").toURI());
+    }
+
+    private static DataConnectionConfig connectionConfig(Path trustCertificate) {
+        String certificatePath = trustCertificate.toString();
+        String host = container.getHost();
         return pulsarDataConnectionConf(DATA_CONNECTION,
-                "pulsar+ssl://" + container.getHost() + ":" + container.getMappedPort(BROKER_TLS_PORT),
-                "https://" + container.getHost() + ":" + container.getMappedPort(HTTPS_PORT))
+                "pulsar+ssl://" + HostAndPort.fromParts(host, container.getMappedPort(BROKER_TLS_PORT)),
+                "https://" + HostAndPort.fromParts(host, container.getMappedPort(HTTPS_PORT)))
                 .setProperty("pulsar.admin.tlsTrustCertsFilePath", certificatePath)
                 .setProperty("pulsar.admin.tlsAllowInsecureConnection", "false")
                 .setProperty("pulsar.admin.tlsHostnameVerificationEnable", "true")
@@ -224,8 +250,12 @@ class PulsarTlsE2ETest extends JetTestSupport {
         @Override
         protected void containerIsStarting(InspectContainerResponse containerInfo) {
             String script = "#!/bin/bash\n"
+                    + "set -e\n"
+                    + "openssl req -x509 -newkey rsa:2048 -nodes -sha256 -days 1"
+                    + " -subj '/CN=Pulsar TLS test broker' -addext \"subjectAltName=$PULSAR_TLS_TEST_SAN\""
+                    + " -out \"$PULSAR_PREFIX_tlsCertificateFilePath\" -keyout \"$PULSAR_PREFIX_tlsKeyFilePath\"\n"
                     + "export PULSAR_PREFIX_advertisedListeners='internal:pulsar://localhost:6650,"
-                    + "external:pulsar+ssl://" + getHost() + ":" + getMappedPort(BROKER_TLS_PORT) + "'\n"
+                    + "external:pulsar+ssl://" + HostAndPort.fromParts(getHost(), getMappedPort(BROKER_TLS_PORT)) + "'\n"
                     + "/pulsar/bin/apply-config-from-env.py /pulsar/conf/standalone.conf\n"
                     + "exec /pulsar/bin/pulsar standalone --no-functions-worker -nss\n";
             copyFileToContainer(Transferable.of(script.getBytes(StandardCharsets.UTF_8)), "/tmp/start-pulsar.sh");
