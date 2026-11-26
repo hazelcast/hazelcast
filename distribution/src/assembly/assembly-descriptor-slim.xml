@@ -20,6 +20,12 @@
     <id>slim</id>
     <baseDirectory>hazelcast-${project.version}-slim</baseDirectory>
 
+    <containerDescriptorHandlers>
+        <containerDescriptorHandler>
+            <handlerName>sbom</handlerName>
+        </containerDescriptorHandler>
+    </containerDescriptorHandlers>
+
     <dependencySets>
         <dependencySet>
             <includes>

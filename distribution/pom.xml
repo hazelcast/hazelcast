@@ -33,11 +33,7 @@
         <configs.from.jar>${project.build.directory}/config</configs.from.jar>
         <main.basedir>${project.parent.basedir}</main.basedir>
         <prometheus.version>0.20.0</prometheus.version>
-		<!--
-			cyclonedx-maven-plugin generates SBOM based on project dependencies, but these are not accurate for distribution
-			the actual contents is configured via assembly configuration and differs between regular/slim packages
-			as such, do not execute
-		-->
+		<!-- For distribution archives, generate via dev.cyberstamp.maven.assembly.sbom:assembly-sbom-handler instead -->
         <cyclonedx.skip>true</cyclonedx.skip>
     </properties>
 
@@ -95,6 +91,13 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-assembly-plugin</artifactId>
+                <dependencies>
+                    <dependency>
+                        <groupId>dev.cyberstamp.maven.assembly.sbom</groupId>
+                        <artifactId>assembly-sbom-handler</artifactId>
+                        <version>${assembly-sbom-handler.version}</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <formats>
                         <format>zip</format>

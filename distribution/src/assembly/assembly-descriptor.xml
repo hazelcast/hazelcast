@@ -19,6 +19,12 @@
 
     <id>hazelcast</id>
 
+    <containerDescriptorHandlers>
+        <containerDescriptorHandler>
+            <handlerName>sbom</handlerName>
+        </containerDescriptorHandler>
+    </containerDescriptorHandlers>
+
     <dependencySets>
         <dependencySet>
             <includes>

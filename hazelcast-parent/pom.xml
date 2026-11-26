@@ -82,6 +82,8 @@
         <!--used also as a dependency version in hazelcast-build-utils module-->
         <maven.shade.plugin.version>3.6.2</maven.shade.plugin.version>
 
+        <assembly-sbom-handler.version>0.1.11</assembly-sbom-handler.version>
+
         <os.maven.plugin.version>1.7.1</os.maven.plugin.version>
         <!-- Externalised so that checkstyle maintainers can test newer versions against Hazelcast -->
         <checkstyle.version>12.3.1</checkstyle.version>
