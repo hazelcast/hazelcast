@@ -218,6 +218,11 @@
     </properties>
 
     <distributionManagement>
+        <repository>
+            <!-- Repo URL is supplied during release build -->
+            <id>private-repository</id>
+            <url>${mvn.repo.url.os}</url>
+        </repository>
         <snapshotRepository>
             <id>private-repository</id>
             <url>https://repository.hazelcast.com/snapshot</url>
