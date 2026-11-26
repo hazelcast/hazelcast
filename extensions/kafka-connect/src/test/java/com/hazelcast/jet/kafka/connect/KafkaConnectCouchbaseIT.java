@@ -16,13 +16,11 @@
 
 package com.hazelcast.jet.kafka.connect;
 
+import com.couchbase.client.core.env.SeedNode;
 import com.couchbase.client.java.Bucket;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.Collection;
 import com.couchbase.client.java.json.JsonObject;
-import com.couchbase.client.java.manager.collection.CollectionManager;
-import com.couchbase.client.java.manager.collection.CollectionSpec;
-import com.couchbase.client.java.manager.collection.ScopeSpec;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
@@ -36,7 +34,6 @@ import com.hazelcast.test.SerialTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.util.SetSystemProperty;
@@ -53,7 +50,9 @@ import java.time.Duration;
 import java.util.Base64;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
+import static com.couchbase.client.java.ClusterOptions.clusterOptions;
 import static com.hazelcast.jet.core.JobAssertions.assertThat;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -95,21 +94,6 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
     }
 
 
-    @AfterEach
-    public void clearDb() {
-        try (Cluster cluster = connectToCluster()) {
-            Bucket bucket = cluster.bucket(BUCKET_NAME);
-            bucket.waitUntilReady(Duration.ofSeconds(10));
-
-            CollectionManager collections = bucket.collections();
-            for (ScopeSpec scopeSpec : collections.getAllScopes()) {
-                for (CollectionSpec collectionSpec : scopeSpec.collections()) {
-                    collections.dropCollection(scopeSpec.name(), collectionSpec.name());
-                }
-            }
-        }
-    }
-
     @Test
     public void testReading_1_1() throws Exception {
         testReading(1, 1);
@@ -135,18 +119,29 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
 
 
     public void testReading(int tasksMax, int localParallelism) throws Exception {
+        try (Cluster cluster = connectToCluster()) {
+            Bucket bucket = cluster.bucket(BUCKET_NAME);
+            bucket.waitUntilReady(Duration.ofSeconds(10));
+            String scopeName = randomName();
+            bucket.collections().createScope(scopeName);
+            testReading(tasksMax, localParallelism, bucket, scopeName);
+        }
+    }
+
+    private void testReading(int tasksMax, int localParallelism, Bucket bucket, String scopeName) throws Exception {
         Properties connectorProperties = new Properties();
         connectorProperties.put("tasks.max", String.valueOf(tasksMax));
         connectorProperties.setProperty("name", "couchbase");
         connectorProperties.setProperty("connector.class", "com.couchbase.connect.kafka.CouchbaseSourceConnector");
         connectorProperties.setProperty("couchbase.bucket", BUCKET_NAME);
+        connectorProperties.setProperty("couchbase.scope", scopeName);
         connectorProperties.setProperty("couchbase.seed.nodes", container.getConnectionString());
         connectorProperties.setProperty("couchbase.password", container.getPassword());
         connectorProperties.setProperty("couchbase.username", container.getUsername());
         connectorProperties.setProperty("couchbase.source.handler",
                 "com.couchbase.connect.kafka.handler.source.RawJsonWithMetadataSourceHandler");
 
-        insertDocuments("items-1");
+        insertDocuments(bucket, scopeName, "items-1");
 
         Pipeline pipeline = Pipeline.create();
         StreamStage<Map<String, Object>> streamStage = pipeline
@@ -174,7 +169,7 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
         Job job = hazelcastInstance.getJet().newJob(pipeline, jobConfig);
         assertThat(job).eventuallyHasStatus(RUNNING);
 
-        insertDocuments("items-2");
+        insertDocuments(bucket, scopeName, "items-2");
 
         //ITEM_COUNT is multiplied by 2 as there is insertDocuments before and after the pipeline
         assertTrueEventually(() -> assertThat(hazelcastInstance.getList("results"))
@@ -185,25 +180,22 @@ public class KafkaConnectCouchbaseIT extends JetTestSupport {
         assertThat(hazelcastInstance.getList("results")).hasSize(ITEM_COUNT * 2);
     }
 
-    private static void insertDocuments(String collectionName) {
-        try (Cluster cluster = connectToCluster()) {
-            Bucket bucket = cluster.bucket(BUCKET_NAME);
-            bucket.waitUntilReady(Duration.ofSeconds(10));
-
-            LOGGER.info("Creating collection " + collectionName);
-            CollectionManager collectionMgr = bucket.collections();
-            CollectionSpec spec = CollectionSpec.create(collectionName);
-            collectionMgr.createCollection(spec.scopeName(), collectionName);
-            Collection collection = bucket.collection(collectionName);
-            for (int i = 0; i < ITEM_COUNT; i++) {
-                String id = collectionName + "-id-" + i;
-                collection.insert(id, JsonObject.create().put("value", collectionName + "-value-" + i));
-            }
+    private static void insertDocuments(Bucket bucket, String scopeName, String collectionName) {
+        LOGGER.info("Creating collection {}.{}", scopeName, collectionName);
+        bucket.collections().createCollection(scopeName, collectionName);
+        Collection collection = bucket.scope(scopeName).collection(collectionName);
+        for (int i = 0; i < ITEM_COUNT; i++) {
+            String id = collectionName + "-id-" + i;
+            collection.insert(id, JsonObject.create().put("value", collectionName + "-value-" + i));
         }
     }
 
     private static Cluster connectToCluster() {
-        return Cluster.connect(container.getConnectionString(), container.getUsername(), container.getPassword());
+        // The SDK falls back to HTTP for bucket config if KV bootstrap fails.
+        SeedNode seed = SeedNode.create(container.getHost())
+                .withKvPort(container.getBootstrapCarrierDirectPort())
+                .withManagerPort(container.getBootstrapHttpDirectPort());
+        return Cluster.connect(Set.of(seed), clusterOptions(container.getUsername(), container.getPassword()));
     }
 
     private URL getCouchbaseConnectorURL() throws URISyntaxException {
