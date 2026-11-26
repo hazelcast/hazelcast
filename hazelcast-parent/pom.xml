@@ -1377,7 +1377,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
-                <version>1.9.0</version>
+                <version>1.10.0</version>
                 <configuration>
                     <flattenMode>ossrh</flattenMode>
                 </configuration>
