@@ -29,7 +29,6 @@ import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.cp.internal.raft.impl.task.RaftNodeStatusAwareTask;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -161,7 +160,7 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
                     }
 
                     raftNode.invalidateFuturesFrom(reqEntry.index());
-                    revertPreAppliedRaftGroupCmd(truncatedEntries);
+                    raftNode.revertPreAppliedRaftGroupCmd(truncatedEntries);
                     newEntries = Arrays.copyOfRange(req.entries(), i, req.entryCount());
                     raftLog.flush();
                     break;
@@ -240,27 +239,6 @@ public class AppendRequestHandlerTask extends RaftNodeStatusAwareTask implements
             }
 
             return;
-        }
-    }
-
-    private void revertPreAppliedRaftGroupCmd(List<LogEntry> entries) {
-        // I am reverting appended-but-uncommitted entries and there can be at most 1 uncommitted Raft command...
-        List<LogEntry> commandEntries = new ArrayList<>();
-        for (LogEntry entry : entries) {
-            if (entry.operation() instanceof RaftGroupCmd) {
-                commandEntries.add(entry);
-            }
-        }
-
-        assert commandEntries.size() <= 1 : "Reverted command entries: " + commandEntries;
-
-        for (LogEntry entry : entries) {
-            if (entry.operation() instanceof DestroyRaftGroupCmd) {
-                raftNode.setStatus(RaftNodeStatus.ACTIVE);
-            } else if (entry.operation() instanceof UpdateRaftGroupMembersCmd) {
-                raftNode.setStatus(RaftNodeStatus.ACTIVE);
-                raftNode.resetGroupMembers();
-            }
         }
     }
 

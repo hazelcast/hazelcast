@@ -100,7 +100,7 @@ public class ChunkedSnapshotInstaller {
         }
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:methodlength"})
     private ChunkProcessingDecision validateAndStoreChunk(InstallSnapshotRequest request) {
         cleanupStaleTransferIfNeeded();
 
@@ -116,6 +116,11 @@ public class ChunkedSnapshotInstaller {
             notifySuccess(request);
             logger.fine("Skipping chunk - index %d matches our current commit index %d (already applied)",
                     chunk.index(), raftNode.state().commitIndex());
+            return ChunkProcessingDecision.ABORT;
+        }
+
+        if (raftNode.isSnapshotMatchingLog(chunk)) {
+            fastForwardCommitIndex(request);
             return ChunkProcessingDecision.ABORT;
         }
 
@@ -202,6 +207,27 @@ public class ChunkedSnapshotInstaller {
 
     private boolean isDuplicateCommitIndex(SnapshotChunk chunk) {
         return chunk.index() == raftNode.state().commitIndex();
+    }
+
+    /**
+     * Commits up to the snapshot's index and applies the entries from the local log, instead of transferring
+     * and installing the snapshot. The entries after the snapshot's index are kept, together with any group
+     * command pre-applied from them. Only the snapshot's index is acknowledged, since the snapshot matches
+     * only the entry at that index. The leader therefore does not count the entries after it as replicated
+     * until its next append request checks them, and that request truncates any that conflict with the
+     * leader's log.
+     */
+    private void fastForwardCommitIndex(InstallSnapshotRequest request) {
+        long snapshotIndex = request.snapshotChunk().index();
+        logger.info(format("Fast-forwarding commit index from %d to snapshot index %d since the snapshot [term=%d] "
+                        + "from leader %s matches the local log",
+                raftNode.state().commitIndex(), snapshotIndex, request.snapshotChunk().term(), request.leader()));
+
+        // run first, so the committed index is unchanged if the cleanup fails
+        cleanupStaleTransferIfNeeded(snapshotIndex);
+        raftNode.state().commitIndex(snapshotIndex);
+        raftNode.applyLogEntries();
+        notifySuccess(request);
     }
 
     private boolean isFromOlderSnapshot(SnapshotChunk chunk) {
@@ -321,15 +347,23 @@ public class ChunkedSnapshotInstaller {
      * <p>An empty transfer or one ahead of the commit index is left unchanged.
      */
     void cleanupStaleTransferIfNeeded() {
+        cleanupStaleTransferIfNeeded(raftNode.state().commitIndex());
+    }
+
+    /**
+     * Cleans up an incomplete snapshot transfer whose snapshot index is less than or equal to the given commit index.
+     * The given index can be ahead of the local commit index, so the cleanup can run before the local commit index
+     * is advanced to it.
+     */
+    private void cleanupStaleTransferIfNeeded(long commitIndex) {
         long transferSnapshotIndex = transferState.snapshotIndex();
-        long commitIndex = raftNode.state().commitIndex();
 
         if (transferSnapshotIndex >= 0 && transferSnapshotIndex <= commitIndex) {
             deleteStaleChunkFile();
             reset();
 
             logger.fine("Cleaned up stale snapshot transfer [index=%d] "
-                            + "because commit index is %d",
+                            + "because commit index reaches %d",
                     transferSnapshotIndex, commitIndex);
         }
     }
