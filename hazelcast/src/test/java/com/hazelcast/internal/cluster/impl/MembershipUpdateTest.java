@@ -130,6 +130,22 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void masterAddress_isKept_whenJoinerResetsItAfterJoin() {
+        HazelcastInstance master = factory.newHazelcastInstance();
+        HazelcastInstance member1 = factory.newHazelcastInstance();
+        HazelcastInstance member2 = factory.newHazelcastInstance();
+        assertClusterSizeEventually(3, master, member1, member2);
+
+        // a joiner's retry loop can reset the master address after FinalizeJoinOp has already joined the member
+        getNode(member2).getClusterService().setMasterAddressToJoin(null);
+
+        assertEquals(getAddress(master), getClusterService(member2).getMasterAddress());
+
+        HazelcastInstance member3 = factory.newHazelcastInstance();
+        assertClusterSizeEventually(4, master, member1, member2, member3);
+    }
+
+    @Test
     public void parallel_member_join() {
         AtomicReferenceArray<HazelcastInstance> instances = new AtomicReferenceArray<>(4);
         for (int i = 0; i < instances.length(); i++) {

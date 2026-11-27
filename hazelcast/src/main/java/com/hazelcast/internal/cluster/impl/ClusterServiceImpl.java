@@ -639,6 +639,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
                 } else if (logger.isFineEnabled()) {
                     logger.fine("Master address is already set to %s", master);
                 }
+                return;
             }
 
             setMasterAddress(master);
