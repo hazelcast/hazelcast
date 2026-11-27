@@ -36,6 +36,7 @@ import org.junit.runners.Parameterized;
 
 import java.util.Collection;
 
+import static com.hazelcast.internal.memory.HeapMemoryAccessor.ARRAY_BYTE_BASE_OFFSET;
 import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -62,17 +63,20 @@ public class EntryCostEstimatorTest extends HazelcastTestSupport {
     // values represent the cost when
     // perEntryStatsEnabled is false(default value).
     private static int getExpectedCostInBytes(boolean perEntryStatsEnabled) {
+        // values below assume a 16 byte header for each of the 2 byte[] (key and value); the header is JVM specific
+        int arrayHeaderSize = ARRAY_BYTE_BASE_OFFSET > 0 ? ARRAY_BYTE_BASE_OFFSET : JVMUtil.OBJECT_HEADER_SIZE + 4;
+        int arrayHeaderCorrection = 2 * (16 - arrayHeaderSize);
         if (JVM.is32bit() && JVMUtil.isCompressedOops()) {
-            return perEntryStatsEnabled ? 140 : 116;
+            return (perEntryStatsEnabled ? 140 : 116) - arrayHeaderCorrection;
         }
 
-        // there are 5 object headers included: Record, 2x HeapData and 2x byte[] (key and value)
-        int compactHeaderCorrection = JVMUtil.isCompactObjectHeader() ? 20 : 0;
+        // there are 3 object headers included: Record and 2x HeapData
+        int correction = arrayHeaderCorrection + (JVMUtil.isCompactObjectHeader() ? 12 : 0);
         if (JVMUtil.isCompressedOops()) {
-            return perEntryStatsEnabled ? 152 - compactHeaderCorrection : 128 - compactHeaderCorrection;
+            return perEntryStatsEnabled ? 152 - correction : 128 - correction;
         }
 
-        return perEntryStatsEnabled ? 196 - compactHeaderCorrection : 172 - compactHeaderCorrection;
+        return perEntryStatsEnabled ? 196 - correction : 172 - correction;
     }
 
     private long getExpectedCost() {
