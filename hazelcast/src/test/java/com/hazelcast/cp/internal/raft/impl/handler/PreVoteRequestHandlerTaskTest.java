@@ -19,9 +19,11 @@ package com.hazelcast.cp.internal.raft.impl.handler;
 
 import com.hazelcast.cp.internal.raft.impl.RaftEndpoint;
 import com.hazelcast.cp.internal.raft.impl.RaftNodeImpl;
+import com.hazelcast.cp.internal.raft.impl.RaftRole;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteRequest;
 import com.hazelcast.cp.internal.raft.impl.dto.PreVoteResponse;
 import com.hazelcast.cp.internal.raft.impl.log.RaftLog;
+import com.hazelcast.cp.internal.raft.impl.state.CandidateState;
 import com.hazelcast.cp.internal.raft.impl.state.RaftState;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -36,6 +38,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeNotZing;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -151,6 +154,22 @@ public class PreVoteRequestHandlerTaskTest {
         verify(raftState, never()).log();
     }
 
+    /**
+     * A pre-vote request the current leader sent before it was elected arrives late.
+     * Leader stickiness should still apply to it.
+     */
+    @Test
+    public void voteNotGranted_whenDelayedRequestFromCurrentLeaderForCurrentTerm() {
+        RaftEndpoint leader = mock(RaftEndpoint.class);
+        when(raftState.term()).thenReturn(5);
+        when(raftState.leader()).thenReturn(leader);
+        when(raftNode.isLeaderAvailable()).thenReturn(true);
+
+        new PreVoteRequestHandlerTask(raftNode, new PreVoteRequest(leader, 5, 4, 10L, false)).run();
+
+        verify(raftNode).send(ArgumentMatchers.<PreVoteResponse>argThat(r -> !r.granted()), any());
+    }
+
     @Test
     public void voteGranted_whenCandidateLogIsNotWorse() {
         when(raftState.term()).thenReturn(1);
@@ -227,5 +246,20 @@ public class PreVoteRequestHandlerTaskTest {
                 ),
                 any()
         );
+    }
+
+    @Test
+    public void preVoteNotCounted_whenResponseIsForPreviousPreVoteRound() {
+        RaftEndpoint voter = mock(RaftEndpoint.class);
+        CandidateState preCandidateState = mock(CandidateState.class);
+        when(raftState.isKnownMember(voter)).thenReturn(true);
+        when(raftState.role()).thenReturn(RaftRole.FOLLOWER);
+        when(raftState.term()).thenReturn(5);
+        // lenient: not reached when the stale response is discarded
+        lenient().when(raftState.preCandidateState()).thenReturn(preCandidateState);
+
+        new PreVoteResponseHandlerTask(raftNode, new PreVoteResponse(voter, 5, true)).run();
+
+        verify(preCandidateState, never()).grantVote(any());
     }
 }

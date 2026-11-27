@@ -820,4 +820,44 @@ public class LocalRaftTest extends HazelcastTestSupport {
     private static RaftAlgorithmConfig newRaftConfigWithNoSnapshotting(int maxEntryCount) {
         return new RaftAlgorithmConfig().setCommitIndexAdvanceCountToSnapshot(maxEntryCount * 2);
     }
+
+    /**
+     * Leader stickiness is skipped for the pre-vote and vote requests of the former leader,
+     * since a leader that starts an election has already stepped down or restarted.
+     */
+    @Test
+    public void when_formerLeaderStartsElection_then_leaderStickinessIsSkipped() {
+        // The heartbeat timeout is much longer than the expected election time,
+        // so a slow environment does not make the test fail.
+        int heartbeatTimeoutSeconds = 600;
+        int expectedElectionSeconds = 120;
+        RaftAlgorithmConfig config = new RaftAlgorithmConfig()
+                .setLeaderHeartbeatPeriodInMillis(1000)
+                .setMaxMissedLeaderHeartbeatCount(heartbeatTimeoutSeconds);
+        group = newGroup(3, config);
+        group.start();
+
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl target = group.getAnyFollowerNode();
+
+        // Force the leader to step down and become a follower by transferring its leadership,
+        // while the other follower is not aware of the leader change: the vote requests
+        // of the target are dropped, so the other follower stays in the current term
+        // and continues to believe that the previous leader is still the leader.
+        group.dropMessagesToAll(target.getLocalMember(), VoteRequest.class);
+        leader.transferLeadership(target.getLocalMember());
+
+        // The leader becomes a follower.
+        assertTrueEventually(() -> assertEquals(RaftRole.FOLLOWER, getRole(leader)));
+
+        // The target crashes, so there is no new leader, and only the former leader starts a new election
+        // by sending pre-vote and vote requests, since it does not know a leader anymore.
+        // The other follower does not start an election, since the former leader's heartbeats have not timed out yet.
+        group.terminateNode(target.getLocalMember());
+
+        // The former leader becomes the leader again, since the other follower grants its pre-vote and vote.
+        // If the follower rejected them because of leader stickiness, no leader could be elected
+        // until the follower's heartbeat timeout elapses.
+        assertTrueEventually(() -> assertEquals(RaftRole.LEADER, getRole(leader)), expectedElectionSeconds);
+    }
 }

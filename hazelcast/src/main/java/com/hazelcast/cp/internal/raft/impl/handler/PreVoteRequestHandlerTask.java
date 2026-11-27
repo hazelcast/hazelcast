@@ -59,8 +59,13 @@ public class PreVoteRequestHandlerTask extends RaftNodeStatusAwareTask implement
             return;
         }
 
-        // Reply false if the leader is available (leader stickiness)
-        if (raftNode.isLeaderAvailable()) {
+        // Reply false if the leader is available (leader stickiness).
+        // If the request comes from the current leader, the stickiness check is skipped
+        // (as in VoteRequestHandlerTask), since the current leader may have stepped down
+        // or restarted by recovering its persistent state (except for a stale request
+        // sent before the leader was elected).
+        boolean fromCurrentLeader = req.candidate().equals(state.leader()) && (req.nextTerm() > state.term());
+        if (raftNode.isLeaderAvailable() && !fromCurrentLeader) {
             logger.info("Rejecting " + req + " since received append entries recently.");
             raftNode.send(new PreVoteResponse(localEndpoint, state.term(), false), req.candidate());
             return;
