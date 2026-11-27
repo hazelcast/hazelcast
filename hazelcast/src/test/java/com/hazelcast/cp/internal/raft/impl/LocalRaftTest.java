@@ -49,6 +49,7 @@ import java.util.concurrent.TimeoutException;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getCommitIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLastLogOrSnapshotEntry;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getLeaderMember;
+import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getMatchIndex;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getRole;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getTerm;
 import static com.hazelcast.cp.internal.raft.impl.RaftUtil.getVotedFor;
@@ -384,6 +385,155 @@ public class LocalRaftTest extends HazelcastTestSupport {
                 }
             }
         });
+    }
+
+    @Test
+    public void when_appendRequestContainsCommittedEntries_then_followerSkipsThemAndAppendsTheRest()
+            throws ExecutionException, InterruptedException {
+        // Build a state where the first entries of the leader's append requests are committed
+        // on the follower, while the leader's match index for it is still 0, so the follower
+        // should skip them and append the new one.
+        group = newGroup(3);
+        group.start();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl follower = group.getAnyFollowerNode();
+
+        group.dropMessagesToMember(follower.getLocalMember(), leader.getLocalMember(), AppendSuccessResponse.class);
+
+        // Commit entry 1 with the other follower's ack
+        leader.replicate(new ApplyRaftRunnable("val0")).get();
+
+        // Wait until the follower learns that entry 1 is committed
+        assertTrueEventually(() -> assertEquals(1, getCommitIndex(follower)));
+
+        // Trigger a new append to the follower, which contains entries 1-2 with prevLogIndex 0
+        leader.replicate(new ApplyRaftRunnable("val1")).get();
+
+        // the follower appends entry 2, while the leader's match index for it is still 0
+        assertTrueEventually(() -> {
+            assertEquals(2, getCommitIndex(follower));
+            assertEquals(0, getMatchIndex(leader, follower.getLocalMember()));
+        });
+    }
+
+    @Test
+    public void when_followerHasUncommittedEntryAfterPrevLogEntry_then_itAcceptsAppendRequest()
+            throws ExecutionException, InterruptedException {
+        // Build a state where the prevLogIndex of the leader's append requests is after the
+        // follower's commit index and before its last log entry, and the follower's entry at
+        // prevLogIndex has the same term, so the follower should accept the appends.
+        // Log entries are shown as index:term value.
+        group = newGroup(5);
+        group.start();
+        RaftNodeImpl leader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(leader.getLocalMember());
+        RaftNodeImpl follower = followers[0];
+
+        leader.replicate(new ApplyRaftRunnable("val0")).get();
+
+        // The other followers miss the new entries, so nothing is committed after entry 1
+        for (int i = 1; i < followers.length; i++) {
+            group.dropMessagesToMember(leader.getLocalMember(), followers[i].getLocalMember(), AppendRequest.class);
+        }
+
+        // Only the follower receives entry 2, and the leader learns it from its ack:
+        //   leader, follower:  [1:1 val0, 2:1 val1]                commit 1
+        //   others:            [1:1 val0]                          commit 1
+        leader.replicate(new ApplyRaftRunnable("val1"));
+
+        assertTrueEventually(() -> assertEquals(2, getMatchIndex(leader, follower.getLocalMember())));
+
+        // The follower's acks are lost from now on, so the leader keeps sending appends with prevLogIndex 2
+        group.dropMessagesToMember(follower.getLocalMember(), leader.getLocalMember(), AppendSuccessResponse.class);
+
+        // Only the follower receives entry 3, so the leader's next appends have prevLogIndex 2,
+        // which is after the follower's commit index and before its last log entry:
+        //   leader, follower:  [1:1 val0, 2:1 val1, 3:1 val2]      commit 1
+        //   others:            [1:1 val0]                          commit 1
+        leader.replicate(new ApplyRaftRunnable("val2"));
+
+        assertTrueEventually(() -> assertEquals(3, getLastLogOrSnapshotEntry(follower).index()));
+
+        // Allow the follower's acks, so the leader learns its match index
+        group.allowMessagesToMember(follower.getLocalMember(), leader.getLocalMember(), AppendSuccessResponse.class);
+
+        // the follower finds its entry 2 with the same term as prevLogTerm, and acks entry 3
+        assertTrueEventually(() -> assertEquals(3, getMatchIndex(leader, follower.getLocalMember())));
+    }
+
+    @Test
+    public void when_followerHasUncommittedEntryAfterConflictingPrevLogEntry_then_itSyncsItsLog()
+            throws ExecutionException, InterruptedException {
+        // Build a state where the prevLogIndex of the leader's append requests is after the
+        // follower's commit index and before its last log entry, and the follower's entry at
+        // prevLogIndex has a different term, so the follower should reject the appends and then
+        // replace its conflicting entries with the leader's.
+        // Log entries are shown as index:term value, with the three leaders' terms as 1, 2 and 3.
+        group = newGroup(7);
+        group.start();
+        RaftNodeImpl firstLeader = group.waitUntilLeaderElected();
+        RaftNodeImpl[] followers = group.getNodesExcept(firstLeader.getLocalMember());
+        RaftNodeImpl follower = followers[0];
+
+        firstLeader.replicate(new ApplyRaftRunnable("val0")).get();
+
+        // Only the follower receives entries 2 and 3 of the first leader, so they are not committed:
+        //   first leader, follower:  [1:1 val0, 2:1 val1, 3:1 val2]                       commit 1
+        //   others:                  [1:1 val0]                                           commit 1
+        for (int i = 1; i < followers.length; i++) {
+            group.dropMessagesToMember(firstLeader.getLocalMember(), followers[i].getLocalMember(), AppendRequest.class);
+        }
+
+        firstLeader.replicate(new ApplyRaftRunnable("val1"));
+        firstLeader.replicate(new ApplyRaftRunnable("val2"));
+
+        assertTrueEventually(() -> assertEquals(3, getLastLogOrSnapshotEntry(follower).index()));
+
+        // Isolate the follower with entries 2 and 3 of the first leader, which is gone
+        group.split(follower.getLocalMember());
+        group.terminateNode(firstLeader.getLocalMember());
+
+        // The second leader commits a different entry 2 in its term:
+        //   follower (isolated):     [1:1 val0, 2:1 val1, 3:1 val2]                       commit 1
+        //   others:                  [1:1 val0, 2:2 valSecondLeader]                      commit 2
+        RaftNodeImpl secondLeader = waitUntilNewLeaderElected(followers[1], firstLeader);
+        secondLeader.replicate(new ApplyRaftRunnable("valSecondLeader")).get();
+
+        // The second leader is gone too, and the 4 remaining nodes are still a majority of 7
+        group.terminateNode(secondLeader.getLocalMember());
+
+        // Take any remaining node other than the second leader to observe the third leader's election
+        RaftNodeImpl nonLeader = Arrays.stream(followers, 1, followers.length)
+                .filter(node -> node != secondLeader).findAny().orElseThrow();
+        RaftNodeImpl thirdLeader = waitUntilNewLeaderElected(nonLeader, secondLeader);
+        // The third leader's last log entry is 2:2, so its appends to the follower start with prevLogIndex 2
+        assertEquals(2, getLastLogOrSnapshotEntry(thirdLeader).index());
+
+        // The third leader commits its own entry:
+        //   follower (isolated):     [1:1 val0, 2:1 val1, 3:1 val2]                       commit 1
+        //   remaining nodes:         [1:1 val0, 2:2 valSecondLeader, 3:3 valThirdLeader]  commit 3
+        thirdLeader.replicate(new ApplyRaftRunnable("valThirdLeader")).get();
+
+        // Allow traffic, so the follower receives an append with prevLogIndex 2 and prevLogTerm 2,
+        // while its own entry 2 has term 1
+        group.merge();
+
+        // the follower rejects the append, then replaces its entries 2 and 3 with the third leader's:
+        //   follower:                [1:1 val0, 2:2 valSecondLeader, 3:3 valThirdLeader]  commit 3
+        assertTrueEventually(() -> {
+            RaftDataService service = group.getService(follower);
+            assertThat(service.values()).contains("valSecondLeader", "valThirdLeader").doesNotContain("val1", "val2");
+        });
+    }
+
+    private RaftNodeImpl waitUntilNewLeaderElected(RaftNodeImpl observer, RaftNodeImpl oldLeader) {
+        assertTrueEventually(() -> {
+            RaftEndpoint leaderEndpoint = getLeaderMember(observer);
+            assertNotNull(leaderEndpoint);
+            assertNotEquals(oldLeader.getLocalMember(), leaderEndpoint);
+        });
+
+        return group.getNode(getLeaderMember(observer));
     }
 
     @Test
