@@ -39,6 +39,8 @@ public class MariaDBDatabaseProvider extends JdbcDatabaseProvider<MariaDBContain
         return new MariaDBContainer<>("mariadb:" + TEST_MARIADB_VERSION)
                 .withDatabaseName(dbName)
                 .withUsername(user())
+                // The test container runs without TLS, which Connector/J 4.0 requires by default.
+                .withUrlParam("sslMode", "disable")
                 .withUrlParam("user", user())
                 .withUrlParam("password", password());
     }
