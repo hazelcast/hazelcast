@@ -18,12 +18,19 @@ package example.serialization;
 
 public enum HiringStatus {
 
-    HIRING("Hiring"),
-    NOT_HIRING("Not hiring");
+    HIRING {
+        @Override
+        public String getHumanReadable() {
+            return "Hiring";
+        }
+    },
+    NOT_HIRING() {
+        @Override
+        public String getHumanReadable() {
+            return "Not hiring";
+        }
+    };
 
-    private final String humanReadable;
+    public abstract String getHumanReadable();
 
-    HiringStatus(String humanReadable) {
-        this.humanReadable = humanReadable;
-    }
 }
